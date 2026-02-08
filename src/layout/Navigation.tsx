@@ -1,5 +1,5 @@
-import { Box, Container, Flex, HStack, Heading, Link } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Box, Container, Flex, HStack, Heading } from '@chakra-ui/react';
+import { RouterLink } from "../components/RouterLink";
 
 const navLinks = [
   { label: 'Planner', to: '/planner' },
@@ -11,23 +11,37 @@ const navLinks = [
 
 export default function Navigation() {
   return (
-    <Box as="nav" bg="gray.900" color="white" boxShadow="sm" py={4}>
+    <Box
+      position="sticky"
+      top="0"
+      zIndex="1000"
+      bg={{ base: "teal.500", _dark: "teal.700" }}
+      color="white"
+      boxShadow="sm"
+      px={4}
+      py={3}
+      shadow="md"
+    >
       <Container maxW="6xl" px={{ base: 4, md: 8 }}>
         <Flex align="center" justify="space-between" gap={6} flexWrap="wrap">
-          <Heading size="md" letterSpacing="tight">
-            Budgetizer
-          </Heading>
+          <Heading size="lg" color="white">Budgeteer</Heading>
           <HStack as="ul" listStyleType="none" gap={{ base: 4, md: 6 }} m={0} p={0}>
             {navLinks.map((link) => (
-              <Box as="li" key={link.to}>
-                <Link
-                  asChild
-                  fontWeight="medium"
-                  color="whiteAlpha.900"
-                  _hover={{ color: 'green.300' }}
-                >
-                  <RouterLink to={link.to}>{link.label}</RouterLink>
-                </Link>
+              <Box as="nav" key={link.to}>
+                <RouterLink to={link.to}>
+                {({ isActive }) => (
+                    <Box
+                        px={3}
+                        py={2}
+                        rounded="md"
+                        fontWeight={isActive ? "700" : "500"}
+                        bg={isActive ? "teal.700" : "teal.500"}
+                        _hover={isActive ? { bg: "teal.700" } : { bg: "teal.600", color: "white" }}
+                    >
+                        {link.label}
+                    </Box>
+                )}
+                </RouterLink>
               </Box>
             ))}
           </HStack>
