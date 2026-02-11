@@ -4,10 +4,10 @@ export function AboutPage() {
   return (
     <VStack align="stretch" gap={6} minH="100%" p={4} bg="white" rounded="md" boxShadow="sm">
       <VStack align="start" gap={2}>
-        <Heading size="2xl">About TaskMaster</Heading>
+        <Heading size="2xl">About Budgeteer</Heading>
         <Text color="gray.600">
-          TaskMaster is a showcase-friendly task app prototype focused on predictable data flow, clean UI patterns,
-          and a clear path to an offline-capable architecture.
+          Budgeteer is a privacy-aware personal finance app built for planning-first budgeting, safe CSV imports, and
+          clear monthly tracking.
         </Text>
       </VStack>
 
@@ -16,8 +16,8 @@ export function AboutPage() {
           Mission
         </Heading>
         <Text color="gray.700">
-          Build a “simple to demo, easy to reason about” task app where state is explicit, navigation is deep-linkable,
-          and the data layer is boring (in a good way).
+          Make budgeting feel intentional and understandable: plan ahead with scenarios, import transactions safely
+          (preview → stage → apply/undo), and keep the math deterministic and explainable.
         </Text>
       </Box>
 
@@ -26,14 +26,12 @@ export function AboutPage() {
           App features
         </Heading>
         <VStack align="start" gap={2} color="gray.700">
-          <Text>• Inbox triage with overdue / due-soon attention across lists.</Text>
-          <Text>• Deep-linkable task navigation via URL-encoded “pane stack” in list details.</Text>
-          <Text>• Store-driven task + list CRUD backed by AppSync GraphQL.</Text>
-          <Text>• Updates feed with read markers (intentionally local-first UX state for MVP).</Text>
-          <Text>• Demo mode and demo data controls for fast, repeatable showcasing.</Text>
-          <Text>• Admin-only console for cross-user inspection (read-only by design for MVP).</Text>
-          <Text>• User-scoped persistence + TTL cache for fast reloads and less cross-account state leakage on shared devices.</Text>
-          <Text>• Consistent loading/error states with friendly inline errors and a Retry path on primary routes.</Text>
+          <Text>• Planner: scenarios for income, expenses, and savings allocation.</Text>
+          <Text>• Tracker: planned vs actual by month, with honest totals and clear comparisons.</Text>
+          <Text>• Accounts: CSV import with preview, staging, apply-to-budget, and a time-window undo.</Text>
+          <Text>• Deterministic ingestion: a strong transaction key makes re-imports idempotent.</Text>
+          <Text>• Local-first by default: persisted client state is scoped per user to prevent cross-account mixing.</Text>
+          <Text>• Privacy-aware posture: no bank credential linking; import only what you provide.</Text>
         </VStack>
       </Box>
 
@@ -52,8 +50,6 @@ export function AboutPage() {
           <Badge variant="solid" colorPalette="green">Zustand</Badge>
           <Badge variant="outline">React Router v7</Badge>
           <Badge variant="outline">Vite 7</Badge>
-          <Badge variant="outline">Playwright</Badge>
-          <Badge variant="outline">axe-core</Badge>
           <Badge variant="outline">ESLint</Badge>
         </HStack>
 
@@ -161,7 +157,8 @@ export function AboutPage() {
         </Heading>
         <VStack align="start" gap={2} color="gray.700">
           <Text>
-            MVP is shipped. Next work focuses on hardening and expanding capability without changing the core architecture.
+            Near-term work focuses on tightening the product surface (copy/routes/UX correctness), hardening types, and
+            polishing Planner + Tracker without changing the core architecture.
           </Text>
 
           <Text>
@@ -169,8 +166,9 @@ export function AboutPage() {
           </Text>
 
           <Box pl={4}>
-            <Text>• Deploy-time CSP + baseline security headers (hosting hardening).</Text>
-            <Text>• Offline groundwork: IndexedDB cache + an offline mutation queue (post-MVP).</Text>
+            <Text>• Fix remaining UI correctness issues and clean up runtime console warnings/errors.</Text>
+            <Text>• Reduce high-risk `any` types around budgeting and import lifecycles.</Text>
+            <Text>• Keep the ingestion pipeline fast and explainable, then improve review tooling later.</Text>
           </Box>
         </VStack>
       </Box>

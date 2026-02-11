@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
-import { Box, Container, Flex, Link } from "@chakra-ui/react";
+import { Box, Flex, Link } from "@chakra-ui/react";
 import { Toaster } from "../components/ui/Toaster";
 import { StorageDisclosureBanner } from "../components/ui/StorageDisclosureBanner.tsx";
-import Navigation from "./Navigation";
+import Header from "./Header.tsx";
 import Footer from "./Footer.tsx";
 import { ErrorBoundary } from "./ErrorBoundary.tsx";
 import type { AuthUserLike } from "../types";
@@ -10,6 +10,8 @@ import { Suspense } from "react";
 import { BasicSpinner } from "../components/ui/BasicSpinner.tsx";
 import { useBootstrapUserProfile } from "../hooks/useBootstrapUserProfile";
 import { WelcomeModal } from "../components/ui/WelcomeModal";
+import { Sidebar } from "./Sidebar.tsx";
+import { PublicSidebar } from "./PublicSidebar.tsx";
 
 type AppShellProps = {
   user?: AuthUserLike | null;
@@ -46,21 +48,41 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
       <Toaster />
       <WelcomeModal signedIn={signedIn && !authLoading} />
 
-      <Flex minH="100vh" direction="column" bg="gray.50">
-        <Navigation />
-        <Box as="main" flex="1" py={{ base: 6, md: 10 }}>
-          <Container maxW="6xl" px={{ base: 4, md: 8 }}>
-            <ErrorBoundary title="Page Crashed">
-              <Suspense fallback={<BasicSpinner />}>
-                <Outlet />
-              </Suspense>
-            </ErrorBoundary>
-          </Container>
+      <Header user={user}/>
+
+      {/* Body: sidebar + main */}
+      {/* Sidebar */}
+      <Flex flex="1" minH={0} overflow={"hidden"}>
+        {/* Sidebar stays visible, its own scroll if needed */}
+        <Box
+          flexShrink={0}
+          h="100%"
+          overflowY="auto"
+          borderRightWidth="1px"
+        >
+          {authLoading ? (
+            <Box w={"25vh"} h="100%">
+              <BasicSpinner height="100%" width="100%" size="md" />
+            </Box>
+          ) : signedIn ? (
+            <Sidebar />
+          ) : (
+            <PublicSidebar />
+          )}
         </Box>
-        <Footer signedIn={signedIn} onSignOut={onSignOut} />
+
+        {/* Main area is the primary scroll container */}
+        <Box flex="1" minW={0} h="100%" overflow="auto" className="Main" id="main-content" tabIndex={-1}>
+          <ErrorBoundary title="Page Crashed">
+            <Suspense fallback={<BasicSpinner />}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
+        </Box>
       </Flex>
 
       <StorageDisclosureBanner />
+      <Footer signedIn={signedIn} onSignOut={onSignOut} />
     </Flex>
   );
 }

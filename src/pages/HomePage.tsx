@@ -1,28 +1,27 @@
+import { useMemo, useState } from "react";
 import { Badge, Box, Button, Heading, HStack, Text, VStack } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-//import { signIn } from "aws-amplify/auth";
-//import { createDemoCredentials } from "../services/demoAuthService";
-//import { clearDemoSessionActive, setDemoSessionActive } from "../services/demoSession";
+import { useNavigate, useLocation } from "react-router-dom";
+import { signIn } from "aws-amplify/auth";
+import { createDemoCredentials } from "../services/demoAuthService";
+import { clearDemoSessionActive, setDemoSessionActive } from "../services/demoSession";
 import { Tip } from "../components/ui/Tip";
-//import { DemoConfirmDialog } from "../components/ui/DemoConfirmDialog";
+import { DemoConfirmDialog } from "../components/ui/DemoConfirmDialog";
 import { VisuallyHidden } from "@chakra-ui/react";
-//import { BudgeteerLogo } from "../components/icons/BudgeteerLogo.svg";
-//import homeBannerSvg from "../assets/home-banner.svg?raw";
+import { BudgeteerLogo } from "../components/icons/BudgeteerLogo";
+import homeBannerSvg from "../assets/home-banner.svg?raw";
 
-/*
 function sanitizeRedirect(raw: string | null): string {
-  if (!raw) return "/today";
-  if (!raw.startsWith("/")) return "/today";
-  if (raw.startsWith("//")) return "/today";
-  if (raw.includes("://")) return "/today";
+  if (!raw) return "/planner";
+  if (!raw.startsWith("/")) return "/planner";
+  if (raw.startsWith("//")) return "/planner";
+  if (raw.includes("://")) return "/planner";
   return raw;
-}*/
+}
 
 export function HomePage({ signedIn }: { signedIn: boolean }) {
   const navigate = useNavigate();
-  //const location = useLocation();
+  const location = useLocation();
 
-  /*
   const redirectTarget = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return sanitizeRedirect(params.get("redirect"));
@@ -47,7 +46,7 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
 
       await signIn({ username: creds.username, password: creds.password });
 
-      navigate(redirectTarget || "/today", { replace: true });
+      navigate(redirectTarget || "/planner", { replace: true });
     } catch (err) {
       // If something failed after we marked the session as demo, clear it to avoid confusing UX.
       clearDemoSessionActive();
@@ -59,7 +58,7 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
     } finally {
       setDemoLoading(false);
     }
-  };*/
+  };
 
   return (
     <VStack align="stretch" gap={6} minH="100%" p={4}>
@@ -79,35 +78,38 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
             borderWidth="1px"
             borderColor="gray.100"
             overflow="hidden"
-            //dangerouslySetInnerHTML={{ __html: homeBannerSvg }}
+            dangerouslySetInnerHTML={{ __html: homeBannerSvg }}
           />
 
           <HStack gap={3} align="center">
             <Badge colorPalette="purple" variant="solid">
               Portfolio build
             </Badge>
-            <Badge variant="outline">Amplify + AppSync</Badge>
-            <Badge variant="outline">Zustand</Badge>
+            <Badge variant="outline">Planner-first</Badge>
+            <Badge variant="outline">CSV imports</Badge>
+            <Badge variant="outline">Stage / Apply / Undo</Badge>
           </HStack>
 
           <Box aria-hidden="true">
-            {/* <BudgeteerLogo /> */}
+            <BudgeteerLogo />
           </Box>
 
           <VisuallyHidden>
-            <h1>TaskMaster</h1>
+            <h1>Budgeteer</h1>
           </VisuallyHidden>
-          <Tip storageKey="tip:home-deeplinks" title="Tip">
-            Most pages support deep links. If someone shares a task or list URL, logging in will bring you right back to
-            that context.
+          <Heading size={{ base: "lg", md: "xl" }}>
+            Plan your month. Import safely. Track honestly.
+          </Heading>
+          <Tip storageKey="tip:home-imports" title="Tip">
+            Imports are previewed and staged first, so you can apply them (or undo them) safely.
           </Tip>
           <Text color="gray.600" fontSize="lg" maxW="2xl">
-            A fast, store-driven task app prototype with deep-linkable task navigation, a user-scoped local cache + TTL refresh,
-            and a guided Admin console for cross-user inspection.
+            Budgeteer is a privacy-aware budgeting app built around a planning-first workflow and deterministic CSV imports.
+            No bank credential linking—just user-controlled data, clear rules, and explainable totals.
           </Text>
 
           <HStack gap={3} pt={2} flexWrap="wrap">
-            {/*!signedIn ? (
+            {!signedIn ? (
               <Button
                 size="lg"
                 colorPalette="purple"
@@ -120,24 +122,33 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
               >
                 {demoLoading ? "Creating demo account…" : "Try Demo (No Signup)"}
               </Button>
-            ) : null*/}
+            ) : null}
 
             <Button
               size="lg"
+              colorPalette="purple"
               variant={signedIn ? "solid" : "outline"}
-              colorPalette={signedIn ? "green" : undefined}
-              onClick={() => navigate(signedIn ? "/today" : "/login")}
+              onClick={() => navigate("/planner")}
             >
-              {signedIn ? "Go to your tasks" : "Sign in / Create account"}
+              Open Planner
             </Button>
 
-            <Button size="lg" variant="ghost" onClick={() => navigate("/about")}
-            >
+            <Button size="lg" variant="outline" onClick={() => navigate("/accounts")}>
+              Import CSV
+            </Button>
+
+            {!signedIn ? (
+              <Button size="lg" variant="ghost" onClick={() => navigate("/login")}>
+                Sign in / Create account
+              </Button>
+            ) : null}
+
+            <Button size="lg" variant="ghost" onClick={() => navigate("/about")}>
               About
             </Button>
           </HStack>
 
-          {/*!signedIn ? (
+          {!signedIn ? (
             <Box pt={2} color="gray.600">
               {demoError ? (
                 <Box p={3} bg="red.50" borderWidth="1px" borderColor="red.200" rounded="md" mb={3}>
@@ -160,11 +171,11 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
                 Local state is scoped per user to prevent cross-account mixing on shared browsers.
               </Text>
             </Box>
-          ) : null*/}
+          ) : null}
         </VStack>
       </Box>
 
-      {/*!signedIn ? (
+      {!signedIn ? (
         <DemoConfirmDialog
           open={demoDialogOpen}
           setOpen={setDemoDialogOpen}
@@ -174,42 +185,42 @@ export function HomePage({ signedIn }: { signedIn: boolean }) {
             await onTryDemo();
           }}
         />
-      ) : null*/}
+      ) : null}
 
       <HStack gap={4} align="stretch" flexWrap="wrap">
         <Box flex="1" minW="280px" p={5} bg="white" rounded="md" boxShadow="sm">
           <Heading size="md" mb={2}>
-            Pane-stack navigation
+            Planning-first
           </Heading>
           <Text color="gray.600">
-            List details use a URL-encoded “pane stack” so task context is shareable and refresh-safe.
+            Build scenarios, model income and expenses, and keep the math explainable.
           </Text>
         </Box>
 
         <Box flex="1" minW="280px" p={5} bg="white" rounded="md" boxShadow="sm">
           <Heading size="md" mb={2}>
-            Store-driven UI
+            Safe imports
           </Heading>
           <Text color="gray.600">
-            Reads go through Zustand selectors; writes go through store actions → GraphQL wrapper → AppSync.
+            Preview first, then stage transactions so apply/undo is deliberate and reversible.
           </Text>
         </Box>
 
         <Box flex="1" minW="280px" p={5} bg="white" rounded="md" boxShadow="sm">
           <Heading size="md" mb={2}>
-            Fast reloads
+            Deterministic ingestion
           </Heading>
           <Text color="gray.600">
-            A persisted local cache with TTL renders immediately and refreshes in the background.
+            Strong transaction keys make re-imports idempotent and duplicates explainable.
           </Text>
         </Box>
 
         <Box flex="1" minW="280px" p={5} bg="white" rounded="md" boxShadow="sm">
           <Heading size="md" mb={2}>
-            User-scoped persistence
+            Privacy-aware by design
           </Heading>
           <Text color="gray.600">
-            Persisted UI state is namespaced per account, so signing in/out on a shared device doesn’t leak or mix data.
+            No bank credential scraping. Import only what you control, and keep storage user-scoped.
           </Text>
         </Box>
       </HStack>

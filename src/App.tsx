@@ -1,10 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import "@aws-amplify/ui-react/styles.css";
-import Planner from './pages/Planner';
-import Accounts from './pages/Accounts';
-import Tracker from './pages/Tracker';
-import Imports from './pages/Imports';
-import Settings from './pages/Settings';
+import PlannerPage from './pages/PlannerPage';
+import AccountsPage from './pages/AccountsPage';
+import SettingsPage from "./pages/SettingsPage"
 import { RequireAuth } from "./routes/RequireAuth";
 import { AppShell } from './layout/AppShell';
 import { LoginPage } from './pages/LoginPage';
@@ -15,6 +13,10 @@ import { resetUserSessionState } from './store/clearUserCaches';
 import { useLayoutEffect } from 'react';
 import { HomePage } from './pages/HomePage';
 import { AboutPage } from './pages/AboutPage';
+import { ProfilePage } from './pages/ProfilePage';
+import ImportHistoryPage from './pages/ImportHistoryPage';
+import TrackerPage from './pages/TrackerPage';
+import { DevPage } from './pages/DevPage';
 
 // TODO(P3): Add lazy loading for pages and components, especially ones that pull in a lot of dependencies (e.g. the login page with Amplify UI).
 
@@ -65,15 +67,19 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<HomePage signedIn={signedIn} />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/planner" element={<Planner />} />
-          <Route path="/tracker" element={<Tracker />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/planner" element={<PlannerPage />} />
+          <Route path="/tracker" element={<TrackerPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/login" element={<LoginPage signedIn={signedIn} authLoading={authLoading} />} />
 
           {/* Protected routes */}
           <Route element={<RequireAuth signedIn={signedIn} loading={authLoading} />}>
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/imports" element={<Imports />} />
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/imports" element={<ImportHistoryPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          {import.meta.env.DEV ? (
+            <Route path="/dev" element={<DevPage />} />
+          ) : null}
           </Route>
 
           {/* Catch-all */}
