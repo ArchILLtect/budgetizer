@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Budgeteer banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B1220"/>
+      <stop offset="0.55" stop-color="#122A5C"/>
+      <stop offset="1" stop-color="#0B1220"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22C55E"/>
+      <stop offset="0.5" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="140%" height="140%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="320" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="6" fill="url(#accent)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="64" y="64" width="1072" height="192" rx="24" fill="#0F1B33" fill-opacity="0.9" stroke="#22304D"/>
+  </g>
+
+  <text x="110" y="136" fill="#FFFFFF" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="56" font-weight="800" letter-spacing="-0.02em">Budgeteer</text>
+  <text x="110" y="188" fill="#C7D2FE" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="22" font-weight="500">Planner-first • CSV imports • Staging + undo • React • Vite • TypeScript • Chakra UI</text>
+
+  <g>
+    <rect x="110" y="214" width="320" height="36" rx="18" fill="#0B1220" stroke="#22304D"/>
+    <circle cx="130" cy="232" r="6" fill="#22C55E"/>
+    <text x="146" y="238" fill="#D1FAE5" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="16" font-weight="600">Deterministic imports • Store-driven UI</text>
+  </g>
+</svg>

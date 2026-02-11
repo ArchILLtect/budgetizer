@@ -13,19 +13,38 @@ For process & quality checklist see: `../CONTRIBUTING.md` (contribution workflow
 -   **Category Rules & Savings Queue Guide:** [category-rules-and-savings-queue](./developer/category-rules-and-savings-queue.md)
 -   **Contribution Guide:** [CONTRIBUTING](../CONTRIBUTING.md)
 
+## Project Docs
+
+-   **Architecture:** [ARCHITECTURE](./ARCHITECTURE.md)
+-   **PRD:** [PRD](./PRD.md)
+-   **Roadmap:** [ROADMAP](./ROADMAP.md)
+-   **Setup:** [SETUP](./SETUP.md)
+-   **API Reference:** [API](./API.md)
+-   **Data Model:** [DATA_MODEL](./DATA_MODEL.md)
+-   **Deployment (Netlify):** [DEPLOYMENT_CHECKLIST](./DEPLOYMENT_CHECKLIST.md)
+-   **Security:** [SECURITY_CHECKLIST](./SECURITY_CHECKLIST.md)
+-   **Risk Register:** [RISK_REGISTER](./RISK_REGISTER.md)
+-   **Milestones:** [MILESTONES](./MILESTONES.md)
+-   **Troubleshooting:** [TROUBLESHOOTING](./TROUBLESHOOTING.md)
+
+Repo-level docs:
+
+-   [LICENSE](../LICENSE.md)
+-   [CHANGELOG](../CHANGELOG.md)
+
 ## Key Code Areas
 
 | Concern                   | Location                                    |
 | ------------------------- | ------------------------------------------- |
-| Global Store (Zustand)    | `src/state/budgetStore.js`                  |
+| Global Store (Zustand)    | `src/store/budgetStore.ts`                  |
 | Ingestion Pipeline        | `src/ingest/`                               |
-| Category Inference Rules  | `src/ingest/categoryRules.js`               |
+| Category Inference Rules  | `src/ingest/categoryRules.ts`               |
 | Cloud Sync Plan           | `docs/developer/migration-plan.md`          |
-| Savings Review Modal Flow | `src/components/SavingsReviewModal.jsx`     |
-| Benchmark Panel           | `src/dev/IngestionBenchmark.jsx`            |
-| Strong Key Builder        | `src/ingest/buildTxKey.js`                  |
-| Auth Utilities            | `src/utils/auth.js`, `src/hooks/useAuth.js` |
-| Recurring Analysis        | `src/utils/analysisUtils.js`                |
+| Savings Review Modal Flow | `src/components/ui/SavingsReviewModal.tsx`  |
+| Benchmark Panel           | `src/dev/`                                  |
+| Strong Key Builder        | `src/ingest/buildTxKey.ts`                  |
+| Auth Utilities            | `src/hooks/useAuthUser.ts`                  |
+| Recurring Analysis        | `src/utils/analysisUtils.ts`                |
 
 ## Testing
 
