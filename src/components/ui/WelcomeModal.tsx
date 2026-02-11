@@ -11,6 +11,7 @@ import {
   setWelcomeModalSeenVersion,
   type WelcomeModalOpenReason,
 } from "../../services/welcomeModalPreference";
+import { shouldShowWelcomeModal, WELCOME_MODAL_VERSION } from "./welcomeModalLogic";
 //import { setDemoModeOptIn } from "../../services/demoModeOptIn";
 import {
   getWelcomeModalLastShownAtMs,
@@ -18,8 +19,6 @@ import {
   setWelcomeModalLastShownAtMs,
   WELCOME_MODAL_REMIND_INTERVAL_MS,
 } from "../../services/welcomeModalSchedule";
-
-const WELCOME_MODAL_VERSION = 1 as const;
 
 const WHATS_NEW: Array<{ title: string; body: string }> = [
   {
@@ -117,13 +116,13 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
   }, [seenVersion]);
 
   const open = useMemo(() => {
-    if (!signedIn) return false;
-    if (authLoading) return false;
-
-    // Never show again applies to auto-opens (login/reminder), but manual opens should still work.
-    if (disabledByPreference && openReason !== "manual") return false;
-
-    return openRequested;
+    return shouldShowWelcomeModal({
+      signedIn,
+      authLoading,
+      disabledByPreference,
+      openRequested,
+      openReason,
+    });
   }, [authLoading, disabledByPreference, openReason, openRequested, signedIn]);
 
   // Auto-open reminder: once per 24h while still signed in.
