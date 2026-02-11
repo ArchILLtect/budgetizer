@@ -1,7 +1,7 @@
 import { Box, Button, HStack, Text } from "@chakra-ui/react";
 import { useCallback, useMemo, useState } from "react";
 
-const STORAGE_DISCLOSURE_ACK_KEY = "taskmaster:storageDisclosureAck:v1" as const;
+const STORAGE_DISCLOSURE_ACK_KEY = "budgeteer:storageDisclosureAck:v1" as const;
 
 function readAcked(): boolean {
   try {

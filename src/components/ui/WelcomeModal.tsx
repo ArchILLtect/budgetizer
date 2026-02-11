@@ -141,7 +141,7 @@ export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
 
   return (
     <DialogModal
-      title="Welcome to TaskMaster"
+      title="Welcome to Budgeteer"
       body={
         <VStack align="start" gap={4}>
           <Text color="gray.700">

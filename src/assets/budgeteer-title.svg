@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100%" height="100%" viewBox="0 0 560 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMid meet" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="tm_grad" x1="0" y1="14" x2="560" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="var(--chakra-colors-purple-600)" />
+      <stop offset="0.55" stop-color="var(--chakra-colors-purple-500)" />
+      <stop offset="1" stop-color="var(--chakra-colors-purple-400)" />
+    </linearGradient>
+
+    <filter id="tm_soft" x="-10%" y="-20%" width="120%" height="140%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="var(--chakra-colors-gray-500)" flood-opacity="0.18" />
+    </filter>
+  </defs>
+
+  <!-- Wordmark (tight viewBox so it scales to height) -->
+  <g filter="url(#tm_soft)">
+    <text x="0" y="86" font-size="104" font-weight="850" letter-spacing="-1" fill="url(#tm_grad)">
+      Budgeteer
+    </text>
+    <text x="0" y="86" font-size="104" font-weight="850" letter-spacing="-1" fill="none" stroke="var(--chakra-colors-purple-700)" stroke-opacity="0.22" stroke-width="2">
+      Budgeteer
+    </text>
+  </g>
+</svg>
