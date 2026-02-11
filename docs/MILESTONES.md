@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -41,7 +41,7 @@ Acceptance:
 Use this as the running “ship list” for Milestone 1. Keep it honest and concrete—each item should be verifiable in the UI.
 
 **A) Click-through + routes**
-- [ ] Routes in `src/App.tsx` match sidebar/header links (no dead links)
+- [x] Routes in `src/App.tsx` match sidebar/header links (no dead links)
 - [ ] Public routes behave correctly (Home/About/Planner/Tracker/Settings/Login)
 - [ ] Protected routes behave correctly (Accounts/Imports/Profile, and Dev in DEV only)
 - [ ] Auth redirect after login lands on a Budgeteer route (not legacy)
@@ -57,6 +57,7 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 **C) Storage + user switching (no state leakage)**
 - [x] All persisted keys follow `budgeteer:*` and user-scoped keys use the `budgeteer:u:<scope>:` prefix
 - [x] Main persisted budget state is user-scoped (no shared `budgeteer:budgetStore` across users)
+- [x] Switching users does not reuse the previous user’s budget data (budget store resets when a new user has no persisted budget state)
 - [ ] Switching users does not reuse the previous user’s cached UI metadata
 - [ ] Switching users does not reuse the previous user’s local settings / tips / demo preferences
 - [ ] “Clear caches”/reset pathways are discoverable and work as expected

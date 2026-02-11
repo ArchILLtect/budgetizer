@@ -46,24 +46,31 @@ export function useAuthUser(): {
     // even before auth resolves on the next page load.
     setUserStorageScopeKey(authKey);
 
-    // If we're switching to a *new* signed-in user who has never persisted a budget store yet,
-    // Zustand's `rehydrate()` will merge `null` into the existing in-memory state, leaving
-    // the previous user's budget data visible until a full page refresh.
+    // If we're switching to a *new* signed-in user who has never persisted a given store yet,
+    // Zustand's `rehydrate()` can merge `null` into the existing in-memory state, leaving
+    // the previous user's data visible until a full page refresh.
     //
-    // Fix: when a scope changes and there's no persisted budget store for that scope, reset
-    // the in-memory budget store back to its initial defaults *before* rehydration.
+    // Fix: when a scope changes and there's no persisted state for that scope, reset
+    // the in-memory store back to its initial defaults *before* rehydration.
     if (authKey && authKey !== lastAppliedScopeKeyRef.current) {
-      const hasPersistedBudgetStore = userScopedGetItem("zustand:budgeteer:budgetStore") != null;
-      if (!hasPersistedBudgetStore) {
+      const resetStoreIfMissing = (persistName: string, store: any) => {
+        const hasPersisted = userScopedGetItem(`zustand:${persistName}`) != null;
+        if (hasPersisted) return;
+
         try {
-          const initial = (useBudgetStore as any).getInitialState?.();
+          const initial = store?.getInitialState?.();
           if (initial) {
-            useBudgetStore.setState(initial, true);
+            store.setState(initial, true);
           }
         } catch {
           // ignore
         }
-      }
+      };
+
+      resetStoreIfMissing("budgeteer:budgetStore", useBudgetStore);
+      resetStoreIfMissing("budgeteer:user", useUserUICacheStore);
+      resetStoreIfMissing("budgeteer:localSettings", useLocalSettingsStore);
+      resetStoreIfMissing("budgeteer:updates", useUpdatesStore);
     }
 
     // IMPORTANT:
