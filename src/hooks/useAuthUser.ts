@@ -4,10 +4,12 @@ import { Hub } from "aws-amplify/utils";
 
 import type { AuthUserLike } from "../types";
 import { resetUserSessionState } from "../store/clearUserCaches";
-import { setUserStorageScopeKey } from "../services/userScopedStorage";
+import { setUserStorageScopeKey, userScopedGetItem } from "../services/userScopedStorage";
 import { useUserUICacheStore } from "../services/userUICacheStore";
 import { requestOpenWelcomeModal } from "../services/welcomeModalPreference";
 import { useBudgetStore } from "../store/budgetStore";
+import { useLocalSettingsStore } from "../store/localSettingsStore";
+import { useUpdatesStore } from "../store/updatesStore";
 //import { clearDemoSessionActive } from "../services/demoSession";
 
 function isNotSignedInError(err: unknown): boolean {
@@ -44,6 +46,26 @@ export function useAuthUser(): {
     // even before auth resolves on the next page load.
     setUserStorageScopeKey(authKey);
 
+    // If we're switching to a *new* signed-in user who has never persisted a budget store yet,
+    // Zustand's `rehydrate()` will merge `null` into the existing in-memory state, leaving
+    // the previous user's budget data visible until a full page refresh.
+    //
+    // Fix: when a scope changes and there's no persisted budget store for that scope, reset
+    // the in-memory budget store back to its initial defaults *before* rehydration.
+    if (authKey && authKey !== lastAppliedScopeKeyRef.current) {
+      const hasPersistedBudgetStore = userScopedGetItem("zustand:budgeteer:budgetStore") != null;
+      if (!hasPersistedBudgetStore) {
+        try {
+          const initial = (useBudgetStore as any).getInitialState?.();
+          if (initial) {
+            useBudgetStore.setState(initial, true);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     // IMPORTANT:
     // - On sign-in / scope switches, do NOT reset persisted user-scoped stores here.
     //   Doing so can overwrite the newly-selected scope with defaults before rehydrate.
@@ -52,27 +74,32 @@ export function useAuthUser(): {
       // Clear any authed state from in-memory stores so signed-out screens (or the next
       // login) can't briefly show previous-user data.
       try {
-        useBudgetStore.setState({
-          user: null,
-          isDemoUser: false,
-          accounts: {},
-          accountMappings: {},
-          pendingSavingsByAccount: {},
-          savingsReviewQueue: [],
-          importHistory: [],
-          importManifests: {},
-          monthlyPlans: {},
-          monthlyActuals: {},
-          savingsLogs: {},
-          lastIngestionTelemetry: null,
-          sessionExpired: false,
-          hasInitialized: false,
-          isSavingsModalOpen: false,
-          isConfirmModalOpen: false,
-          isLoadingModalOpen: false,
-          isProgressOpen: false,
-          resolveSavingsPromise: null,
-        } as any);
+        const initial = (useBudgetStore as any).getInitialState?.();
+        if (initial) {
+          useBudgetStore.setState(initial, true);
+        } else {
+          useBudgetStore.setState({
+            user: null,
+            isDemoUser: false,
+            accounts: {},
+            accountMappings: {},
+            pendingSavingsByAccount: {},
+            savingsReviewQueue: [],
+            importHistory: [],
+            importManifests: {},
+            monthlyPlans: {},
+            monthlyActuals: {},
+            savingsLogs: {},
+            lastIngestionTelemetry: null,
+            sessionExpired: false,
+            hasInitialized: false,
+            isSavingsModalOpen: false,
+            isConfirmModalOpen: false,
+            isLoadingModalOpen: false,
+            isProgressOpen: false,
+            resolveSavingsPromise: null,
+          } as any);
+        }
       } catch {
         // ignore
       }
@@ -87,6 +114,8 @@ export function useAuthUser(): {
       // void <store>.persist.rehydrate();
       void useUserUICacheStore.persist.rehydrate();
       void useBudgetStore.persist.rehydrate();
+      void useLocalSettingsStore.persist.rehydrate();
+      void useUpdatesStore.persist.rehydrate();
     } catch {
       // ignore
     }
