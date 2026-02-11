@@ -36,6 +36,38 @@ Acceptance:
 - Sidebar links match routes
 - Switching users does not leak persisted state
 
+### Milestone 1 checklist
+
+Use this as the running “ship list” for Milestone 1. Keep it honest and concrete—each item should be verifiable in the UI.
+
+**A) Click-through + routes**
+- [ ] Routes in `src/App.tsx` match sidebar/header links (no dead links)
+- [ ] Public routes behave correctly (Home/About/Planner/Tracker/Settings/Login)
+- [ ] Protected routes behave correctly (Accounts/Imports/Profile, and Dev in DEV only)
+- [ ] Auth redirect after login lands on a Budgeteer route (not legacy)
+- [ ] 404/unknown routes land on a sensible Budgeteer page
+
+**B) Copy + terminology**
+- [ ] Planner copy reads as Budgeteer (titles, buttons, empty states)
+- [ ] Tracker copy reads as Budgeteer (titles, buttons, empty states)
+- [ ] Accounts + Imports copy reads as Budgeteer (titles, buttons, empty states)
+- [ ] Settings copy reads as Budgeteer (titles, sections, helper text)
+- [ ] Remove/rename any leftover non-Budgeteer terminology in the UI
+
+**C) Storage + user switching (no state leakage)**
+- [ ] All persisted keys follow `budgeteer:*` and user-scoped keys use the `budgeteer:u:<scope>:` prefix
+- [ ] Switching users does not reuse the previous user’s cached UI metadata
+- [ ] Switching users does not reuse the previous user’s local settings / tips / demo preferences
+- [ ] “Clear caches”/reset pathways are discoverable and work as expected
+
+**D) Regression guardrails**
+- [ ] No console warnings/errors during normal navigation
+- [ ] `npm run check` stays green for Milestone 1 changes
+
+**Milestone 1 manual test script (quick)**
+- [ ] Sign in as User A → visit Planner/Tracker/Accounts/Imports/Settings → sign out
+- [ ] Sign in as User B → repeat → confirm no User A state is visible
+
 ---
 
 ## Milestone 2 — Domain boundaries and type hardening
