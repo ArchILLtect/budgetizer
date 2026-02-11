@@ -5,7 +5,7 @@ import type { PersistStorage, StorageValue } from "zustand/middleware";
 import { isoNow } from "../services/storage";
 import { createUserScopedZustandStorage, getUserStorageScopeKey } from "../services/userScopedStorage";
 
-const STORAGE_KEY = "taskmaster:updates";
+const STORAGE_KEY = "budgeteer:updates";
 const STORE_VERSION = 1;
 const MAX_EVENTS = 500;
 

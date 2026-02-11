@@ -1,23 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { createUserScopedZustandStorage, getUserStorageScopeKey } from "../services/userScopedStorage";
+import { createUserScopedZustandStorage } from "../services/userScopedStorage";
 
 export const LOCAL_SETTINGS_STORE_VERSION = 1 as const;
 
 export type SidebarWidthPreset = "small" | "medium" | "large";
 
-export type DefaultViewRoute = "/today" | "/week" | "/month";
+export type DefaultViewRoute = "/" | "/planner" | "/tracker";
 
-export type DefaultLandingRoute =
-  | "/today"
-  | "/inbox"
-  | "/tasks"
-  | "/lists"
-  | "/favorites"
-  | "/updates"
-  | "/week"
-  | "/month";
+export type DefaultLandingRoute = "/" | "/planner" | "/tracker" | "/accounts" | "/imports" | "/profile" | "/settings";
 
 export type LocalSettingsState = {
   dueSoonWindowDays: number;
@@ -40,53 +32,24 @@ function normalizeSidebarWidthPreset(value: unknown): SidebarWidthPreset {
 }
 
 function normalizeDefaultViewRoute(value: unknown): DefaultViewRoute {
-  return value === "/today" || value === "/week" || value === "/month" ? value : "/today";
+  return value === "/" || value === "/planner" || value === "/tracker" ? value : "/";
 }
 
 function normalizeDefaultLandingRoute(value: unknown): DefaultLandingRoute {
-  return value === "/today" ||
-    value === "/inbox" ||
-    value === "/tasks" ||
-    value === "/lists" ||
-    value === "/favorites" ||
-    value === "/updates" ||
-    value === "/week" ||
-    value === "/month"
+  return value === "/" ||
+    value === "/planner" ||
+    value === "/tracker" ||
+    value === "/accounts" ||
+    value === "/imports" ||
+    value === "/profile" ||
+    value === "/settings"
     ? value
-    : "/today";
+    : "/";
 }
-
-function readLegacyDueSoonDays(): number | null {
-  // Best-effort migration: older builds stored this on the inbox store.
-  // We avoid changing any backend settingsVersion (GraphQL persistence comes later).
-  try {
-    // Don't read/migrate legacy global caches unless we have an explicit auth scope.
-    if (!getUserStorageScopeKey()) return null;
-    const raw = localStorage.getItem("taskmaster:inbox");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    const envelope = parsed as { state?: unknown };
-    const state = envelope.state as { dueSoonWindowDays?: unknown } | undefined;
-    const n = state?.dueSoonWindowDays;
-    const migrated = typeof n === "number" && Number.isFinite(n) ? normalizeDueSoonDays(n) : null;
-
-    // Legacy inbox store also contained triage/dismiss state; clear it once we've migrated what we need.
-    try {
-      localStorage.removeItem("taskmaster:inbox");
-    } catch {
-      // ignore
-    }
-
-    return migrated;
-  } catch {
-    return null;
-  }
-}
-
-const DEFAULT_DUE_SOON_DAYS = readLegacyDueSoonDays() ?? 3;
+const DEFAULT_DUE_SOON_DAYS = 3;
 const DEFAULT_SIDEBAR_WIDTH_PRESET: SidebarWidthPreset = "small";
-const DEFAULT_DEFAULT_VIEW_ROUTE: DefaultViewRoute = "/today";
-const DEFAULT_DEFAULT_LANDING_ROUTE: DefaultLandingRoute = "/today";
+const DEFAULT_DEFAULT_VIEW_ROUTE: DefaultViewRoute = "/";
+const DEFAULT_DEFAULT_LANDING_ROUTE: DefaultLandingRoute = "/";
 
 export const useLocalSettingsStore = create<LocalSettingsState>()(
   persist(
@@ -113,7 +76,7 @@ export const useLocalSettingsStore = create<LocalSettingsState>()(
       },
     }),
     {
-      name: "taskmaster:localSettings",
+      name: "budgeteer:localSettings",
       version: LOCAL_SETTINGS_STORE_VERSION,
       migrate: (persistedState) => {
         const s = persistedState as Partial<LocalSettingsState> | undefined;

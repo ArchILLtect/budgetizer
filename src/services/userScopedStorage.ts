@@ -1,6 +1,6 @@
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 
-export const AUTH_SCOPE_STORAGE_KEY = "taskmaster:authScope" as const;
+export const AUTH_SCOPE_STORAGE_KEY = "budgeteer:authScope" as const;
 
 function safeJsonParse(raw: string): unknown {
   try {
@@ -47,7 +47,7 @@ export function setUserStorageScopeKey(scope: string | null): void {
 export function makeUserScopedKey(baseKey: string, scopeOverride?: string | null): string {
   const scope = scopeOverride ?? getUserStorageScopeKey() ?? "anonymous";
   // Keep a consistent prefix so we can clear a whole category later (e.g. tips).
-  return `taskmaster:u:${scope}:${baseKey}`;
+  return `budgeteer:u:${scope}:${baseKey}`;
 }
 
 export function userScopedGetItem(baseKey: string): string | null {
@@ -76,7 +76,7 @@ export function userScopedRemoveItem(baseKey: string): void {
 
 export function clearUserScopedKeysByPrefix(basePrefix: string): void {
   const scope = getUserStorageScopeKey() ?? "anonymous";
-  const fullPrefix = `taskmaster:u:${scope}:${basePrefix}`;
+  const fullPrefix = `budgeteer:u:${scope}:${basePrefix}`;
 
   try {
     // Iterate backwards to avoid index shifting issues.

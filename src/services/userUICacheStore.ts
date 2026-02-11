@@ -4,7 +4,7 @@ import type { PersistStorage, StorageValue } from "zustand/middleware";
 import type { UserUI } from "../types";
 import { createUserScopedZustandStorage, getUserStorageScopeKey } from "./userScopedStorage";
 
-export const USER_UI_STORAGE_KEY = "taskmaster:user";
+export const USER_UI_STORAGE_KEY = "budgeteer:user";
 export const USER_UI_STORE_VERSION = 1 as const;
 
 export type UserUICacheState = {

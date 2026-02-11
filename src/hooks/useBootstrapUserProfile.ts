@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { AuthUserLike } from "../types";
 import { bootstrapUser } from "../services/userBootstrapService";
-import { userScopedGetItem } from "../services/userScopedStorage";
+import { isDemoSessionActive } from "../services/demoSession";
 //import { isSeedDemoDisabled as isSeedDemoDisabledFromPref } from "../services/seedDemoPreference";
 
 /*
@@ -37,7 +37,6 @@ function shouldDisableDemoFromStorage(): boolean {
 }*/
 
 export function useBootstrapUserProfile(user?: AuthUserLike | null) {
-
   const didRunForUserKey = useRef<string | null>(null);
 
   const userKey = useMemo(() => {
@@ -45,7 +44,6 @@ export function useBootstrapUserProfile(user?: AuthUserLike | null) {
     return key;
   }, [user?.userId, user?.username]);
 
-  /*
   useEffect(() => {
     if (!userKey) {
       didRunForUserKey.current = null;
@@ -55,20 +53,18 @@ export function useBootstrapUserProfile(user?: AuthUserLike | null) {
     if (didRunForUserKey.current === userKey) return;
     didRunForUserKey.current = userKey;
 
+    // Only seed demo data for explicitly-created demo sessions.
+    // For normal users, we still ensure the profile exists and self-heal legacy fields.
+    const seedDemo = isDemoSessionActive();
 
     void (async () => {
       try {
-        const res = await bootstrapUser({ seedDemo });
-        if (res.didSeedDemo) {
-          expireTaskCache();
-          await refreshAll(undefined, { reason: "mutation" });
-        }
+        await bootstrapUser({ seedDemo });
       } catch (err) {
         if (import.meta.env.DEV) {
           console.error("[user bootstrap] failed", err);
         }
       }
     })();
-  }, [expireTaskCache, refreshAll, userKey]);
-  */
+  }, [userKey]);
 }

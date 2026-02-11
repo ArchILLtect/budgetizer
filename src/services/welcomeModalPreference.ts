@@ -1,8 +1,8 @@
 import { userScopedGetItem, userScopedRemoveItem, userScopedSetItem } from "./userScopedStorage";
 
 export const WELCOME_MODAL_PREF_KEY = "welcomeModalSeenVersion" as const;
-export const WELCOME_MODAL_PREF_EVENT = "taskmaster:welcomeModalPrefChanged" as const;
-export const WELCOME_MODAL_OPEN_EVENT = "taskmaster:welcomeModalOpenRequested" as const;
+export const WELCOME_MODAL_PREF_EVENT = "budgeteer:welcomeModalPrefChanged" as const;
+export const WELCOME_MODAL_OPEN_EVENT = "budgeteer:welcomeModalOpenRequested" as const;
 
 export type WelcomeModalOpenReason = "manual" | "login" | "reminder";
 

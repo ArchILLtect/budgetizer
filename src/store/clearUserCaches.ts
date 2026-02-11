@@ -1,3 +1,4 @@
+import { useUpdatesStore } from "./updatesStore";
 import { clearUserUIInMemoryCache } from "../services/authService";
 
 let resetInProgress = false;
@@ -11,6 +12,10 @@ export function resetUserSessionState(): void {
   if (now - lastResetAtMs < 250) return;
   resetInProgress = true;
 
+  const updatesState = useUpdatesStore.getState() as unknown as { resetAll?: () => void; clearAll?: () => void };
+  if (typeof updatesState.resetAll === "function") updatesState.resetAll();
+  else updatesState.clearAll?.();
+
   // Clear module-level authService caches so a user switch doesn't show stale metadata.
   clearUserUIInMemoryCache();
 
@@ -22,7 +27,7 @@ export async function clearCurrentUserPersistedCaches(): Promise<void> {
   // Clear storage for current scope (per-user) and then reset in-memory state.
   try {
     await Promise.all([
-      // Add any additional per-user persisted stores here as needed.
+      useUpdatesStore.persist.clearStorage(),
     ]);
   } catch {
     // ignore

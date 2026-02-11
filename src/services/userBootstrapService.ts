@@ -10,8 +10,6 @@ import { isDemoIdentityUsername } from "./userDisplay";
 
 export const CURRENT_SEED_VERSION = 1 as const;
 
-
-
 type BootstrapUserResult = {
   profileId: string;
   didSeedDemo: boolean;
@@ -120,7 +118,8 @@ async function selfHealUserProfileDisplayName(profileId: string, displayName: st
   }
 }
 
-/* TODO(P5): Refactor once demo-mode is re-built. The current implementation is a no-op, but the intended flow is to use `seedVersion` as a simple state machine for demo seeding:
+/* Not used until we build seed data for Budgeteer, but keeping around as a reference for how
+// to build deterministic due dates for demo tasks.
 function buildIsoAtMidnightUtcFromNow(daysFromNow: number): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + daysFromNow);
@@ -139,16 +138,18 @@ function payloadToRole(payload?: Record<string, unknown>): string {
   return typeof raw === "string" ? raw : "";
 }
 
-async function resolveDesiredPlanTier(username?: string | null): Promise<typeof PlanTier[keyof typeof PlanTier]> {
+// Used ype any for now to keep the dependency tree clean; we can type this properly once we
+// integrate it into the UI layer.
+async function resolveDesiredPlanTier(username?: string | null): Promise<any> {
   // Fast-path: demo identities are created with the demo+<uuid>@... username shape.
-  if (username && isDemoIdentityUsername(username)) return PlanTier.DEMO;
+  if (username && isDemoIdentityUsername(username)) return PlanTier.DEMO as any;
 
   try {
     const session = await fetchAuthSession();
     const payload = session.tokens?.idToken?.payload as Record<string, unknown> | undefined;
     const groups = payloadToGroups(payload);
     const role = payloadToRole(payload);
-    if (groups.includes("Demo") || role === "Demo") return PlanTier.DEMO;
+    if (groups.includes("Demo") || role === "Demo") return PlanTier.DEMO as any;
   } catch {
     // ignore
   }
@@ -244,7 +245,6 @@ async function ensureUserProfile(profileId: string, seedDemo: boolean) {
   }
 }
 
-/* TODO(P5): refactor once demo-mode is re-built. The current implementation is a no-op, but the intended flow is:
 async function tryClaimDemoSeed(profileId: string) {
   const condition: ModelUserProfileConditionInput = {
     seedVersion: {
@@ -253,7 +253,7 @@ async function tryClaimDemoSeed(profileId: string) {
     },
   };
 
-  return await taskmasterApi.updateUserProfile(
+  return await budgeteerApi.updateUserProfile(
     {
       id: profileId,
       seedVersion: -1,
@@ -269,7 +269,7 @@ async function finalizeDemoSeed(profileId: string) {
     seedVersion: { eq: -1 },
   };
 
-  return await taskmasterApi.updateUserProfile(
+  return await budgeteerApi.updateUserProfile(
     {
       id: profileId,
       seedVersion: CURRENT_SEED_VERSION,
@@ -277,7 +277,7 @@ async function finalizeDemoSeed(profileId: string) {
     },
     condition
   );
-}*/
+}
 
 async function rollbackClaim(profileId: string) {
   const condition: ModelUserProfileConditionInput = {
@@ -297,23 +297,46 @@ async function rollbackClaim(profileId: string) {
   }
 }
 
-/* TODO(P5): Add real seeded data here. For now, the value prop of demo mode is just the presence of the flag and the associated UI messaging, without actual seeded tasks.
 async function seedDemoData() {
   const current = await getCurrentUser();
   const owner = current.userId;
 
   if (import.meta.env.DEV) {
-    console.debug(`[demo seed] using owner(sub)=${owner} for demo creates`);
+    console.debug(`[demo seed] data empty until we build a new seed flow for Budgeteer (current owner sub=${owner})`);
+    // console.debug(`[demo seed] using owner(sub)=${owner} for demo creates`);
   }
 
+  /* TODO(P2): Build a Budgeteer-specific demo seed flow here.
+  // This should create demo budgeting domain data (accounts, transactions, plans, goals)
+  // using Budgeteer APIs and store shapes.
+  const hobbyListId = String((hobby as { id?: unknown })?.id ?? "");
 
+  if (!homeListId || !workListId || !hobbyListId) {
+    throw new Error("Demo seed failed: missing list ids.");
+  }
 
+  // Tasks (8–15) including parent+subtasks
+  const parent = await budgeteerApi.createTask({
+    owner,
+    listId: homeListId,
+    sortOrder: 0,
+    parentTaskId: null,
+    title: "Plan the week",
+    description: "Pick 3 priorities and schedule them.",
+    status: TaskStatus.Open,
+    priority: TaskPriority.Medium,
+    dueAt: buildIsoAtMidnightUtcFromNow(1),
+    completedAt: null,
+    assigneeId: null,
+    tagIds: [],
+    isDemo: true,
+  });
 
   const parentId = String((parent as { id?: unknown })?.id ?? "");
   if (!parentId) throw new Error("Demo seed failed: missing parent task id.");
 
   await Promise.all([
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: homeListId,
       sortOrder: 1,
@@ -328,7 +351,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: homeListId,
       sortOrder: 2,
@@ -343,7 +366,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: homeListId,
       sortOrder: 3,
@@ -361,7 +384,7 @@ async function seedDemoData() {
   ]);
 
   await Promise.all([
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: workListId,
       sortOrder: 0,
@@ -376,7 +399,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: workListId,
       sortOrder: 1,
@@ -391,7 +414,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: workListId,
       sortOrder: 2,
@@ -409,7 +432,7 @@ async function seedDemoData() {
   ]);
 
   await Promise.all([
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: hobbyListId,
       sortOrder: 0,
@@ -424,7 +447,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: hobbyListId,
       sortOrder: 1,
@@ -439,7 +462,7 @@ async function seedDemoData() {
       tagIds: [],
       isDemo: true,
     }),
-    taskmasterApi.createTask({
+    budgeteerApi.createTask({
       owner,
       listId: hobbyListId,
       sortOrder: 2,
@@ -455,7 +478,9 @@ async function seedDemoData() {
       isDemo: true,
     }),
   ]);
-}*/
+  */
+
+}
 
 export async function bootstrapUser(opts?: { seedDemo?: boolean }): Promise<BootstrapUserResult> {
   const seedDemo = opts?.seedDemo ?? true;
@@ -471,7 +496,7 @@ export async function bootstrapUser(opts?: { seedDemo?: boolean }): Promise<Boot
   if (Number.isFinite(seedVersion) && seedVersion >= CURRENT_SEED_VERSION) {
     return { profileId, didSeedDemo: false };
   }
-/*
+
   try {
     await tryClaimDemoSeed(profileId);
   } catch (err) {
@@ -489,11 +514,9 @@ export async function bootstrapUser(opts?: { seedDemo?: boolean }): Promise<Boot
     console.info("[demo seed] claimed; seeding demo data...");
   }
 
-  */
-
   try {
-    //await seedDemoData();
-    //await finalizeDemoSeed(profileId);
+    await seedDemoData();
+    await finalizeDemoSeed(profileId);
 
     if (import.meta.env.DEV) {
       console.info("[demo seed] completed");
