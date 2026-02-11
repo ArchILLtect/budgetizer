@@ -42,16 +42,16 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 
 **A) Click-through + routes**
 - [x] Routes in `src/App.tsx` match sidebar/header links (no dead links)
-- [ ] Public routes behave correctly (Home/About/Planner/Tracker/Settings/Login)
-- [ ] Protected routes behave correctly (Accounts/Imports/Profile, and Dev in DEV only)
+- [x] Public routes behave correctly (Home/About/Planner/Tracker/Settings/Login)
+- [x] Protected routes behave correctly (Accounts/Imports/Profile, and Dev in DEV only)
 - [x] Auth redirect after login lands on a Budgeteer route (not legacy)
 - [x] 404/unknown routes land on a sensible Budgeteer page
 
 **B) Copy + terminology**
 - [ ] Planner copy reads as Budgeteer (titles, buttons, empty states)
 - [ ] Tracker copy reads as Budgeteer (titles, buttons, empty states)
-- [ ] Accounts + Imports copy reads as Budgeteer (titles, buttons, empty states)
-- [ ] Settings copy reads as Budgeteer (titles, sections, helper text)
+- [x] Accounts + Imports copy reads as Budgeteer (titles, buttons, empty states)
+- [x] Settings copy reads as Budgeteer (titles, sections, helper text)
 - [ ] Remove/rename any leftover non-Budgeteer terminology in the UI
 
 **C) Storage + user switching (no state leakage)**
@@ -64,7 +64,7 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 - [x] “Clear caches” clears user-scoped persisted stores + tip/demo/welcome prefs
 
 **D) Regression guardrails**
-- [ ] No console warnings/errors during normal navigation
+- [x] No console warnings/errors during normal navigation
 - [x] `npm run check` stays green for Milestone 1 changes
 
 **Milestone 1 manual test script (quick)**
