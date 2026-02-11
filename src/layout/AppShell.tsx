@@ -46,7 +46,7 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
         Skip to content
       </Link>
       <Toaster />
-      <WelcomeModal signedIn={signedIn && !authLoading} />
+      <WelcomeModal signedIn={signedIn} authLoading={authLoading} />
 
       <Header user={user}/>
 

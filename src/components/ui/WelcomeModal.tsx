@@ -36,17 +36,17 @@ const WHATS_NEW: Array<{ title: string; body: string }> = [
   },
 ];
 
-export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
+export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; authLoading?: boolean }) {
   //const { isDemo, isDemoIdentity } = useDemoMode(signedIn);
   //const openDemoTour = useDemoTourStore((s) => s.openTour);
   //const demoTourDisabled = useDemoTourStore((s) => s.disabled);
   //const resetDemoTourDisabled = useDemoTourStore((s) => s.resetDisabled);
-
   const [neverShowAgainChecked, setNeverShowAgainChecked] = useState(false);
   const [seenVersion, setSeenVersion] = useState(() => getWelcomeModalSeenVersion());
   const [openRequested, setOpenRequested] = useState(false);
   const [openReason, setOpenReason] = useState<WelcomeModalOpenReason>("manual");
   const wasOpenRef = useRef(false);
+  const prevSignedInRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,12 +62,17 @@ export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
         return;
       }
 
-      setSeenVersion(getWelcomeModalSeenVersion());
+      const nextSeen = getWelcomeModalSeenVersion();
+      setSeenVersion(nextSeen);
+      // Reflect the persisted preference in the checkbox.
+      setNeverShowAgainChecked(nextSeen >= WELCOME_MODAL_VERSION);
     }, 0);
 
     const unsub = signedIn
       ? onWelcomeModalPrefChange(() => {
-          setSeenVersion(getWelcomeModalSeenVersion());
+          const nextSeen = getWelcomeModalSeenVersion();
+          setSeenVersion(nextSeen);
+          setNeverShowAgainChecked(nextSeen >= WELCOME_MODAL_VERSION);
         })
       : () => {};
 
@@ -78,13 +83,34 @@ export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
     };
   }, [signedIn]);
 
+  // Open on login (but not on refresh): detect a signed-out -> signed-in transition.
   useEffect(() => {
+    const prevSignedIn = prevSignedInRef.current;
+    prevSignedInRef.current = signedIn;
+
+    if (authLoading) return;
     if (!signedIn) return;
+    if (prevSignedIn) return;
+
+    // Read from storage immediately so we don't briefly open before state sync.
+    const nextSeen = getWelcomeModalSeenVersion();
+    setSeenVersion(nextSeen);
+    setNeverShowAgainChecked(nextSeen >= WELCOME_MODAL_VERSION);
+
+    if (nextSeen >= WELCOME_MODAL_VERSION) return;
+
+    setOpenReason("login");
+    setOpenRequested(true);
+  }, [authLoading, signedIn]);
+
+  useEffect(() => {
+    // Subscribe even while signed-out/loading so we don't miss the sign-in event.
+    // We'll gate actual opening via the `open` computed state.
     return onWelcomeModalOpenRequest((reason) => {
       setOpenReason(reason);
       setOpenRequested(true);
     });
-  }, [signedIn]);
+  }, []);
 
   const disabledByPreference = useMemo(() => {
     return seenVersion >= WELCOME_MODAL_VERSION;
@@ -92,22 +118,28 @@ export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
 
   const open = useMemo(() => {
     if (!signedIn) return false;
+    if (authLoading) return false;
 
     // Never show again applies to auto-opens (login/reminder), but manual opens should still work.
     if (disabledByPreference && openReason !== "manual") return false;
 
     return openRequested;
-  }, [disabledByPreference, openReason, openRequested, signedIn]);
+  }, [authLoading, disabledByPreference, openReason, openRequested, signedIn]);
 
   // Auto-open reminder: once per 24h while still signed in.
   useEffect(() => {
     if (!signedIn) return;
+    if (authLoading) return;
     if (disabledByPreference) return;
 
     const lastShownAtMs = getWelcomeModalLastShownAtMs();
     const now = Date.now();
     const nextAt = lastShownAtMs ? lastShownAtMs + WELCOME_MODAL_REMIND_INTERVAL_MS : 0;
     if (!nextAt) return;
+
+    // Important: don't auto-open immediately on a fresh page load/refresh even if overdue.
+    // Only schedule reminders that will become due while the session is still open.
+    if (nextAt <= now) return;
 
     const delay = Math.max(0, nextAt - now);
     const t = window.setTimeout(() => {
@@ -120,13 +152,15 @@ export function WelcomeModal({ signedIn }: { signedIn: boolean }) {
     return () => {
       window.clearTimeout(t);
     };
-  }, [disabledByPreference, open, signedIn]);
+  }, [authLoading, disabledByPreference, open, signedIn]);
 
   // Mark as "shown" when it transitions to open (so refresh won't re-trigger it).
   useEffect(() => {
     if (!wasOpenRef.current && open) {
       const now = Date.now();
       setWelcomeModalLastShownAtMs(now);
+      // Sync the checkbox to the saved preference when opening.
+      setNeverShowAgainChecked(getWelcomeModalSeenVersion() >= WELCOME_MODAL_VERSION);
     }
     wasOpenRef.current = open;
   }, [open]);

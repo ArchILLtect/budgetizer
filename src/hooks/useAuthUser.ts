@@ -6,7 +6,6 @@ import type { AuthUserLike } from "../types";
 import { resetUserSessionState } from "../store/clearUserCaches";
 import { setUserStorageScopeKey, userScopedGetItem } from "../services/userScopedStorage";
 import { useUserUICacheStore } from "../services/userUICacheStore";
-import { requestOpenWelcomeModal } from "../services/welcomeModalPreference";
 import { useBudgetStore } from "../store/budgetStore";
 import { useLocalSettingsStore } from "../store/localSettingsStore";
 import { useUpdatesStore } from "../store/updatesStore";
@@ -175,7 +174,8 @@ export function useAuthUser(): {
     const cancel = Hub.listen("auth", ({ payload }) => {
       const evt = String((payload as { event?: unknown } | undefined)?.event ?? "");
       if (evt === "signIn" || evt === "signedIn") {
-        requestOpenWelcomeModal("login");
+        // Resolve auth + apply scope; the WelcomeModal itself will handle
+        // "open on login (not refresh)" based on a signed-out -> signed-in transition.
         void refresh();
       }
       if (evt === "signOut" || evt === "signedOut") {
