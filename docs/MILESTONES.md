@@ -21,7 +21,7 @@ Acceptance (from roadmap):
 
 ## Milestone 1 — Product surface coherence (Tighten main app)
 
-Status: Planned / In progress
+Status: Done
 
 Goal:
 - Make the app read like Budgeteer end-to-end.
@@ -52,15 +52,15 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 - [x] Tracker copy reads as Budgeteer (titles, buttons, empty states)
 - [x] Accounts + Imports copy reads as Budgeteer (titles, buttons, empty states)
 - [x] Settings copy reads as Budgeteer (titles, sections, helper text)
-- [ ] Remove/rename any leftover non-Budgeteer terminology in the UI
+- [x] Remove/rename any leftover non-Budgeteer terminology in the UI
 
 **C) Storage + user switching (no state leakage)**
 - [x] All persisted keys follow `budgeteer:*` and user-scoped keys use the `budgeteer:u:<scope>:` prefix
 - [x] Main persisted budget state is user-scoped (no shared `budgeteer:budgetStore` across users)
 - [x] Switching users does not reuse the previous user’s budget data (budget store resets when a new user has no persisted budget state)
-- [ ] Switching users does not reuse the previous user’s cached UI metadata
-- [ ] Switching users does not reuse the previous user’s local settings / tips / demo preferences
-- [ ] “Clear caches”/reset pathways are discoverable and work as expected
+- [x] Switching users does not reuse the previous user’s cached UI metadata
+- [x] Switching users does not reuse the previous user’s local settings / tips / demo preferences
+- [x] “Clear caches”/reset pathways are discoverable and work as expected
 - [x] “Clear caches” clears user-scoped persisted stores + tip/demo/welcome prefs
 
 **D) Regression guardrails**
@@ -68,8 +68,8 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 - [x] `npm run check` stays green for Milestone 1 changes
 
 **Milestone 1 manual test script (quick)**
-- [ ] Sign in as User A → visit Planner/Tracker/Accounts/Imports/Settings → sign out
-- [ ] Sign in as User B → repeat → confirm no User A state is visible
+- [x] Sign in as User A → visit Planner/Tracker/Accounts/Imports/Settings → sign out
+- [x] Sign in as User B → repeat → confirm no User A state is visible
 
 ---
 
@@ -81,13 +81,41 @@ Goal:
 - Reduce risk by making budgeting logic easier to change.
 
 Scope:
-- Split monolithic store into slices (planner/accounts/import/settings)
+- Split monolithic store into slice modules (planner/import/settings first; accounts later)
 - Add types at ingestion and transaction boundaries
 - Add high-value tests for staging/apply/undo transitions
 
 Acceptance:
 - Fewer implicit/widened types in critical paths
 - Tests cover strong key and import lifecycle
+
+### Milestone 2 checklist
+
+**A) Store boundaries (reduce coupling)**
+- [ ] Identify the domain slices and their public APIs (planner/import/settings now; accounts later)
+- [ ] Implement slice modules under `src/store/` while keeping a single persisted store (keep behavior identical)
+- [ ] Ensure cross-slice dependencies are explicit (no hidden `getState()` reach-throughs)
+- [ ] Keep persistence rules intentional (`partialize` boundaries stay correct)
+- [ ] Update imports/call-sites to use the new slice exports (no dead code)
+
+**B) Type hardening (critical paths first)**
+- [ ] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`
+- [ ] Replace `any` in import/staging/apply/undo codepaths with concrete types
+- [ ] Make transaction identity/strong-key inputs typed and explicit
+- [ ] Tighten ingestion outputs (`runIngestion` return shape) where UI consumes it
+
+**C) Tests (high-value regression coverage)**
+- [ ] Add/expand unit tests for staged import → apply to budget → undo flows
+- [ ] Add tests for import history retention/pruning behavior (if present)
+- [ ] Add tests for cross-slice invariants (e.g., applying staged updates monthly actuals deterministically)
+
+**D) Docs + verification**
+- [ ] Update `docs/ARCHITECTURE.md` to reflect the new store slice layout
+- [ ] Update `docs/DATA_MODEL.md` if any domain types are formalized/renamed
+- [ ] `npm run check` stays green throughout Milestone 2
+
+**E) Stretch goals (optional / later)**
+- [ ] Evaluate splitting slice modules into separate persisted stores once domains are stable
 
 ---
 
