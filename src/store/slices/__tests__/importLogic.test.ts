@@ -97,6 +97,32 @@ describe("importLogic", () => {
     expect(typeof h.undoneAt).toBe("string");
   });
 
+  it("undoStagedImport does nothing once the undo window has expired", () => {
+    const importedAt = "2026-02-12T00:00:00.000Z";
+    const now = Date.parse("2026-02-12T00:31:00.000Z");
+
+    const state = baseState({
+      accounts: {
+        "1234": {
+          transactions: [{ id: "t1", importSessionId: "s1", staged: true }],
+        },
+      },
+      importHistory: [
+        {
+          sessionId: "s1",
+          accountNumber: "1234",
+          importedAt,
+          newCount: 1,
+          hash: "h1",
+        },
+      ],
+      importUndoWindowMinutes: 30,
+    });
+
+    const patch = undoStagedImport(state, "1234", "s1", now);
+    expect(patch).toEqual({});
+  });
+
   it("getImportSessionRuntime reports active/expired/applied/undone correctly", () => {
     const importedAtMs = Date.parse("2026-02-12T00:00:00.000Z");
 
@@ -202,5 +228,35 @@ describe("importLogic", () => {
 
     expect(undone?.status).toBe("undone");
     expect(undone?.canUndo).toBe(false);
+  });
+
+  it("getImportSessionRuntime reports partial-undone when only some staged tx were removed", () => {
+    const importedAtMs = Date.parse("2026-02-12T00:00:00.000Z");
+
+    const runtime = getImportSessionRuntime(
+      {
+        accounts: {
+          "1234": { transactions: [] },
+        },
+        importHistory: [
+          {
+            sessionId: "s1",
+            accountNumber: "1234",
+            importedAt: "2026-02-12T00:00:00.000Z",
+            newCount: 3,
+            undoneAt: "2026-02-12T00:10:00.000Z",
+            removed: 1,
+            hash: "h1",
+          },
+        ],
+        importUndoWindowMinutes: 30,
+      },
+      "1234",
+      "s1",
+      importedAtMs + 15 * 60000
+    );
+
+    expect(runtime?.status).toBe("partial-undone");
+    expect(runtime?.canUndo).toBe(false);
   });
 });
