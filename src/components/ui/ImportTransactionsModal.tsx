@@ -7,6 +7,7 @@ import { streamParseCsv } from '../../ingest/parseCsvStreaming';
 import IngestionMetricsPanel from '../accounts/IngestionMetricsPanel';
 import { fireToast } from '../../hooks/useFireToast';
 import { AppSelect } from './AppSelect';
+import type { ImportHistoryEntry } from '../../store/slices/importLogic';
 
 
 type ImportTransactionsModalProps = {
@@ -227,19 +228,27 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
       setState(result.patch);
       setApplied(true);
       setShowConfirm(false);
-      const sessionId = result.stats.importSessionId || result.importSessionId;
+      const sessionId = String(result?.importSessionId || result?.stats?.importSessionId || "");
+      const hash = String(result?.stats?.hash || "");
+      if (!sessionId) {
+        throw new Error("Missing import session id");
+      }
+      if (!hash) {
+        throw new Error("Missing import hash");
+      }
       fireToast("success", "Import applied (staged)", "Transactions are staged until you Apply to Budget.");
       // Record audit entry
-      recordImportHistory({
+      const entry: ImportHistoryEntry = {
         sessionId,
         accountNumber,
         importedAt: new Date().toISOString(),
-        newCount: result.stats.newCount,
-        dupesExisting: result.stats.dupesExisting,
-        dupesIntraFile: result.stats.dupesIntraFile,
+        newCount: result.stats?.newCount ?? 0,
+        dupesExisting: result.stats?.dupesExisting,
+        dupesIntraFile: result.stats?.dupesIntraFile,
         savingsCount: result.savingsQueue?.length || 0,
-        hash: result.stats.hash,
-      });
+        hash,
+      };
+      recordImportHistory(entry);
       if (result.savingsQueue && result.savingsQueue.length) {
         addPendingSavingsQueue(accountNumber, result.savingsQueue);
         fireToast("info", "Savings deferred", `${result.savingsQueue.length} potential savings transactions will be reviewed after budget apply.`);

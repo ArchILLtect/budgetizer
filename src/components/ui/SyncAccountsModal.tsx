@@ -5,6 +5,7 @@ import { useBudgetStore } from "../../store/budgetStore";
 import { runIngestion } from "../../ingest/runIngestion";
 import IngestionMetricsPanel from "../accounts/IngestionMetricsPanel";
 import { fireToast } from "../../hooks/useFireToast";
+import type { ImportHistoryEntry } from "../../store/slices/importLogic";
 
 // Migration Notes:
 // This modal now leverages the ingestion pipeline (runIngestion) for each account present in the CSV.
@@ -174,16 +175,25 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
         if (!result?.patch) return;
         setState(result.patch);
         // Record per-account history
-        recordImportHistory({
-          sessionId: result.stats.importSessionId,
+        const sessionId = String(result?.importSessionId || result?.stats?.importSessionId || "");
+        const hash = String(result?.stats?.hash || "");
+        if (!sessionId) {
+          throw new Error(`Missing import session id for account ${accountNumber}`);
+        }
+        if (!hash) {
+          throw new Error(`Missing import hash for account ${accountNumber}`);
+        }
+        const entry: ImportHistoryEntry = {
+          sessionId,
           accountNumber,
           importedAt: new Date().toISOString(),
-            newCount: result.stats.newCount,
-            dupesExisting: result.stats.dupesExisting,
-            dupesIntraFile: result.stats.dupesIntraFile,
-            savingsCount: result.savingsQueue?.length || 0,
-            hash: result.stats.hash,
-        });
+          newCount: result.stats?.newCount ?? 0,
+          dupesExisting: result.stats?.dupesExisting,
+          dupesIntraFile: result.stats?.dupesIntraFile,
+          savingsCount: result.savingsQueue?.length || 0,
+          hash,
+        };
+        recordImportHistory(entry);
         if (result.savingsQueue?.length) {
           addPendingSavingsQueue(accountNumber, result.savingsQueue);
         }
