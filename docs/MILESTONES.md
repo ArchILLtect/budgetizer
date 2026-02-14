@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-11
+Last updated: 2026-02-14
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -97,6 +97,10 @@ Acceptance:
 - [ ] Ensure cross-slice dependencies are explicit (no hidden `getState()` reach-throughs)
 - [ ] Keep persistence rules intentional (`partialize` boundaries stay correct)
 - [ ] Update imports/call-sites to use the new slice exports (no dead code)
+
+Progress notes:
+- [x] Extract Import lifecycle into `src/store/slices/importSlice.ts` + `importLogic.ts`
+- [x] Extract Planner domain into `src/store/slices/plannerSlice.ts`
 
 **B) Type hardening (critical paths first)**
 - [ ] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`
