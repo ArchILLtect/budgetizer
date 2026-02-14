@@ -263,6 +263,23 @@ Notes:
 
 ---
 
+- [ ] TODO(P2): Import History “Apply selected session” must be session-scoped (do not apply other sessions in same month)
+  - add session-scoped store APIs (apply + pending savings) and wire Import History to use them
+  - add regression tests for overlapping sessions
+  - tracking doc: `docs/developer/ingestion-plan.md`
+
+- [ ] TODO(P3): Full ingestion refactor — ImportPlan + commit
+  - add `analyzeImport(...) -> ImportPlan` (serializable plan; no patch closures)
+  - add `commitImportPlan(plan)` store action and migrate import UIs off `useBudgetStore.setState(patch)`
+  - add tests for analyze/commit determinism + idempotency
+  - tracking doc: `docs/developer/ingestion-plan.md`
+
+- [ ] TODO(P4): Proposed ingestion upgrades
+  - enable PapaParse worker mode for streaming parse (large files)
+  - add streaming backpressure/batching for classify/infer stages
+  - add memory/perf guardrails for huge imports
+  - improve error panel scalability (virtualized list + export warning)
+
 ### UX polish + clarity
 
 ---

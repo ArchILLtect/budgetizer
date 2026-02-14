@@ -1,12 +1,14 @@
-# Ingestion Architecture (Revised – Privacy‑Aware)
+# Ingestion Architecture (Proposed – Privacy‑Aware)
 
-Last Updated: 2026-02-08
+Last Updated: 2026-02-14
 
-This document describes the **revised** CSV ingestion/import pipeline, updated to support
+Note: This document describes a proposed privacy-aware variant (account fingerprinting / opaque account IDs). The current implemented ingestion pipeline is documented in `docs/developer/ingestion-architecture.md`, and the next planned refactor is tracked in `docs/developer/ingestion-plan.md`.
+
+This document describes a **proposed** CSV ingestion/import pipeline, updated to support
 **privacy‑aware account identification** while preserving deterministic behavior, idempotency,
 and existing UX guarantees.
 
-This version replaces raw `accountNumber` usage with a **one‑way account fingerprint model**
+This proposal replaces raw `accountNumber` usage with a **one‑way account fingerprint model**
 suitable for cloud sync and long‑term storage.
 
 ---
@@ -54,7 +56,7 @@ Stored values:
 - `institution` (optional)
 - `nickname` (user‑editable)
 
-**Raw account numbers are never persisted.**
+Target guarantee (once implemented): **raw account numbers are never persisted.**
 
 ### Import Matching Rules
 

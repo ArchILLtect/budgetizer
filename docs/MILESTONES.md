@@ -114,7 +114,9 @@ Progress notes:
 **C) Tests (high-value regression coverage)**
 - [x] Add/expand unit tests for staged import → apply to budget → undo flows
 - [x] Add tests for import history retention/pruning behavior (if present)
-- [ ] Add tests for cross-slice invariants (e.g., applying staged updates monthly actuals deterministically)
+- [x] Add tests for cross-slice invariants (e.g., applying staged updates monthly actuals deterministically)
+- [ ] Fix Import History “Apply selected session” to be session-scoped (do not apply other sessions’ staged txns)
+- [ ] Add regression tests for overlapping sessions in the same month (apply/undo/savings stay session-correct)
 
 **D) Docs + verification**
 - [x] Update `docs/ARCHITECTURE.md` to reflect the new store slice layout
@@ -159,6 +161,20 @@ Scope:
 Acceptance:
 - Users can explain what happened after an import
 - Large imports are reliable
+
+### Milestone 4 checklist
+
+**A) ImportPlan + commit boundary**
+- [ ] Implement `analyzeImport(...) -> ImportPlan` (serializable plan, no patch closures)
+- [ ] Implement `commitImportPlan(plan)` store action (single entrypoint to merge + record history + queue savings)
+- [ ] Migrate import UIs to commit via store action (no `useBudgetStore.setState(patch)` from components)
+- [ ] Add deterministic unit tests for analyze vs commit (idempotency, error surfaces, and plan stability)
+
+**B) Proposed ingestion upgrades (from plan)**
+- [ ] Streaming parse worker mode (PapaParse worker) for large files
+- [ ] Backpressure/batching for classification/inference in streaming mode (reduce main-thread jank)
+- [ ] Memory profiling notes + guardrails for huge imports
+- [ ] Error panel scalability improvements (virtualization / export guardrails)
 
 ---
 

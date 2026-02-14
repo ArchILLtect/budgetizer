@@ -1,6 +1,6 @@
 # Ingestion Architecture (Current)
 
-Last Updated: 2026-02-07
+Last Updated: 2026-02-14
 
 This document describes the *current* CSV ingestion/import pipeline as implemented in `src/ingest/` and used by the Accounts flows.
 
@@ -125,6 +125,12 @@ Import history and undo behavior live in the store:
 - Audit log: `importHistory`
 - Undo (time-window guarded): `undoStagedImport(accountNumber, sessionId)`
 - Apply-to-budget: `markTransactionsBudgetApplied(accountNumber, months)`
+
+### Known gap (selected session apply)
+
+Import History operates on selected `sessionId`s, but `markTransactionsBudgetApplied(accountNumber, months)` is month-scoped and does not filter by session. If two sessions have staged txns in the same month, “Apply selected session” can unintentionally apply transactions from a different session.
+
+Planned fix: add a session-scoped apply API and update Import History to use it. See `./ingestion-plan.md`.
 
 Savings behavior:
 

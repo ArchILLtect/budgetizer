@@ -9,6 +9,7 @@ For process & quality checklist see: `../CONTRIBUTING.md` (contribution workflow
 -   **App Overview & State Domains:** [copilot-instructions](../.github/copilot-instructions.md) (AI + human quick reference)
 -   **Cloud Sync Migration Plan (Amplify-native):** [migration-plan](./developer/migration-plan.md)
 -   **Ingestion Architecture (Current):** [ingestion-architecture](./developer/ingestion-architecture.md)
+-   **Ingestion Plan (next refactor):** [ingestion-plan](./developer/ingestion-plan.md)
 -   **Ingestion Refactor Plan / Status:** [ingestion-refactor-plan](./legacy/ingestion-refactor-plan.md)
 -   **Category Rules & Savings Queue Guide:** [category-rules-and-savings-queue](./developer/category-rules-and-savings-queue.md)
 -   **Contribution Guide:** [CONTRIBUTING](../CONTRIBUTING.md)

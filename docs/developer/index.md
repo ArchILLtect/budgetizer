@@ -8,6 +8,7 @@ If you’re looking for the broader docs hub, see `../index.md`.
 
 - Cloud Sync Migration Plan (Amplify-native): `./migration-plan.md`
 - Ingestion Architecture (Current): `./ingestion-architecture.md`
+- Ingestion Plan (next refactor): `./ingestion-plan.md`
 - Category Rules & Savings Queue Guide: `./category-rules-and-savings-queue.md`
 
 ## Legacy / Historical Plans
