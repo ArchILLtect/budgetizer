@@ -1,6 +1,18 @@
 export type BudgetDayKey = string; // YYYY-MM-DD
 export type BudgetMonthKey = string; // YYYY-MM
 
+export type ImportSessionId = string;
+
+export type ImportSession = {
+  sessionId: ImportSessionId;
+  accountNumber: string;
+  importedAt: string;
+  hash?: string;
+  newCount?: number;
+
+  [key: string]: unknown;
+};
+
 export type TransactionType = "income" | "expense" | "savings";
 
 // Local-first transaction shape used throughout ingestion + store.

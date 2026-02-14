@@ -106,7 +106,7 @@ Progress notes:
 - [x] Audit and remove non-UI `useBudgetStore.getState()` reach-throughs (remaining usages are component-level async flows)
 
 **B) Type hardening (critical paths first)**
-- [ ] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`
+- [x] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`
 - [ ] Replace `any` in import/staging/apply/undo codepaths with concrete types
 - [ ] Make transaction identity/strong-key inputs typed and explicit
 - [ ] Tighten ingestion outputs (`runIngestion` return shape) where UI consumes it
