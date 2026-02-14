@@ -112,14 +112,14 @@ Progress notes:
 - [ ] Tighten ingestion outputs (`runIngestion` return shape) where UI consumes it
 
 **C) Tests (high-value regression coverage)**
-- [ ] Add/expand unit tests for staged import → apply to budget → undo flows
-- [ ] Add tests for import history retention/pruning behavior (if present)
+- [x] Add/expand unit tests for staged import → apply to budget → undo flows
+- [x] Add tests for import history retention/pruning behavior (if present)
 - [ ] Add tests for cross-slice invariants (e.g., applying staged updates monthly actuals deterministically)
 
 **D) Docs + verification**
-- [ ] Update `docs/ARCHITECTURE.md` to reflect the new store slice layout
-- [ ] Update `docs/DATA_MODEL.md` if any domain types are formalized/renamed
-- [ ] `npm run check` stays green throughout Milestone 2
+- [x] Update `docs/ARCHITECTURE.md` to reflect the new store slice layout
+- [x] Update `docs/DATA_MODEL.md` if any domain types are formalized/renamed
+- [x] `npm run check` stays green throughout Milestone 2
 
 **E) Stretch goals (optional / later)**
 - [ ] Evaluate splitting slice modules into separate persisted stores once domains are stable

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getImportSessionRuntime,
+  pruneImportHistory,
   recordImportHistory,
   undoStagedImport,
   type ImportHistoryEntry,
@@ -21,6 +22,39 @@ function baseState(overrides?: Partial<ImportLifecycleState>): ImportLifecycleSt
 }
 
 describe("importLogic", () => {
+  it("pruneImportHistory drops entries older than cutoff and caps to maxEntries", () => {
+    const now = Date.parse("2026-02-14T12:00:00.000Z");
+    const maxAgeDays = 30;
+    const maxEntries = 2;
+
+    const entries: ImportHistoryEntry[] = [
+      {
+        sessionId: "newest",
+        accountNumber: "1234",
+        importedAt: "2026-02-14T10:00:00.000Z",
+        newCount: 1,
+        hash: "h-new",
+      },
+      {
+        sessionId: "middle",
+        accountNumber: "1234",
+        importedAt: "2026-02-01T10:00:00.000Z",
+        newCount: 1,
+        hash: "h-mid",
+      },
+      {
+        sessionId: "old",
+        accountNumber: "1234",
+        importedAt: "2025-12-01T10:00:00.000Z",
+        newCount: 1,
+        hash: "h-old",
+      },
+    ];
+
+    const pruned = pruneImportHistory(entries, maxEntries, maxAgeDays, now);
+    expect(pruned.map((e) => e.sessionId)).toEqual(["newest", "middle"]);
+  });
+
   it("recordImportHistory replaces by sessionId and caps entries", () => {
     const a: ImportHistoryEntry = {
       sessionId: "s1",
