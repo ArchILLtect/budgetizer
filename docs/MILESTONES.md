@@ -92,15 +92,17 @@ Acceptance:
 ### Milestone 2 checklist
 
 **A) Store boundaries (reduce coupling)**
-- [ ] Identify the domain slices and their public APIs (planner/import/settings now; accounts later)
-- [ ] Implement slice modules under `src/store/` while keeping a single persisted store (keep behavior identical)
+- [x] Identify the domain slices and their public APIs (planner/import/settings/accounts)
+- [x] Implement slice modules under `src/store/` while keeping a single persisted store (keep behavior identical)
 - [ ] Ensure cross-slice dependencies are explicit (no hidden `getState()` reach-throughs)
-- [ ] Keep persistence rules intentional (`partialize` boundaries stay correct)
-- [ ] Update imports/call-sites to use the new slice exports (no dead code)
+- [x] Keep persistence rules intentional (`partialize` boundaries stay correct)
+- [x] Update imports/call-sites to use the new slice exports (no dead code)
 
 Progress notes:
 - [x] Extract Import lifecycle into `src/store/slices/importSlice.ts` + `importLogic.ts`
 - [x] Extract Planner domain into `src/store/slices/plannerSlice.ts`
+- [x] Extract Settings/UI shell state into `src/store/slices/settingsSlice.ts`
+- [x] Extract Accounts + mappings into `src/store/slices/accountsSlice.ts`
 
 **B) Type hardening (critical paths first)**
 - [ ] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`

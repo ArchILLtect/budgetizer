@@ -1,6 +1,6 @@
 # Budgeteer — Data Model
 
-Last updated: 2026-02-10
+Last updated: 2026-02-14
 
 This document describes the **data domains and shapes** Budgeteer uses today, plus the key conventions (dates, amounts, transaction identity) that make imports safe and deterministic.
 
@@ -84,6 +84,9 @@ See:
 
 Primary store:
 - `src/store/budgetStore.ts`
+
+Note:
+- The budget store is a single persisted store composed from slice modules under `src/store/slices/*`.
 
 Persistence model:
 - The budgeting domain store is persisted to localStorage.

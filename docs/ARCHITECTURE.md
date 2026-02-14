@@ -1,7 +1,7 @@
 
 # Budgeteer — Architecture
 
-Last updated: 2026-02-10
+Last updated: 2026-02-14
 
 This document describes **how Budgeteer is built today** (as reflected in `src/`) and the intended direction as it evolves into a cohesive personal finance app.
 
@@ -59,7 +59,8 @@ Auth + user-scoped caching
 
 Budgeting domain state
 
-- `src/store/budgetStore.ts`: large persisted domain store for planner/tracker/accounts/import history.
+- `src/store/budgetStore.ts`: persisted root store composed from slice modules.
+- `src/store/slices/*`: domain slice modules (planner/import/settings/accounts).
 - `src/pages/Planner.tsx`, `src/pages/BudgetTrackerPage.tsx`: primary budgeting views.
 - `src/pages/SettingsPage.tsx`: import/staging policy settings.
 - `src/pages/ImportHistoryPage.tsx`: import session history + staged/apply/undo controls.
@@ -131,7 +132,7 @@ Storage keys are namespaced under `budgeteer:*`.
 
 ## 5) Domain state: budgeting model (current)
 
-The budgeting feature set is currently implemented as a large local domain store in `src/store/budgetStore.ts`.
+The budgeting feature set is implemented as a **single persisted root store** in `src/store/budgetStore.ts`, composed from slice modules under `src/store/slices/`.
 
 Core concepts reflected in the store:
 
@@ -144,6 +145,14 @@ Core concepts reflected in the store:
 Persistence:
 
 - The store is persisted to localStorage (`budgeteer:budgetStore`) with a `partialize` that omits transient UI flags.
+- Storage is user-scoped via the `createUserScopedZustandStorage()` adapter.
+
+Current slice modules:
+
+- `src/store/slices/importSlice.ts` (+ pure helpers in `importLogic.ts`)
+- `src/store/slices/plannerSlice.ts` (+ pure helpers in `plannerLogic.ts`)
+- `src/store/slices/settingsSlice.ts`
+- `src/store/slices/accountsSlice.ts`
 
 Design intent:
 

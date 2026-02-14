@@ -1,17 +1,18 @@
 import type { StateCreator } from "zustand";
 
 import { buildTxKey } from "../../ingest/buildTxKey";
+import type { Account, AccountMapping, Transaction } from "../../types";
 
 const getStrongTransactionKey = (tx: any, accountNumber: string) =>
   buildTxKey({ ...tx, accountNumber: tx.accountNumber || accountNumber });
 
 export type AccountsSlice = {
-  accountMappings: { [accountNumber: string]: { label: string; institution: string } };
-  accounts: { [accountNumber: string]: { transactions: any; id: any } };
+  accountMappings: { [accountNumber: string]: AccountMapping };
+  accounts: { [accountNumber: string]: Account };
 
   clearAllAccounts: () => void;
   addOrUpdateAccount: (accountNumber: any, data: any) => void;
-  addTransactionsToAccount: (accountNumber: any, transactions: any) => void;
+  addTransactionsToAccount: (accountNumber: any, transactions: Transaction[]) => void;
   setAccountMapping: (accountNumber: any, mapping: any) => void;
   removeAccount: (accountNumber: any) => void;
 };
