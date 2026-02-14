@@ -4,6 +4,7 @@ import { getStrongTransactionKey } from '../utils/storeHelpers.ts';
 import { createUserScopedZustandStorage } from "../services/userScopedStorage";
 import { createImportSlice } from "./slices/importSlice";
 import { createPlannerSlice } from "./slices/plannerSlice";
+import { createSettingsSlice } from "./slices/settingsSlice";
 
 // TODO: Allow users to change overtime threshold and tax rates
 
@@ -12,90 +13,17 @@ export const useBudgetStore = create(
         (set: any, get: any, store: any) => ({
             ...createImportSlice(set, get, store),
             ...createPlannerSlice(set, get, store),
+            ...createSettingsSlice(set, get, store),
             ORIGIN_COLOR_MAP: {
                 csv: 'purple',
                 ofx: 'green',
                 plaid: 'red',
                 manual: 'blue',
             },
-            currentPage: 'planner', // or null initially
-            user: null, // User object will be set after login
-            sessionExpired: false,
-            hasInitialized: false,
-            isDemoUser: false,
             accountMappings: {} as { [accountNumber: string]: { label: string; institution: string } },
             accounts: {} as { [accountNumber: string]: { transactions: any, id: any } },
             // NOTE: Import lifecycle state/actions (staging/history/undo/settings/telemetry) live in the Import slice.
-            isSavingsModalOpen: false,
-            resolveSavingsPromise: null,
-            isLoadingModalOpen: false,
-            loadingHeader: '',
-            isConfirmModalOpen: false,
-            isProgressOpen: false,
-            progressHeader: '',
-            progressCount: 0,
-            progressTotal: 0,
-            isLoading: false,
-            setIsLoading: (val: boolean) => set({ isLoading: val }),
-            // NOTE: Import lifecycle helpers/selectors/actions moved to the Import slice.
-            // Promise-based savings linking flow
-            awaitSavingsLink: (entries: any) => {
-                // enqueue and open modal, then return a promise resolved by resolveSavingsLink
-                set({ savingsReviewQueue: entries, isSavingsModalOpen: true });
-                return new Promise((resolve: any) => {
-                    useBudgetStore.setState({ resolveSavingsPromise: resolve });
-                });
-            },
-            resolveSavingsLink: (result: any) => {
-                const resolver = useBudgetStore.getState().resolveSavingsPromise as any;
-                if (typeof resolver === 'function') {
-                    try {
-                        resolver(result);
-                    } catch {
-                        // noop
-                    }
-                }
-                set({
-                    resolveSavingsPromise: null,
-                    isSavingsModalOpen: false,
-                    savingsReviewQueue: [],
-                });
-            },
-            openProgress: (header: any, total: any) =>
-                set({
-                    isProgressOpen: true,
-                    progressHeader: header,
-                    progressCount: 0,
-                    progressTotal: total,
-                }),
-            updateProgress: (count: any) => set({ progressCount: count }),
-            closeProgress: () =>
-                set({
-                    isProgressOpen: false,
-                    progressHeader: '',
-                    progressCount: 0,
-                    progressTotal: 0,
-                }),
-            openLoading: (header: any) =>
-                set({
-                    isLoadingModalOpen: true,
-                    loadingHeader: header,
-                }),
-            closeLoading: () =>
-                set({
-                    isLoadingModalOpen: false,
-                    loadingHeader: '',
-                }),
-            setConfirmModalOpen: (open: any) => set({ isConfirmModalOpen: open }),
-            setSavingsReviewQueue: (entries: any) => set({ savingsReviewQueue: entries }),
-            clearSavingsReviewQueue: () => set({ savingsReviewQueue: [] }),
-            setSavingsModalOpen: (open: any) => set({ isSavingsModalOpen: open }),
             clearAllAccounts: () => set(() => ({ accounts: {} })),
-            setSessionExpired: (value: any) => set({ sessionExpired: value }),
-            setHasInitialized: (value: any) => set({ hasInitialized: value }),
-            setCurrentPage: (page: any) => set(() => ({ currentPage: page })),
-            setUser: (user: any) => set(() => ({ user })),
-            setIsDemoUser: (val: any) => set({ isDemoUser: val }),
             addOrUpdateAccount: (accountNumber: any, data: any) =>
                 set((state: any) => ({
                     accounts: {

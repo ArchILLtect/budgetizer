@@ -34,6 +34,8 @@ export type ImportSlice = {
   addPendingSavingsQueue: (accountNumber: string, entries: any[]) => void;
   clearPendingSavingsForAccount: (accountNumber: string) => void;
   processSavingsQueue: (entries: any[]) => void;
+  setSavingsReviewQueue: (entries: any[]) => void;
+  clearSavingsReviewQueue: () => void;
   processPendingSavingsForAccount: (accountNumber: string, months: string[]) => void;
   markTransactionsBudgetApplied: (accountNumber: string, months: string[]) => void;
 
@@ -110,6 +112,11 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
         isSavingsModalOpen: true,
       };
     }),
+
+  setSavingsReviewQueue: (entries) =>
+    set(() => ({ savingsReviewQueue: Array.isArray(entries) ? entries : [] })),
+
+  clearSavingsReviewQueue: () => set(() => ({ savingsReviewQueue: [] })),
 
   addPendingSavingsQueue: (accountNumber, entries) =>
     set((state: any) => {
