@@ -56,13 +56,13 @@ export default function ScenarioPlanModal({ isOpen, onClose }: ScenarioPlanModal
 
     /* TODO: Apply to actuals if selected
     if (applyAsActuals && !currentActuals) {
-      useBudgetStore.getState().updateMonthlyActuals(selectedMonth, {
+      // updateMonthlyActuals(selectedMonth, {
         actualFixedIncomeSources: JSON.parse(JSON.stringify(scenario.incomeSources)),
         actualExpenses: JSON.parse(JSON.stringify(scenario.expenses)),
         actualTotalNetIncome: netIncome,
         savingsMode: scenario.savingsMode,
         customSavings: scenario.customSavings,
-      });
+      // });
     }*/
 
     if (currentActuals) {
