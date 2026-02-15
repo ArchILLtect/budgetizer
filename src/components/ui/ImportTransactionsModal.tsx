@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
 import { Button, Box, VStack, HStack, Input, Text, Stat, Alert, Badge, Dialog, Separator, StatGroup, Field } from '@chakra-ui/react';
 import { useBudgetStore } from '../../store/budgetStore';
-import { runIngestion } from '../../ingest/runIngestion';
+import { analyzeImport } from '../../ingest/analyzeImport';
 import { parseCsv } from '../../ingest/parseCsv';
 import { streamParseCsv } from '../../ingest/parseCsvStreaming';
 import IngestionMetricsPanel from '../accounts/IngestionMetricsPanel';
 import { fireToast } from '../../hooks/useFireToast';
 import { AppSelect } from './AppSelect';
-import type { ImportHistoryEntry } from '../../store/slices/importLogic';
+import type { ImportPlan } from '../../ingest/importPlan';
 
 
 type ImportTransactionsModalProps = {
@@ -24,9 +24,9 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
   const registerImportManifest = useBudgetStore((s: any) => s.registerImportManifest);
   const setLastIngestionTelemetry = useBudgetStore((s: any) => s.setLastIngestionTelemetry);
   const lastIngestionTelemetry = useBudgetStore((s: any) => s.lastIngestionTelemetry);
-  const setState = useBudgetStore.setState;
   const streamingAutoLineThreshold = useBudgetStore((s: any) => s.streamingAutoLineThreshold);
   const streamingAutoByteThreshold = useBudgetStore((s: any) => s.streamingAutoByteThreshold);
+  const commitImportPlan = useBudgetStore((s: any) => s.commitImportPlan);
 
   const [fileName, setFileName] = useState('');
   const [fileText, setFileText] = useState('');
@@ -42,7 +42,15 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
   const [autoStreamingReason, setAutoStreamingReason] = useState('');
   const [streamAborted, setStreamAborted] = useState(false);
   const [streamController, setStreamController] = useState<AbortController | null>(null);
-  const [result, setResult] = useState<any>(null); // { patch, stats, errors, ... }
+  const [result, setResult] = useState<null | {
+    plan: ImportPlan;
+    stats: any;
+    errors: any[];
+    duplicatesSample: any[];
+    acceptedTxns: any[];
+    savingsQueue: any[];
+    importSessionId: string;
+  }>(null);
   const [applied, setApplied] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [totalLines, setTotalLines] = useState<number | null>(null); // for progress % estimation
@@ -182,24 +190,46 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
         ingestionInput = { parsedRows: parsedRowsContainer } as any;
         setTiming((t: any) => ({ ...t, parseMs: +(parseEnd - parseStart).toFixed(2) }));
       }
-      const r = await runIngestion({
-        ...ingestionInput,
+
+      const plan = await analyzeImport({
+        ...(ingestionInput as any),
         accountNumber,
         existingTxns,
-        registerManifest: registerImportManifest,
       });
-      setResult(r as any);
+
+      // Preserve previous behavior: record hash/account association at dry-run time
+      // so users get a "previously imported" warning.
+      try {
+        registerImportManifest(plan.stats.hash, accountNumber, {
+          size: fileText.length,
+          sampleName: fileName,
+          newCount: plan.stats.newCount,
+          dupes: plan.stats.dupes,
+        });
+      } catch {/* noop */}
+
+      const r = {
+        plan,
+        stats: plan.stats,
+        errors: plan.errors,
+        duplicatesSample: plan.duplicatesSample,
+        acceptedTxns: plan.acceptedPreview,
+        savingsQueue: plan.savingsQueue,
+        importSessionId: plan.session.sessionId,
+      };
+
+      setResult(r);
       setApplied(false);
       // Persist telemetry
       try {
         setLastIngestionTelemetry({
           at: new Date().toISOString(),
           accountNumber,
-            hash: r.stats.hash,
-            newCount: r.stats.newCount,
-            dupesExisting: r.stats.dupesExisting,
-            dupesIntraFile: r.stats.dupesIntraFile,
-            categorySources: r.stats.categorySources,
+          hash: r.stats.hash,
+          newCount: r.stats.newCount,
+          dupesExisting: r.stats.dupesExisting,
+          dupesIntraFile: r.stats.dupesIntraFile,
+          categorySources: r.stats.categorySources,
         });
       } catch {/* noop */}
       const wallEnd = (performance && performance.now) ? performance.now() : Date.now();
@@ -219,38 +249,14 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
     }
   };
   
-  const addPendingSavingsQueue = useBudgetStore(s => s.addPendingSavingsQueue);
-  const recordImportHistory = useBudgetStore(s => s.recordImportHistory);
-
   const applyPatch = () => {
-    if (!result?.patch) return;
+    if (!result?.plan) return;
     try {
-      setState(result.patch);
+      commitImportPlan(result.plan);
       setApplied(true);
       setShowConfirm(false);
-      const sessionId = String(result?.importSessionId || result?.stats?.importSessionId || "");
-      const hash = String(result?.stats?.hash || "");
-      if (!sessionId) {
-        throw new Error("Missing import session id");
-      }
-      if (!hash) {
-        throw new Error("Missing import hash");
-      }
       fireToast("success", "Import applied (staged)", "Transactions are staged until you Apply to Budget.");
-      // Record audit entry
-      const entry: ImportHistoryEntry = {
-        sessionId,
-        accountNumber,
-        importedAt: new Date().toISOString(),
-        newCount: result.stats?.newCount ?? 0,
-        dupesExisting: result.stats?.dupesExisting,
-        dupesIntraFile: result.stats?.dupesIntraFile,
-        savingsCount: result.savingsQueue?.length || 0,
-        hash,
-      };
-      recordImportHistory(entry);
       if (result.savingsQueue && result.savingsQueue.length) {
-        addPendingSavingsQueue(accountNumber, result.savingsQueue);
         fireToast("info", "Savings deferred", `${result.savingsQueue.length} potential savings transactions will be reviewed after budget apply.`);
       }
     } catch (e: any) {
@@ -330,7 +336,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
                 )}
               </HStack>
               {!showConfirm && (
-                <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)} disabled={!result?.patch || applied}>Review & Apply</Button>
+                <Button size="sm" variant="outline" onClick={() => setShowConfirm(true)} disabled={!result?.plan || applied}>Review & Apply</Button>
               )}
               {showConfirm && (
                 <Button size="sm" colorScheme="green" onClick={applyPatch} disabled={applied}>Confirm Apply</Button>
@@ -531,9 +537,9 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
                 <Text fontSize="xs" color="gray.600">Preview of accepted (first 10)</Text>
                 <Box mt={1} maxH="180px" overflowY="auto" fontFamily="mono" fontSize="xs" p={2} borderWidth={1} borderRadius="md" bg="gray.800" color="green.200">
                   {(() => {
-                    const mockState = { accounts: { [accountNumber]: { transactions: existingTxns } } };
-                    const partial = result.patch(mockState);
-                    const merged = partial.accounts[accountNumber].transactions || [];
+                    const merged = [...(existingTxns || []), ...(result?.plan?.accepted || [])].sort((a: any, b: any) =>
+                      String(a?.date || "").localeCompare(String(b?.date || ""))
+                    );
                     return merged.slice(0,10).map((t: any) => (
                       <Text key={t.id}>{t.date} | {(t.rawAmount ?? t.amount).toFixed(2)} | {t.type} | {t.category || '—'} | {t.description.slice(0,50)}</Text>
                     ));
@@ -553,7 +559,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
         </Dialog.CloseTrigger>
         <Dialog.Footer>
           <Button mr={3} onClick={closeAndReset}>Close</Button>
-          {!showConfirm && <Button colorScheme="blue" onClick={() => setShowConfirm(true)} disabled={!result?.patch || applied}>Review & Apply</Button>}
+          {!showConfirm && <Button colorScheme="blue" onClick={() => setShowConfirm(true)} disabled={!result?.plan || applied}>Review & Apply</Button>}
           {showConfirm && <Button colorScheme="green" onClick={applyPatch} disabled={applied}>Confirm Apply</Button>}
           {showConfirm && <Button variant="ghost" onClick={() => setShowConfirm(false)} disabled={applied}>Cancel</Button>}
         </Dialog.Footer>

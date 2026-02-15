@@ -12,6 +12,8 @@ import {
   type PendingSavingsQueueEntry,
   type TransactionForImportLifecycle,
 } from "./importLogic";
+import { buildTxKey } from "../../ingest/buildTxKey";
+import type { ImportPlan } from "../../ingest/importPlan";
 
 type ImportManifestMeta = {
   size?: number;
@@ -76,6 +78,8 @@ export type ImportSlice = {
 
   setLastIngestionTelemetry: (telemetry: unknown) => void;
   registerImportManifest: (hash: string, accountNumber: string, meta?: ImportManifestMeta) => void;
+
+  commitImportPlan: (plan: ImportPlan) => void;
 
   addPendingSavingsQueue: (accountNumber: string, entries: PendingSavingsQueueEntry[]) => void;
   clearPendingSavingsForAccount: (accountNumber: string) => void;
@@ -158,6 +162,176 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
             },
           },
         },
+      };
+    }),
+
+  commitImportPlan: (plan) =>
+    set((state) => {
+      const sessionId = String(plan?.session?.sessionId || "");
+      const accountNumber = String(plan?.session?.accountNumber || "");
+      const importedAt = String(plan?.session?.importedAt || new Date().toISOString());
+      const hash = String(plan?.stats?.hash || plan?.session?.hash || "");
+
+      if (!sessionId || !accountNumber) return {};
+
+      const alreadyRecorded = (state.importHistory || []).some(
+        (h) => h.sessionId === sessionId && h.accountNumber === accountNumber
+      );
+      if (alreadyRecorded) return {};
+
+      const accepted = Array.isArray(plan?.accepted) ? plan.accepted : [];
+      if (!accepted.length) {
+        // Still record the session metadata for audit if desired.
+        const entry: ImportHistoryEntry = {
+          sessionId,
+          accountNumber,
+          importedAt,
+          newCount: 0,
+          dupesExisting: (plan?.stats as any)?.dupesExisting,
+          dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
+          savingsCount: Array.isArray(plan?.savingsQueue) ? plan.savingsQueue.length : 0,
+          hash,
+        };
+
+        const maxEntries = state.importHistoryMaxEntries || 30;
+        const maxAgeDays = state.importHistoryMaxAgeDays || 30;
+        const withEntry = recordImportHistory(state.importHistory, entry, maxEntries);
+        const pruned = pruneImportHistory(withEntry, maxEntries, maxAgeDays, Date.now());
+        return {
+          importHistory: pruned,
+        };
+      }
+
+      // Merge into the account's transactions, de-duping again at commit time
+      // so retry/double-clicks can't double-insert.
+      const acct = state.accounts?.[accountNumber] as { transactions?: TransactionForImportLifecycle[] } | undefined;
+      const existingTxns = (acct?.transactions ?? []) as TransactionForImportLifecycle[];
+
+      const existingKeys = new Set<string>();
+      for (const t of existingTxns) {
+        try {
+          const k = buildTxKey(t as any);
+          if (k) existingKeys.add(k);
+        } catch {
+          // ignore
+        }
+      }
+
+      const toAdd = [] as any[];
+      for (const t of accepted as any[]) {
+        try {
+          const k = typeof t?.key === "string" && t.key ? t.key : buildTxKey(t);
+          if (!k || existingKeys.has(k)) continue;
+          existingKeys.add(k);
+          toAdd.push(t);
+        } catch {
+          // If keying fails, skip commit rather than risk duping.
+          continue;
+        }
+      }
+
+      const merged = [...existingTxns, ...toAdd].sort((a: any, b: any) =>
+        String(a?.date || "").localeCompare(String(b?.date || ""))
+      );
+
+      // Bootstrap account metadata similar to buildPatch.
+      const firstOrig = (toAdd.find((t: any) => t?.original)?.original || {}) as Record<string, unknown>;
+      const inferredType =
+        String((firstOrig as any)?.AccountType || (firstOrig as any)?.accountType || "")
+          .trim()
+          .toLowerCase() || "checking";
+
+      const baseNew = {
+        accountNumber,
+        label: accountNumber,
+        type: inferredType,
+        transactions: [],
+      };
+
+      const nextAccount = acct
+        ? {
+            ...baseNew,
+            ...(acct as any),
+            transactions: merged,
+          }
+        : {
+            ...baseNew,
+            transactions: merged,
+          };
+
+      // Record audit entry
+      const entry: ImportHistoryEntry = {
+        sessionId,
+        accountNumber,
+        importedAt,
+        newCount: toAdd.length,
+        dupesExisting: (plan?.stats as any)?.dupesExisting,
+        dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
+        savingsCount: Array.isArray(plan?.savingsQueue) ? plan.savingsQueue.length : 0,
+        hash,
+      };
+
+      const maxEntries = state.importHistoryMaxEntries || 30;
+      const maxAgeDays = state.importHistoryMaxAgeDays || 30;
+      const withEntry = recordImportHistory(state.importHistory, entry, maxEntries);
+      const pruned = pruneImportHistory(withEntry, maxEntries, maxAgeDays, Date.now());
+
+      // Queue pending savings (deferred until apply)
+      const savings = Array.isArray(plan?.savingsQueue) ? (plan.savingsQueue as any[]) : [];
+      const currentPending = (state.pendingSavingsByAccount?.[accountNumber] || []) as any[];
+      const pendingSavingsByAccount = savings.length
+        ? {
+            ...state.pendingSavingsByAccount,
+            [accountNumber]: currentPending.concat(savings),
+          }
+        : state.pendingSavingsByAccount;
+
+      // Update import manifest for dedupe warnings
+      const importManifests = (() => {
+        if (!hash) return state.importManifests;
+        const existing = state.importManifests[hash] || {
+          firstImportedAt: importedAt,
+          accounts: {},
+          size: 0,
+          sampleName: "",
+        };
+        return {
+          ...state.importManifests,
+          [hash]: {
+            ...existing,
+            firstImportedAt: existing.firstImportedAt || importedAt,
+            accounts: {
+              ...existing.accounts,
+              [accountNumber]: {
+                importedAt,
+                newCount: toAdd.length,
+                dupes: (plan?.stats as any)?.dupes ?? 0,
+              },
+            },
+          },
+        };
+      })();
+
+      // Snapshot latest ingestion telemetry
+      const lastIngestionTelemetry = {
+        at: new Date().toISOString(),
+        accountNumber,
+        hash,
+        newCount: (plan?.stats as any)?.newCount ?? toAdd.length,
+        dupesExisting: (plan?.stats as any)?.dupesExisting,
+        dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
+        categorySources: (plan?.stats as any)?.categorySources,
+      };
+
+      return {
+        accounts: {
+          ...state.accounts,
+          [accountNumber]: nextAccount,
+        },
+        importHistory: pruned,
+        pendingSavingsByAccount,
+        importManifests,
+        lastIngestionTelemetry,
       };
     }),
 
