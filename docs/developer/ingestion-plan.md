@@ -137,3 +137,12 @@ Acceptance criteria:
 - Current ingestion architecture: `docs/developer/ingestion-architecture.md`
 - Historical refactor log: `docs/legacy/ingestion-refactor-plan.md`
 - Cloud sync alignment: `docs/developer/migration-plan.md`
+
+## 6) Deferred Follow-ups (After ImportPlan is Browser-Testable)
+
+We are intentionally pausing broader TypeScript type-hardening until the ImportPlan + commit flow exists and can be manually tested end-to-end in the browser.
+
+Tracked follow-ups live in `TODO.md` (Type hardening follow-ups) and include:
+- typing the root persisted store wiring (`src/store/budgetStore.ts`)
+- tightening `runIngestion` internal/output shapes (or replacing it with `analyzeImport`)
+- reducing remaining `any` clusters in planner domain code

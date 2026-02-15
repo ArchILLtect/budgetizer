@@ -158,6 +158,19 @@ Docs (P1):
   - separate UI-only flags from budgeting domain state
   - ensure persist `partialize` is correct and minimal
 
+Type hardening follow-ups (deferred until Milestone 4A is browser-testable):
+
+- [ ] TODO(P3): Type the root persisted store wiring in `src/store/budgetStore.ts`
+  - define a single RootStore type (slice composition)
+  - remove `set/get/store/state: any` in the persist wrapper
+- [ ] TODO(P3): Replace remaining `any` in `src/store/slices/plannerSlice.ts` (planner domain models + setters)
+  - keep scope tight; don’t attempt to type unrelated UI
+- [ ] TODO(P3): Tighten `src/ingest/runIngestion.ts` internal/output shapes
+  - replace `existingTxns: any[]` with domain `Transaction[]`
+  - remove `parsedRows?: any` and `norm: any` by introducing narrow row/normalized-row types
+- [ ] TODO(P3): Defer non-core `any` cleanup in utilities until after core ingestion work ships
+  - `src/utils/analysisUtils.ts`, `src/utils/calcUtils.ts`, `src/utils/demoUtils.ts`
+
 <a id="p4"></a>
 ### TODO(P4)
 
