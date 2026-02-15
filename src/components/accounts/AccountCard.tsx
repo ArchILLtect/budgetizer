@@ -8,6 +8,7 @@ import { Tooltip } from "../ui/Tooltip";
 import dayjs from "dayjs";
 import { formatDate, getUniqueOrigins } from "../../utils/accountUtils";
 import { getMonthlyTotals, getAvailableMonths } from '../../utils/storeHelpers';
+import { maskAccountNumber } from "../../utils/maskAccountNumber";
 import { useBudgetStore } from "../../store/budgetStore";
 import type { Account, Transaction, BudgetMonthKey } from "../../types";
 // Used for DEV only:
@@ -87,7 +88,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
 
   // Add safe fallbacks where label is read.
   const account = currentAccount;
-  const displayLabel = account?.label || account?.accountNumber || 'Account';
+  const displayLabel = account?.label || (account?.accountNumber ? maskAccountNumber(account.accountNumber) : 'Account');
 
   // All available months for THIS account: ["2025-07","2025-06",...]
   const months = useMemo(
