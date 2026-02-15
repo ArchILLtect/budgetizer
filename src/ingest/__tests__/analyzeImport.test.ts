@@ -1,7 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { createStore } from "zustand/vanilla";
 
 import { analyzeImport } from "../analyzeImport";
-import { runIngestion } from "../runIngestion";
+import { createAccountsSlice } from "../../store/slices/accountsSlice";
+import { createImportSlice } from "../../store/slices/importSlice";
+
+function makeTestStore() {
+  return createStore<any>()((set, get, api) => ({
+    ...createAccountsSlice(set as any, get as any, api as any),
+    ...createImportSlice(set as any, get as any, api as any),
+  }));
+}
 
 function makeDeterministicNow() {
   let t = 0;
@@ -50,7 +59,7 @@ describe("analyzeImport", () => {
     restoreCrypto = null;
   });
 
-  it("returns a serializable ImportPlan (no patch closure)", async () => {
+  it("returns a serializable ImportPlan (no functions)", async () => {
     const now = makeDeterministicNow();
 
     const csv = [
@@ -76,7 +85,7 @@ describe("analyzeImport", () => {
     expect((plan as unknown as { patch?: unknown }).patch).toBeUndefined();
   });
 
-  it("runIngestion delegates analysis to analyzeImport and still returns a patch", async () => {
+  it("commitImportPlan(plan) stages accepted transactions and records history", async () => {
     const now = makeDeterministicNow();
 
     const csv = [
@@ -84,6 +93,19 @@ describe("analyzeImport", () => {
       "2026-02-01,Paycheck,100.00",
       "2026-02-02,Groceries,-20.50",
     ].join("\n");
+
+    const store = makeTestStore();
+    store.setState({
+      accounts: {
+        "1234": {
+          id: "acct-1",
+          transactions: [],
+        },
+      },
+      importHistory: [],
+      pendingSavingsByAccount: {},
+      importManifests: {},
+    });
 
     const plan = await analyzeImport({
       fileText: csv,
@@ -94,28 +116,15 @@ describe("analyzeImport", () => {
       now,
     });
 
-    const result = await runIngestion({
-      fileText: csv,
-      accountNumber: "1234",
-      existingTxns: [],
-      sessionId: "s1",
-      importedAt: "2026-02-14T00:00:00.000Z",
-      now,
-    });
+    store.getState().commitImportPlan(plan);
 
-    expect(result.importSessionId).toBe("s1");
-    expect(typeof result.patch).toBe("function");
+    expect(store.getState().importHistory.some((h: any) => h.sessionId === "s1")).toBe(true);
+    expect(store.getState().importManifests?.[plan.stats.hash]).toBeTruthy();
 
-    expect(result.stats.hash).toBe(plan.stats.hash);
-
-    const stripIds = <T extends Record<string, unknown>>(items: T[]) =>
-      items.map((item) => {
-        const copy: Record<string, unknown> = { ...item };
-        delete copy.id;
-        return copy;
-      });
-
-    expect(stripIds(result.acceptedTxns)).toEqual(stripIds(plan.acceptedPreview));
-    expect(stripIds(result.savingsQueue)).toEqual(stripIds(plan.savingsQueue));
+    const txns = store.getState().accounts["1234"].transactions;
+    expect(txns).toHaveLength(plan.accepted.length);
+    for (const t of txns) {
+      expect(t).toMatchObject({ importSessionId: "s1", staged: true, budgetApplied: false });
+    }
   });
 });

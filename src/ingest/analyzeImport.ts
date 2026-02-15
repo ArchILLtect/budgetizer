@@ -1,6 +1,5 @@
 import type { Transaction } from "../types";
 
-import { buildPatch } from "./buildPatch";
 import { buildTxKey } from "./buildTxKey";
 import { classifyTx } from "./classifyTx";
 import { shortFileHash } from "./fileHash";
@@ -469,10 +468,4 @@ export async function analyzeImport({
     errors,
     duplicatesSample,
   };
-}
-
-// Convenience: derive the existing patch closure from an ImportPlan.
-// This is intentionally separate from the plan so ImportPlan stays serializable.
-export function buildPatchFromPlan(plan: ImportPlan, existingTxns: Transaction[]) {
-  return buildPatch(plan.session.accountNumber, existingTxns, plan.accepted);
 }

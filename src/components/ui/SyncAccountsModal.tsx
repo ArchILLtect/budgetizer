@@ -2,19 +2,18 @@ import { Button, RadioGroup, Stack, Input, Text, Box, Stat, SimpleGrid, Tag, Dia
 import { useEffect, useRef, useState } from "react";
 import Papa from "papaparse";
 import { useBudgetStore } from "../../store/budgetStore";
-import { runIngestion } from "../../ingest/runIngestion";
+import { analyzeImport } from "../../ingest/analyzeImport";
 import IngestionMetricsPanel from "../accounts/IngestionMetricsPanel";
 import { fireToast } from "../../hooks/useFireToast";
-import type { ImportHistoryEntry } from "../../store/slices/importLogic";
+import type { ImportPlan } from "../../ingest/importPlan";
 
 // Migration Notes:
-// This modal now leverages the ingestion pipeline (runIngestion) for each account present in the CSV.
+// This modal now leverages the ingestion pipeline (analyzeImport + commitImportPlan) for each account present in the CSV.
 // Workflow:
 // 1) Parse CSV (Papa) -> group rows by AccountNumber.
-// 2) For each account group: build a minimal CSV string (header + rows) consumed by runIngestion OR pass parsed rows directly.
-//    We pass parsedRows directly to avoid re-stringifying; we adapt row keys to expected normalizeRow fields.
-// 3) Collect ingestion results (staged transactions + stats) and aggregate telemetry.
-// 4) User confirms -> apply patches sequentially; record history entries & pending savings; show telemetry summary.
+// 2) For each account group: pass parsedRows directly to analyzeImport to avoid re-stringifying; adapt row keys to expected normalizeRow fields.
+// 3) Collect ImportPlans (staged transactions + stats) and aggregate telemetry.
+// 4) User confirms -> commit plans sequentially via commitImportPlan; show telemetry summary.
 // 5) Undo & staging semantics then handled by existing store logic.
 
 type SyncAccountsModalProps = {
@@ -27,7 +26,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
   const accounts = useBudgetStore((s: any) => s.accounts);
   const setAccountMapping = useBudgetStore((s: any) => s.setAccountMapping);
   const addOrUpdateAccount = useBudgetStore((s: any) => s.addOrUpdateAccount);
-  const registerImportManifest = useBudgetStore((s: any) => s.registerImportManifest);
+  const commitImportPlan = useBudgetStore((s: any) => s.commitImportPlan);
 
   const [sourceType, setSourceType] = useState("csv");
   const [csvFile, setCsvFile] = useState<any>(null);
@@ -37,13 +36,10 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
   const [pendingData, setPendingData] = useState<any[]>([]); // original parsed rows awaiting mapping
   const [accountInputs, setAccountInputs] = useState<any>({});
   const [ingesting, setIngesting] = useState(false);
-  const [ingestionResults, setIngestionResults] = useState<Record<string, any>[]>([]); // [{ accountNumber, result }]
+  const [ingestionResults, setIngestionResults] = useState<Array<{ accountNumber: string; plan: ImportPlan }>>([]); // [{ accountNumber, plan }]
   const [telemetry, setTelemetry] = useState<any>(null); // aggregate
   const [metricsAccount, setMetricsAccount] = useState('');
   const setLastIngestionTelemetry = useBudgetStore(s => s.setLastIngestionTelemetry);
-  const recordImportHistory = useBudgetStore(s => s.recordImportHistory);
-  const addPendingSavingsQueue = useBudgetStore(s => s.addPendingSavingsQueue);
-  const setState = useBudgetStore.setState;
 
   const fileTypes = ["csv", "ofx"];
   const isDemo = useBudgetStore((s) => s.isDemoUser);
@@ -51,7 +47,6 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
   // Keep latest store values available to async callbacks without reach-through reads.
   const accountMappingsRef = useRef(accountMappings);
   const accountsRef = useRef(accounts);
-  const registerImportManifestRef = useRef(registerImportManifest);
   const addOrUpdateAccountRef = useRef(addOrUpdateAccount);
 
   useEffect(() => {
@@ -61,10 +56,6 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
   useEffect(() => {
     accountsRef.current = accounts;
   }, [accounts]);
-
-  useEffect(() => {
-    registerImportManifestRef.current = registerImportManifest;
-  }, [registerImportManifest]);
 
   useEffect(() => {
     addOrUpdateAccountRef.current = addOrUpdateAccount;
@@ -155,11 +146,11 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
         savings: 0,
       };
 
-  for (const acctNumber of Object.keys(groups)) {
+      for (const acctNumber of Object.keys(groups)) {
         const rows = groups[acctNumber];
         aggregate.accounts++;
         aggregate.rows += rows.length;
-        // Build a parsedRows structure that runIngestion understands: each row mapped to expected keys
+        // Build a parsedRows structure that analyzeImport understands: each row mapped to expected normalizeRow fields
         const adaptedRows = rows.map((r: any, idx: number) => ({
           date: r['Posted Date'] || r['Date'] || r.date,
           Description: r.Description || r.description || r.Memo,
@@ -168,20 +159,21 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
           __line: idx + 1,
         }));
         const existing: any[] = accountsRef.current?.[acctNumber]?.transactions || [];
-        const r = await runIngestion({
+
+        const plan = await analyzeImport({
           parsedRows: { rows: adaptedRows, errors: [] },
           accountNumber: acctNumber,
           existingTxns: existing,
-          registerManifest: registerImportManifestRef.current as any, // pass through manifest for potential short-circuiting; can be optimized further by exposing a "dry run" mode in runIngestion that skips manifest updates and other side effects
         });
-        results.push({ accountNumber: acctNumber, result: r });
-        aggregate.newCount += r.stats.newCount;
-        aggregate.dupesExisting += r.stats.dupesExisting;
-        aggregate.dupesIntraFile += r.stats.dupesIntraFile;
-        aggregate.savings += r.savingsQueue?.length || 0;
+
+        results.push({ accountNumber: acctNumber, plan });
+        aggregate.newCount += plan.stats.newCount;
+        aggregate.dupesExisting += plan.stats.dupesExisting;
+        aggregate.dupesIntraFile += plan.stats.dupesIntraFile;
+        aggregate.savings += plan.savingsQueue?.length || 0;
       }
-  setIngestionResults(results);
-  if (results.length && !metricsAccount) setMetricsAccount(results[0].accountNumber);
+      setIngestionResults(results);
+      if (results.length && !metricsAccount) setMetricsAccount(results[0].accountNumber);
       setTelemetry(aggregate);
       fireToast("info", "Dry run complete", `Accounts: ${aggregate.accounts} New: ${aggregate.newCount} DupEx: ${aggregate.dupesExisting} DupIntra: ${aggregate.dupesIntraFile}`);
     } catch (e: any) {
@@ -191,35 +183,14 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
     }
   };
 
-  const applyAllPatches = () => {
+  const applyAllPlans = () => {
     if (!ingestionResults.length) return;
     try {
-  ingestionResults.forEach(({ accountNumber, result }: any) => {
-        if (!result?.patch) return;
-        setState(result.patch);
-        // Record per-account history
-        const sessionId = String(result?.importSessionId || result?.stats?.importSessionId || "");
-        const hash = String(result?.stats?.hash || "");
-        if (!sessionId) {
-          throw new Error(`Missing import session id for account ${accountNumber}`);
-        }
-        if (!hash) {
-          throw new Error(`Missing import hash for account ${accountNumber}`);
-        }
-        const entry: ImportHistoryEntry = {
-          sessionId,
-          accountNumber,
-          importedAt: new Date().toISOString(),
-          newCount: result.stats?.newCount ?? 0,
-          dupesExisting: result.stats?.dupesExisting,
-          dupesIntraFile: result.stats?.dupesIntraFile,
-          savingsCount: result.savingsQueue?.length || 0,
-          hash,
-        };
-        recordImportHistory(entry);
-        if (result.savingsQueue?.length) {
-          addPendingSavingsQueue(accountNumber, result.savingsQueue);
-        }
+
+      ingestionResults.forEach(({ accountNumber, plan }) => {
+        if (!plan) return;
+        commitImportPlan(plan);
+
         // Update account metadata (label/institution) if newly mapped
         const mapping: any = accountMappingsRef.current?.[accountNumber];
         if (mapping) {
@@ -233,15 +204,15 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
           });
         }
         // Per-account undo toast (quick action) - require plumbing
-        // const sessionId = result.stats.importSessionId;
-        fireToast("info", "Import Applied (Staged)", `Account ${accountNumber}: ${result.stats.newCount} new transactions.`)
+        // const sessionId = plan.stats.importSessionId;
+        fireToast("info", "Import Applied (Staged)", `Account ${accountNumber}: ${plan.stats.newCount} new transactions.`)
 
         /* TODO(P3): Re-enable per-account undo to staged state; requires plumbing undoStagedImport to
         // accept an accountNumber + sessionId and revert just that slice of the patch, leaving any other
         // accounts' transactions intact. For now, users can apply all then undo from the history tab if needed. 
           render: ({ onClose }) => (
             <Box p={3} bg='gray.800' color='white' borderRadius='md' boxShadow='md'>
-              <Text fontSize='sm' mb={1}>Imported {result.stats.newCount} new transactions in {accountNumber}</Text>
+              <Text fontSize='sm' mb={1}>Imported {plan.stats.newCount} new transactions in {accountNumber}</Text>
               <Button size='xs' colorScheme='red' variant='outline'>Undo</Button>
             </Box>
           )*/
@@ -390,7 +361,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
               </Button>
             )}
             {step === 'import' && ingestionResults.length > 0 && !ingesting && (
-              <Button ml={3} colorScheme='purple' onClick={applyAllPatches}>Apply All ({telemetry?.newCount || 0} new)</Button>
+              <Button ml={3} colorScheme='purple' onClick={applyAllPlans}>Apply All ({telemetry?.newCount || 0} new)</Button>
             )}
           </Dialog.Footer>
           {step === 'import' && ingestionResults.length > 0 && (
@@ -405,10 +376,10 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                 <Stat.Root><Stat.Label>Savings</Stat.Label><Stat.ValueText fontSize='md'>{telemetry?.savings}</Stat.ValueText></Stat.Root>
               </SimpleGrid>
               <Box maxH='140px' overflow='auto' borderWidth='1px' borderRadius='md' p={2} fontSize='11px'>
-                {ingestionResults.map(({ accountNumber, result }) => (
+                {ingestionResults.map(({ accountNumber, plan }: any) => (
                   <Box key={accountNumber} mb={2}>
                     <Text fontWeight='bold'>{accountNumber}</Text>
-                    <Text>New: {result.stats.newCount} | DupEx: {result.stats.dupesExisting} | DupIntra: {result.stats.dupesIntraFile} | EarlySC: {result.stats.earlyShortCircuits?.total}</Text>
+                    <Text>New: {plan.stats.newCount} | DupEx: {plan.stats.dupesExisting} | DupIntra: {plan.stats.dupesIntraFile} | EarlySC: {plan.stats.earlyShortCircuits?.total}</Text>
                   </Box>
                 ))}
               </Box>
@@ -424,7 +395,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                 {(() => {
                   const sel = ingestionResults.find(r => r.accountNumber === metricsAccount) || ingestionResults[0];
                   if (!sel) return null;
-                  const s = sel.result.stats;
+                  const s = sel.plan.stats;
                   const metrics = {
                     ingestMs: s.ingestMs,
                     parseMs: null,

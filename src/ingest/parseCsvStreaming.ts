@@ -1,7 +1,7 @@
 // Phase 5: Streaming CSV parser using PapaParse with chunk callbacks.
 // This utility wraps Papa.parse to emit normalized row objects progressively.
 // It does not classify/dedupe; it simply parses and pushes raw rows.
-// Downstream code can accumulate or feed rows into runIngestion via the `parsedRows` option.
+// Downstream code can accumulate or feed rows into analyzeImport via the `parsedRows` option.
 
 import Papa from 'papaparse';
 

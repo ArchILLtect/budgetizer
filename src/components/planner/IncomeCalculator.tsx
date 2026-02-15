@@ -117,7 +117,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
               <HStack gap={4}>
                   <RadioGroup.Item value="single">Single</RadioGroup.Item>
                   <RadioGroup.Item value="headOfHousehold">Head of household</RadioGroup.Item>
-                  <RadioGroup.Item value="marriedSeparate">Married filing seperately</RadioGroup.Item>
+                  <RadioGroup.Item value="marriedSeparate">Married filing separately</RadioGroup.Item>
                   <RadioGroup.Item value="marriedJoint">Married filing jointly</RadioGroup.Item>
               </HStack>
             </RadioGroup.Root>
