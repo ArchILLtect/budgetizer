@@ -6,18 +6,18 @@ import AccountCard from '../components/accounts/AccountCard';
 import { config } from '../config/theme';
 // Dev harness can still be imported manually when needed
 // import IngestionDevHarness from '../../dev/IngestionDevHarness';
-const ImportTransactionsModal = lazy(() => import('../components/ui/ImportTransactionsModal'));
-const preloadImportModal = () => import('../components/ui/ImportTransactionsModal');
-
 const SyncAccountsModal = lazy(() => import('../components/ui/SyncAccountsModal'));
 const preloadSyncModal = () => import('../components/ui/SyncAccountsModal');
 
 export default function AccountsTracker() {
 
   const accounts = useBudgetStore((s) => s.accounts);
+  const clearAllAccounts = useBudgetStore((s: any) => s.clearAllAccounts);
+  const clearAllAccountMappings = useBudgetStore((s: any) => s.clearAllAccountMappings);
+  const clearAllImportData = useBudgetStore((s: any) => s.clearAllImportData);
   const syncModal = useDisclosure();
-  const importModal = useDisclosure();
   const bg = config.theme?.semanticTokens?.colors?.bg.value?.toLocaleString('base'); // use semantic token for background color
+  const isDev = import.meta.env.DEV;
   
 
   return (
@@ -25,30 +25,35 @@ export default function AccountsTracker() {
       <VStack gap={2} mb={4}>
         <Heading size="lg">Accounts</Heading>
         <Text fontSize="sm" color="gray.600">
-          Sync accounts and import transactions.
+          Import a CSV in two steps: set up accounts, then import transactions.
         </Text>
         <Center>
           <HStack gap={4}>
             <Button colorScheme="teal" onClick={syncModal.onOpen} onMouseEnter={preloadSyncModal}>
-              Sync Accounts
+              Import CSV
             </Button>
-            <Button
-              colorScheme="purple"
-              variant="outline"
-              onClick={importModal.onOpen}
-              onMouseEnter={preloadImportModal}
-              onFocus={preloadImportModal}
-            >
-              Import Transactions
-            </Button>
+            {isDev && (
+              <Button
+                colorScheme="red"
+                variant="outline"
+                onClick={() => {
+                  const ok = window.confirm(
+                    'DEV only: Clear all imported data?\n\nThis will remove accounts, account mappings, and import history for your current user scope.'
+                  );
+                  if (!ok) return;
+                  clearAllImportData?.();
+                  clearAllAccounts?.();
+                  clearAllAccountMappings?.();
+                }}
+              >
+                DEV: Clear Imported Data
+              </Button>
+            )}
           </HStack>
         </Center>
       </VStack>
       <Suspense fallback={<InlineSpinner />}>
         <SyncAccountsModal isOpen={syncModal.open} onClose={syncModal.onClose} />
-      </Suspense>
-      <Suspense fallback={<InlineSpinner />}>
-        <ImportTransactionsModal isOpen={importModal.open} onClose={importModal.onClose} />
       </Suspense>
       {/* ...rest of the AccountsTracker UI */}
       {Object.entries(accounts).length > 0 ? (
@@ -66,7 +71,7 @@ export default function AccountsTracker() {
       ) : (
         <Box mx={4} borderWidth="1px" borderRadius="lg" p={4}>
           <Text fontSize="sm" color="gray.600">
-            No accounts yet. Click “Sync Accounts” to get started.
+            No accounts yet. Click “Import CSV” to get started.
           </Text>
         </Box>
       )}
