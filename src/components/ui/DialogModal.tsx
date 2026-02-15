@@ -1,5 +1,6 @@
 import { Dialog, Button, Portal, CloseButton } from "@chakra-ui/react"
 import { fireToast } from "../../hooks/useFireToast";
+import { useEffect, useRef } from "react";
 
 type DialogModalProps = {
   list?: { id: string; isFavorite: boolean };
@@ -24,6 +25,11 @@ type DialogModalProps = {
   loading?: boolean;
   disableClose?: boolean;
   closeOnAccept?: boolean;
+
+  // Quality-of-life: optional default focus and Enter-key behavior.
+  // Accessibility: we only trigger on Enter when focus isn't inside form controls.
+  initialFocus?: "accept" | "cancel" | "none";
+  enterKeyAction?: "accept" | "cancel" | "none";
 }
 
 export const DialogModal = ({
@@ -46,7 +52,13 @@ export const DialogModal = ({
   hideFooter,
   hideCancelButton,
   hideCloseButton,
+
+  initialFocus,
+  enterKeyAction,
 } : DialogModalProps) => {
+
+  const acceptRef = useRef<HTMLButtonElement | null>(null);
+  const cancelRef = useRef<HTMLButtonElement | null>(null);
 
   const handleAccept = async () => {
     let didSucceed = false;
@@ -78,6 +90,61 @@ export const DialogModal = ({
     }
   };
 
+  useEffect(() => {
+    if (!open) return;
+    if (hideFooter) return;
+
+    const want = initialFocus ?? "none";
+    if (want === "none") return;
+
+    const shouldFocusAccept =
+      want === "accept" && !acceptDisabled && !loading;
+    const el = shouldFocusAccept ? acceptRef.current : cancelRef.current;
+    if (!el) return;
+
+    // Let the dialog mount and autofocus traps settle.
+    const id = window.requestAnimationFrame(() => {
+      try {
+        el.focus();
+      } catch {
+        // noop
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [open, hideFooter, initialFocus, acceptDisabled, loading]);
+
+  const onDialogKeyDown: React.KeyboardEventHandler = (e) => {
+    if ((enterKeyAction ?? "none") === "none") return;
+    if (e.key !== "Enter") return;
+    if ((e as any).isComposing) return;
+
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+
+    // Don't steal Enter inside form controls.
+    const inFormControl = target.closest(
+      'input, textarea, select, [contenteditable="true"]'
+    );
+    if (inFormControl) return;
+
+    // If the user is already on a button/link, let the browser handle it.
+    const onInteractive = target.closest('button, a, [role="button"], [role="link"]');
+    if (onInteractive) return;
+
+    if (enterKeyAction === "accept") {
+      if (acceptDisabled || loading) return;
+      e.preventDefault();
+      void handleAccept();
+      return;
+    }
+
+    if (enterKeyAction === "cancel") {
+      if (loading || disableClose) return;
+      e.preventDefault();
+      handleCancel();
+    }
+  };
+
   return (
     <Dialog.Root
       lazyMount
@@ -92,7 +159,7 @@ export const DialogModal = ({
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content>
+          <Dialog.Content onKeyDown={onDialogKeyDown}>
             <Dialog.Header paddingX={4} paddingTop={4} paddingBottom={2}>
               <Dialog.Title>{title}</Dialog.Title>
             </Dialog.Header>
@@ -104,6 +171,7 @@ export const DialogModal = ({
                 {hideCancelButton ? null : (
                   <Dialog.ActionTrigger asChild>
                     <Button
+                      ref={cancelRef}
                       variant={cancelVariant ?? "outline"}
                       onClick={handleCancel}
                       disabled={Boolean(loading) || Boolean(disableClose)}
@@ -113,6 +181,7 @@ export const DialogModal = ({
                   </Dialog.ActionTrigger>
                 )}
                 <Button
+                  ref={acceptRef}
                   onClick={handleAccept}
                   colorPalette={acceptColorPalette}
                   variant={acceptVariant}

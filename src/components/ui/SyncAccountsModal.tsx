@@ -52,6 +52,8 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
   const setLastIngestionTelemetry = useBudgetStore(s => s.setLastIngestionTelemetry);
   const [dryRunStarted, setDryRunStarted] = useState(false);
 
+  const primaryActionButtonRef = useRef<HTMLButtonElement | null>(null);
+
   const fileTypes = ["csv", "ofx"];
   const isDemo = useBudgetStore((s) => s.isDemoUser);
 
@@ -178,6 +180,57 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
 
   const isLargeFile = (csvFile?.size || 0) > (streamingAutoByteThreshold || 500_000);
   const shouldAutoRunDryRun = !isLargeFile;
+
+  const enableEnterToProceed = step === "select" || step === "accounts" || step === "transactions";
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!enableEnterToProceed) return;
+    const el = primaryActionButtonRef.current;
+    if (!el) return;
+    const id = window.requestAnimationFrame(() => {
+      try {
+        el.focus();
+      } catch {
+        // noop
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [isOpen, enableEnterToProceed, step, ingesting, dryRunStarted, ingestionResults.length]);
+
+  const onDialogKeyDown: React.KeyboardEventHandler = (e) => {
+    if (!enableEnterToProceed) return;
+    if (e.key !== "Enter") return;
+    if ((e as any).isComposing) return;
+
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+
+    const inFormControl = target.closest('input, textarea, select, [contenteditable="true"]');
+    if (inFormControl) return;
+    const onInteractive = target.closest('button, a, [role="button"], [role="link"]');
+    if (onInteractive) return;
+
+    e.preventDefault();
+
+    if (step === "select") {
+      handleStartAccounts();
+      return;
+    }
+    if (step === "accounts") {
+      beginTransactionsStep();
+      return;
+    }
+
+    // transactions
+    if (!dryRunStarted || ingestionResults.length === 0) {
+      void runDryRun();
+      return;
+    }
+    if (!ingesting) {
+      void applyAllPlans();
+    }
+  };
 
   useEffect(() => {
     if (step !== 'transactions') return;
@@ -315,7 +368,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
     >
       <Dialog.Backdrop />
       <Dialog.Positioner>
-        <Dialog.Content>
+        <Dialog.Content onKeyDown={onDialogKeyDown}>
           <Dialog.Header>
             {step === 'select'
               ? 'Step 1: Select CSV'
@@ -466,7 +519,13 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                 <Button onClick={() => { onClose(); resetState(); }} variant="ghost" mr={3}>
                   Cancel
                 </Button>
-                <Button onClick={handleStartAccounts} colorScheme="teal" loading={ingesting} disabled={!fileTypes.includes(sourceType)}>
+                <Button
+                  ref={primaryActionButtonRef}
+                  onClick={handleStartAccounts}
+                  colorScheme="teal"
+                  loading={ingesting}
+                  disabled={!fileTypes.includes(sourceType)}
+                >
                   Continue
                 </Button>
               </>
@@ -500,13 +559,14 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                 <Button onClick={() => { onClose(); resetState(); }} variant="ghost" mr={3}>
                   Cancel Import
                 </Button>
-                <Button colorScheme='teal' onClick={beginTransactionsStep}>
+                <Button ref={primaryActionButtonRef} colorScheme='teal' onClick={beginTransactionsStep}>
                   Continue to Transactions
                 </Button>
               </>
             ) : (
               <>
                 <Button
+                  ref={(!dryRunStarted || ingestionResults.length === 0) ? primaryActionButtonRef : undefined}
                   colorScheme='teal'
                   onClick={runDryRun}
                   loading={ingesting}
@@ -515,7 +575,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                   {dryRunStarted ? 'Re-Run Dry Run' : 'Run Dry Run'}
                 </Button>
                 {ingestionResults.length > 0 && !ingesting && (
-                  <Button ml={3} colorScheme='purple' onClick={applyAllPlans}>
+                  <Button ref={(dryRunStarted && ingestionResults.length > 0) ? primaryActionButtonRef : undefined} ml={3} colorScheme='purple' onClick={applyAllPlans}>
                     Apply All ({telemetry?.newCount || 0} new)
                   </Button>
                 )}

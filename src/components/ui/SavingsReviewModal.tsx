@@ -110,6 +110,8 @@ export default function SavingsReviewModal() {
       open={isOpen}
       setOpen={setIsOpen}
       onCancel={closeConfirm}
+      initialFocus="accept"
+      enterKeyAction="accept"
       acceptColorPalette='blue'
       acceptLabel='Confirm'
       onAccept={handleSubmit}

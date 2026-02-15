@@ -140,6 +140,8 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
       setOpen={(open) => {
         if (!open) onClose();
       }}
+      initialFocus="accept"
+      enterKeyAction="accept"
       acceptColorPalette="teal"
       onAccept={runScopedApply}
       onCancel={onClose}
