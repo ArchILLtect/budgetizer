@@ -16,6 +16,7 @@ type ApplyToBudgetModalProps = {
 };
 
 type ApplyTransaction = Parameters<typeof applyOneMonth>[2]["transactions"][number];
+type ApplyOneMonthCounts = Awaited<ReturnType<typeof applyOneMonth>>;
 
 type AccountLike = {
   accountNumber?: string;
@@ -46,7 +47,15 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
   const updateProgress = useBudgetStore(s => s.updateProgress);
   const closeProgress = useBudgetStore(s => s.closeProgress);
   const markTransactionsBudgetApplied = useBudgetStore(s => s.markTransactionsBudgetApplied);
-  const processPendingSavingsForAccount = useBudgetStore(s => s.processPendingSavingsForAccount);
+  const clearPendingSavingsForAccountMonths = useBudgetStore(s => s.clearPendingSavingsForAccountMonths);
+  const awaitSavingsLink = useBudgetStore(s => s.awaitSavingsLink);
+  const isSavingsModalOpen = useBudgetStore(s => s.isSavingsModalOpen);
+
+  const applyTimelineOptions = [
+    { value: "month", label: `Current Month ${dayjs(selectedMonth).format("MMMM YYYY") || 'n/a'} = (${transactionsThisMonth?.length.toLocaleString('en-US')})`, disabled: !selectedMonth || transactionsThisMonth?.length <= 0 },
+    { value: "year", label: `Current Year (${selectedYearFromStore || 'year not set'}) = (${transactionsThisYear?.length.toLocaleString('en-US') || 0})`, disabled: !selectedYearFromStore || transactionsThisYear.length <= 0 },
+    { value: "all", label: `All Transactions (${acct?.transactions?.length.toLocaleString('en-US') || 0})`, disabled: !months || months?.length <= 0 },
+  ];
 
   const runScopedApply = async () => {
     setLoading(true);
@@ -57,6 +66,7 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
     
     let targets: string[] = [];
     const total = { e: 0, i: 0, s: 0 };
+    const savingsReviewEntriesAll: NonNullable<ApplyOneMonthCounts["reviewEntries"]> = [];
 
     try {
       const resolvedAccountNumber = acct.accountNumber || acct.account || acct.label;
@@ -86,6 +96,10 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
         total.i += counts.i;
         total.s += counts.s;
 
+        if (Array.isArray(counts.reviewEntries) && counts.reviewEntries.length > 0) {
+          savingsReviewEntriesAll.push(...counts.reviewEntries);
+        }
+
         processed++;
         updateProgress(processed);
         await new Promise(requestAnimationFrame);
@@ -94,8 +108,13 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
       // Mark staged transactions as applied for selected scope
       const monthsApplied = targets;
       markTransactionsBudgetApplied(resolvedAccountNumber, monthsApplied);
-      // Move any pending savings for these months into review queue
-      processPendingSavingsForAccount(resolvedAccountNumber, monthsApplied);
+      // Savings linking is handled once at the end (single aggregated modal).
+      // Clear any pending import savings entries for these months so they can't be processed a second time.
+      clearPendingSavingsForAccountMonths?.(resolvedAccountNumber, monthsApplied);
+
+      if (savingsReviewEntriesAll.length > 0) {
+        await awaitSavingsLink(savingsReviewEntriesAll);
+      }
     } catch (err: any) {
       fireToast("error", "Error applying to budget", err.message || "An error occurred while applying transactions to the budget.");
     }
@@ -117,7 +136,7 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
   return (
     <DialogModal
       title="Apply to Budget"
-      open={isOpen}
+      open={isOpen && !isSavingsModalOpen}
       setOpen={(open) => {
         if (!open) onClose();
       }}
@@ -136,9 +155,15 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
           >
             <Text color={'GrayText'} fontSize={'sm'}>Make sure you have selected desired month or year before proceeding</Text>
             <Stack gap={3}>
-              <RadioGroup.Item value="month" disabled={!selectedMonth || transactionsThisMonth?.length <= 0}>Current Month ({dayjs(selectedMonth).format("MMMM YYYY") || 'n/a'}) = ({transactionsThisMonth?.length.toLocaleString('en-US')})</RadioGroup.Item>
-              <RadioGroup.Item value="year" disabled={!selectedYearFromStore || transactionsThisYear.length <= 0}>Current Year ({selectedYearFromStore || 'year not set'}) = ({transactionsThisYear?.length.toLocaleString('en-US') || 0})</RadioGroup.Item>                
-              <RadioGroup.Item value="all" disabled={!months || months?.length <= 0}>All Transactions ({acct?.transactions?.length.toLocaleString('en-US') || 0})</RadioGroup.Item>
+              {applyTimelineOptions.map((opt) => (
+                <RadioGroup.Item key={opt.value} value={opt.value as ApplyScope} disabled={opt.disabled}>
+                  <RadioGroup.ItemHiddenInput />
+                  <RadioGroup.ItemControl>
+                    <RadioGroup.ItemIndicator />
+                  </RadioGroup.ItemControl>
+                  <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
+                </RadioGroup.Item>
+              ))}
             </Stack>
           </RadioGroup.Root>
           <hr style={{marginTop: 15 + "px", marginBottom: 15 + "px"}}/>

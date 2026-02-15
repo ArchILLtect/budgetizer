@@ -21,6 +21,14 @@ type SyncAccountsModalProps = {
   onClose: () => void;
 };
 
+type syncFileTypeMode = "csv" | "ofx" | "plaid";
+
+const syncFileTypeOptions = [
+    { value: "csv", label: "CSV File" },
+    { value: "ofx", label: "OFX File (Coming Soon)" },
+    { value: "plaid", label: "Bank Account via Plaid (Coming Soon)" },
+  ];
+
 export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModalProps) {
   const accountMappings = useBudgetStore((s: any) => s.accountMappings);
   const accounts = useBudgetStore((s: any) => s.accounts);
@@ -361,9 +369,15 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                   }}
                 >
                   <Stack direction="column">
-                    <RadioGroup.Item value="csv">CSV File</RadioGroup.Item>
-                    <RadioGroup.Item value="ofx">OFX File (Coming Soon)</RadioGroup.Item>
-                    <RadioGroup.Item value="plaid" disabled>Bank Account (Coming Soon)</RadioGroup.Item>
+                    {syncFileTypeOptions.map((opt) => (
+                      <RadioGroup.Item key={opt.value} value={opt.value as syncFileTypeMode}>
+                        <RadioGroup.ItemHiddenInput />
+                        <RadioGroup.ItemControl>
+                          <RadioGroup.ItemIndicator />
+                        </RadioGroup.ItemControl>
+                        <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
+                      </RadioGroup.Item>
+                    ))}
                   </Stack>
                 </RadioGroup.Root>
 
