@@ -160,9 +160,9 @@ Benchmark tooling:
 
 When adding Amplify-native cloud sync (see `./migration-plan.md`):
 
-- Keep `runIngestion` pure.
+- Keep `analyzeImport` pure.
 - Treat the strong key as the canonical idempotency primitive.
 - On import apply:
-  - Apply patch locally for fast UX.
+   - Commit `ImportPlan` locally via `commitImportPlan(plan)` for fast UX.
   - Enqueue outbox operations to create ImportSession + Transactions in the backend.
   - Use a TTL sync lock (mutex) to avoid two devices syncing bulk imports simultaneously.

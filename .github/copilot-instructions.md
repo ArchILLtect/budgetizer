@@ -63,7 +63,7 @@ Note: When you start needing backward compatibility, switch to the legacy-mode g
 ## Ingestion pipeline
 
 - Located in `src/ingest/` (TypeScript modules).
-- Orchestrator: `runIngestion(...)` returns `{ patch, savingsQueue, stats, errors, acceptedTxns }`.
+- Orchestrator: `analyzeImport(...)` returns an `ImportPlan` (serializable plan data), committed via `commitImportPlan(plan)`.
 - Imported txns are tagged with `importSessionId` and may be `staged`.
 - Strong key is built early to short-circuit duplicate work.
 

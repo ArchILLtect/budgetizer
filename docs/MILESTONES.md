@@ -109,7 +109,7 @@ Progress notes:
 - [x] Define core domain types: `Account`, `Transaction`, `ImportSession`, `BudgetMonthKey`
 - [x] Replace `any` in import/staging/apply/undo codepaths with concrete types
 - [x] Make transaction identity/strong-key inputs typed and explicit
-- [x] ~~Tighten ingestion outputs (`runIngestion` return shape) where UI consumes it~~ (done: removed legacy wrapper; UI commits via `commitImportPlan(plan)`)
+- [x] ~~Tighten ingestion outputs (serializable `ImportPlan`) where UI consumes it~~ (done: UI commits via `commitImportPlan(plan)`)
 
 Progress notes:
 - We are intentionally pausing broader type hardening here to avoid “type the entire app” churn.
@@ -174,7 +174,7 @@ Acceptance:
 ### Milestone 4 checklist
 
 **A) ImportPlan + commit boundary**
-- [x] ~~Implement `analyzeImport(...) -> ImportPlan` (serializable plan, no patch closures)~~ (done)
+- [x] ~~Implement `analyzeImport(...) -> ImportPlan` (serializable plan, no function-valued patches)~~ (done)
 - [x] ~~Implement `commitImportPlan(plan)` store action (single entrypoint to merge + record history + queue savings)~~ (done)
 - [x] ~~Migrate import UIs to commit via store action (no `useBudgetStore.setState(patch)` from components)~~ (done: ImportTransactionsModal + SyncAccountsModal)
 - [x] ~~Add deterministic unit tests for analyze vs commit (idempotency, error surfaces, and plan stability)~~ (done: `analyzeImport` tests + commit boundary test)

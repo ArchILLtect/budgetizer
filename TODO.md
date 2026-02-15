@@ -165,7 +165,7 @@ Type hardening follow-ups (deferred until Milestone 4A is browser-testable):
   - remove `set/get/store/state: any` in the persist wrapper
 - [ ] TODO(P3): Replace remaining `any` in `src/store/slices/plannerSlice.ts` (planner domain models + setters)
   - keep scope tight; don’t attempt to type unrelated UI
-- [ ] TODO(P3): Tighten `src/ingest/runIngestion.ts` internal/output shapes
+- [ ] TODO(P3): Tighten ingestion internal/output shapes (`analyzeImport` + `ImportPlan`)
   - replace `existingTxns: any[]` with domain `Transaction[]`
   - remove `parsedRows?: any` and `norm: any` by introducing narrow row/normalized-row types
 - [ ] TODO(P3): Defer non-core `any` cleanup in utilities until after core ingestion work ships
@@ -284,10 +284,10 @@ Notes:
   - add regression tests for overlapping sessions
   - tracking doc: `docs/developer/ingestion-plan.md`
 
-- [ ] TODO(P3): Full ingestion refactor — ImportPlan + commit
-  - add `analyzeImport(...) -> ImportPlan` (serializable plan; no patch closures)
-  - add `commitImportPlan(plan)` store action and migrate import UIs off `useBudgetStore.setState(patch)`
-  - add tests for analyze/commit determinism + idempotency
+- [x] TODO(P3): Full ingestion refactor — ImportPlan + commit (done)
+  - `analyzeImport(...) -> ImportPlan` (serializable plan; no function-valued patches)
+  - `commitImportPlan(plan)` is the single store commit boundary for import UIs
+  - tests cover analyze/commit determinism + idempotency
   - tracking doc: `docs/developer/ingestion-plan.md`
 
 - [ ] TODO(P4): Proposed ingestion upgrades

@@ -228,10 +228,10 @@ Optional future enhancement:
 
 When adding Amplify‑native cloud sync:
 
-- `runIngestion` remains pure
+- `analyzeImport` remains pure
 - Strong transaction key remains canonical idempotency primitive
 - Import apply flow:
-  1. Apply patch locally (fast UX)
+  1. Commit `ImportPlan` locally via `commitImportPlan(plan)` (fast UX)
   2. Create `ImportSession`
   3. Batch create transactions
   4. Use TTL‑based sync lock to prevent multi‑device collision

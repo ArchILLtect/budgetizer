@@ -6,7 +6,7 @@ This document captures the planned improvements to the import/ingestion lifecycl
 
 Scope of this plan:
 - The **80/20 correctness fix**: make Apply-to-Budget and pending savings processing **session-scoped** when the user is operating on a specific import session.
-- The **full refactor**: introduce an explicit **ImportPlan + commit** boundary so ingestion produces a serializable plan instead of a patch closure.
+- The **full refactor**: introduce an explicit **ImportPlan + commit** boundary so ingestion produces a serializable plan instead of a function-valued patch.
 
 Non-goals (for now):
 - Any UI redesign beyond wiring existing screens to correct semantics.
@@ -88,7 +88,7 @@ Acceptance criteria:
 
 ## 4) Full Refactor (Later): ImportPlan + Commit
 
-The purpose of this refactor is to make ingestion produce a **serializable plan** (data), not a patch closure, and to create a single store entry point that commits that plan.
+The purpose of this refactor is to make ingestion produce a **serializable plan** (data), not a function-valued patch, and to create a single store entry point that commits that plan.
 
 ### 4.1 Target structure
 
@@ -113,7 +113,7 @@ Then commit via the store:
 
 ### 4.2 Why this is worth it
 
-- Removes hidden coupling via patch closures.
+- Removes hidden coupling via function-valued patches.
 - Makes “dry run” and “commit” boundaries explicit and testable.
 - Enables future features (without redesign):
   - persisting import plans
@@ -122,9 +122,10 @@ Then commit via the store:
 
 ### 4.3 Migration approach (incremental)
 
-1. Add `analyzeImport` alongside `runIngestion`.
-2. Implement `commitImportPlan` and route one UI entry point to it.
-3. Once stable, simplify/replace `runIngestion` to return `ImportPlan` (or become a thin wrapper).
+1. Add `analyzeImport` to produce a serializable `ImportPlan`.
+2. Implement `commitImportPlan(plan)` as the single store commit boundary.
+3. Route UI import entry points through `analyzeImport` + `commitImportPlan`.
+4. Remove any legacy wrapper that returns non-serializable results.
 
 Acceptance criteria:
 - Same UX as today for import preview + confirm.
@@ -145,5 +146,5 @@ We are intentionally pausing broader TypeScript type-hardening until the ImportP
 
 Tracked follow-ups live in `TODO.md` (Type hardening follow-ups) and include:
 - typing the root persisted store wiring (`src/store/budgetStore.ts`)
-- tightening `runIngestion` internal/output shapes (or replacing it with `analyzeImport`)
+- tightening ingestion internal/output shapes (e.g. `analyzeImport` inputs and `ImportPlan` contents)
 - reducing remaining `any` clusters in planner domain code
