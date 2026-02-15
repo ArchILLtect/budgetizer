@@ -3,11 +3,13 @@ import dayjs from 'dayjs';
 import { fireToast } from '../hooks/useFireToast';
 
 type Transaction = {
-    id: string;
-    date: string;
-    name: string;
-    amount: number;
-    type: 'expense' | 'income' | 'savings';
+    id?: string;
+    date?: string;
+    name?: string;
+    description?: string;
+    amount?: number | string;
+    rawAmount?: number;
+    type?: 'expense' | 'income' | 'savings';
     origin?: string;
 };
 
@@ -61,7 +63,8 @@ type BudgetStoreLike = {
 
 type formatDateOptions = 'shortMonthAndDay' | 'shortMonth' | 'longMonth' | 'year' | 'monthNumber';
 
-export function formatDate(dateString: string, format: formatDateOptions = 'shortMonthAndDay') {
+export function formatDate(dateString: string | undefined, format: formatDateOptions = 'shortMonthAndDay') {
+    if (typeof dateString !== 'string' || !dateString) return '';
     let newDate;
 
     if (format === 'shortMonthAndDay') {
@@ -167,7 +170,7 @@ export function extractVendorDescription(raw: string) {
     return lowered.slice(0, 32); // safe fallback
 }
 
-export function getUniqueOrigins(txs: Transaction[]) {
+export function getUniqueOrigins<T extends { origin?: string }>(txs: T[]) {
     const unique = new Set<string>();
     txs.forEach((tx) => {
         if (tx.origin) {
@@ -273,9 +276,9 @@ export const applyOneMonth = async (
     // Savings handling
     if (newSavings.length > 0) {
         let reviewEntries: SavingsReviewEntry[] = newSavings.map((s) => ({
-            id: s.id,
-            date: s.date,
-            name: s.name,
+            id: s.id || crypto.randomUUID(),
+            date: s.date || '',
+            name: s.name || s.description || '',
             amount: normalizeTransactionAmount(s),
             month: monthKey,
         }));
@@ -356,6 +359,7 @@ export function groupTransactions(transactions: Transaction[]) {
     const grouped: { [year: number]: { [month: string]: Transaction[] } } = {};
 
     transactions.forEach((tx) => {
+        if (!tx.date) return;
         const date = new Date(tx.date);
         const year = date.getFullYear();
         const month = date.toLocaleString('default', { month: 'long' });

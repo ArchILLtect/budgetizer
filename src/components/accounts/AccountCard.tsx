@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import { formatDate, getUniqueOrigins } from "../../utils/accountUtils";
 import { getMonthlyTotals, getAvailableMonths } from '../../utils/storeHelpers';
 import { useBudgetStore } from "../../store/budgetStore";
+import type { Account, Transaction, BudgetMonthKey } from "../../types";
 // Used for DEV only:
 // import { findRecurringTransactions } from "../utils/analysisUtils";
 // import { assessRecurring } from "../dev/analysisDevTools";
@@ -19,22 +20,54 @@ import { YearPill } from "./YearPill";
 import { FiChevronDown } from "react-icons/fi";
 
 type AccountCardProps = {
-  acct: any; // Replace with actual account type
+  acct: Account & { importedAt?: string };
   acctNumber: string;
 };
 
+type OriginColorMap = Record<string, string>;
+
+type StagedSessionEntry = {
+  sessionId: string;
+  count: number;
+  stagedNow?: number;
+  appliedCount?: number;
+  newCount?: number;
+  removed?: number;
+  canUndo?: boolean;
+  expired?: boolean;
+  status?: string;
+  expiresAt?: number | null;
+  importedAt?: string;
+  savingsCount?: number;
+  hash?: string;
+};
+
+type BudgetStoreAccountState = {
+  ORIGIN_COLOR_MAP: OriginColorMap;
+  accounts: Record<string, Account>;
+  removeAccount: (acctNumber: string) => void;
+  selectedMonth: BudgetMonthKey;
+  getAccountStagedSessionSummaries: (accountNumber: string) => StagedSessionEntry[];
+  undoStagedImport: (accountNumber: string, sessionId: string) => void;
+};
+
 export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
-  const ORIGIN_COLOR_MAP = useBudgetStore((s: any) => s.ORIGIN_COLOR_MAP);
-  const accounts = useBudgetStore((s: any) => s.accounts);
-  const removeAccount = useBudgetStore((s: any) => s.removeAccount); 
-  const selectedMonth = useBudgetStore((s: any) => s.selectedMonth);
-  //const setSelectedMonth = useBudgetStore((s: any) => s.setSelectedMonth);
+  const ORIGIN_COLOR_MAP = useBudgetStore((s) => (s as BudgetStoreAccountState).ORIGIN_COLOR_MAP);
+  const accounts = useBudgetStore((s) => (s as BudgetStoreAccountState).accounts);
+  const removeAccount = useBudgetStore((s) => (s as BudgetStoreAccountState).removeAccount);
+  const selectedMonth = useBudgetStore((s) => (s as BudgetStoreAccountState).selectedMonth);
   const currentAccount = accounts[acctNumber];
-  const currentTransactions = currentAccount.transactions;
-  const getAccountStagedSessionSummaries = useBudgetStore((s: any) => s.getAccountStagedSessionSummaries);
-  const undoStagedImport = useBudgetStore((s: any) => s.undoStagedImport);
-  const sessionEntries = getAccountStagedSessionSummaries(acct.accountNumber);
-  const stagedCount = sessionEntries.reduce((sum: any, s: any) => sum + (s.stagedNow || s.count || 0), 0);
+  const currentTransactions = (currentAccount?.transactions ?? []) as Transaction[];
+  const getAccountStagedSessionSummaries = useBudgetStore(
+    (s) => (s as BudgetStoreAccountState).getAccountStagedSessionSummaries
+  );
+  const undoStagedImport = useBudgetStore((s) => (s as BudgetStoreAccountState).undoStagedImport);
+  const resolvedAccountNumber = acct.accountNumber || acctNumber;
+  const sessionEntries = getAccountStagedSessionSummaries(resolvedAccountNumber);
+  const stagedCount = sessionEntries.reduce(
+    (sum: number, entry) => sum + (entry.stagedNow ?? entry.count ?? 0),
+    0
+  );
   const institution = acct.institution || "Institution Unknown";
 
   const { open, onOpen, onClose } = useDisclosure();
@@ -52,10 +85,10 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
   const displayLabel = account?.label || account?.accountNumber || 'Account';
 
   // All available months for THIS account: ["2025-07","2025-06",...]
-  const months: any = useMemo(() => getAvailableMonths(acct), [acct]);
+  const months = useMemo(() => getAvailableMonths(acct) as string[], [acct]);
   // Years present in this account’s data (ascending for nice left→right buttons)
   const years = useMemo(
-    () => Array.from(new Set(months.map((m: any) => m.slice(0,4)))).sort(),
+    () => Array.from(new Set(months.map((m) => m.slice(0, 4)))).sort(),
     [months]
   );
 
@@ -63,11 +96,11 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
   // If the account doesn’t have that year, fallback to the most recent account year.
   const selectedYearFromStore = dayjs(selectedMonth).year().toString();
   const hasYear = years.includes(selectedYearFromStore);
-  const currentYear = hasYear ? selectedYearFromStore : years.at(-1);
+  const currentYear = hasYear ? selectedYearFromStore : (years.at(-1) || selectedYearFromStore);
 
   // Months just for currentYear, oldest→newest for tabs (or reverse if you prefer)
-  const monthsForYear: any = useMemo(
-    () => months.filter((m: any) => m.startsWith(currentYear)).sort(),
+  const monthsForYear = useMemo(
+    () => months.filter((m) => m.startsWith(currentYear)).sort(),
     [months, currentYear]
   );
 
@@ -80,13 +113,13 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
             {institution}
           </Text>
           <Text fontSize="sm" color="gray.500">
-            Imported {dayjs(acct.importedAt).format("MMM D, YYYY @ h:mm A")}
+            Imported {acct.importedAt ? dayjs(acct.importedAt).format("MMM D, YYYY @ h:mm A") : "—"}
           </Text>
         </VStack>
         <Flex alignItems="center" gap={3}>
           <HStack gap={1}>
-            {getUniqueOrigins(currentTransactions).map((origin: any) => (
-              <Tooltip content={`Imported via ${origin}`}>
+            {getUniqueOrigins(currentTransactions).map((origin) => (
+              <Tooltip key={origin} content={`Imported via ${origin}`}>
                 <Tag.Root size="sm" colorScheme={ORIGIN_COLOR_MAP[origin.toLowerCase()] || 'gray'}>
                   {origin?.toUpperCase() || 'manual'}
                 </Tag.Root>
@@ -101,15 +134,12 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                   </Menu.Trigger>
                 </Tooltip>
                 <Menu.Content fontSize="xs" maxW="320px">
-                  {sessionEntries.map((se: any) => {
+                  {sessionEntries.map((se) => {
                     const minutesLeft: number | null =
                       se.status === 'active' && se.expiresAt && nowMs
                         ? Math.max(0, Math.ceil((se.expiresAt - nowMs) / 60000))
                         : null;
-                    type StatusColorMap = {
-                      [key: string]: string;
-                    };
-                    const statusColorMap: StatusColorMap = {
+                    const statusColorMap: Record<string, string> = {
                       active: 'yellow',
                       expired: 'gray',
                       applied: 'teal',
@@ -117,7 +147,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                       undone: 'red',
                       'partial-undone': 'orange'
                     };
-                    const statusColor = statusColorMap[se.status] || 'blue';
+                    const statusColor = statusColorMap[se.status ?? ""] || 'blue';
                     const progressPct = se.newCount ? Math.round(((se.appliedCount || 0) / se.newCount) * 100) : 0;
                     return (
                       <Menu.Content
@@ -137,7 +167,15 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                             </HStack>
                             <HStack gap={1}>
                               {minutesLeft !== null && <Text fontSize="8px" color="orange.600">{minutesLeft}m</Text>}
-                              <Button size="xs" variant="outline" colorScheme="red" disabled={!se.canUndo} onClick={() => se.canUndo && undoStagedImport(acct.accountNumber, se.sessionId)}>Undo</Button>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                colorScheme="red"
+                                disabled={!se.canUndo}
+                                onClick={() => se.canUndo && undoStagedImport(resolvedAccountNumber, se.sessionId)}
+                              >
+                                Undo
+                              </Button>
                             </HStack>
                           </Flex>
                           <Text fontSize="9px" color="gray.600">Staged: {se.stagedNow || se.count} / New: {se.newCount ?? '—'}{se.removed ? ` | Removed: ${se.removed}` : ''}</Text>
@@ -196,8 +234,8 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
         </Tabs.List>
 
         <Tabs.Content value="Months">
-          {monthsForYear.map((monthRaw: any) => {
-            const monthRows = acct.transactions.filter((tx: any) => tx.date?.startsWith(monthRaw));
+          {monthsForYear.map((monthRaw) => {
+            const monthRows = (acct.transactions ?? []).filter((tx) => tx.date?.startsWith(monthRaw));
             const totals = getMonthlyTotals(acct, monthRaw);
 
             return (
@@ -215,14 +253,22 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                         </Table.Row>
                       </Table.Header>
                       <Table.Body>
-                        {monthRows.map((tx: any) => {
+                        {monthRows.map((tx) => {
                           const appliedFromSession = tx.importSessionId && !tx.staged && tx.budgetApplied;
+                          const signedAmount =
+                            typeof tx.rawAmount === "number"
+                              ? tx.rawAmount
+                              : typeof tx.amount === "number"
+                              ? tx.amount
+                              : typeof tx.amount === "string"
+                              ? Number.parseFloat(tx.amount)
+                              : 0;
                           return (
                           <Table.Row key={tx.id} bg={tx.staged ? 'yellow.50' : (appliedFromSession ? 'teal.50' : undefined)} opacity={tx.staged ? 0.85 : 1}>
                             <Table.Cell whiteSpace={'nowrap'}>{formatDate(tx.date)}</Table.Cell>
                             <Table.Cell>{tx.description}</Table.Cell>
-                            <Table.Cell color={(tx.rawAmount ?? 0) < 0 ? "red.500" : "green.600"}>
-                              ${Math.abs(tx.rawAmount ?? tx.amount).toFixed(2)}
+                            <Table.Cell color={signedAmount < 0 ? "red.500" : "green.600"}>
+                              ${Math.abs(signedAmount).toFixed(2)}
                             </Table.Cell>
                             <Table.Cell>
                               <Tag.Root
@@ -268,7 +314,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                     <ApplyToBudgetModal
                       isOpen={open}
                       onClose={onClose}
-                      acct={acct}
+                      acct={{ ...acct, transactions: acct.transactions ?? [] }}
                       months={months}
                     />
                     <SavingsReviewModal />

@@ -1,23 +1,37 @@
 // Strong transaction key only.
 // Format: accountNumber|YYYY-MM-DD|signedAmount|normalized description[|bal:<balance>]
 
-function normalizeDescription(desc: any) {
-    return (desc || '').toLowerCase().replace(/\s+/g, ' ').trim();
+export type TxKeyInput = {
+    accountNumber?: string;
+    date?: string;
+    description?: string;
+    amount?: number | string;
+    rawAmount?: number;
+    original?: {
+        Balance?: unknown;
+        balance?: unknown;
+        [key: string]: unknown;
+    };
+    [key: string]: unknown;
+};
+
+function normalizeDescription(desc: unknown) {
+    return String(desc || '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function coerceSignedAmount(tx: any) {
+function coerceSignedAmount(tx: TxKeyInput) {
     if (typeof tx.rawAmount === 'number') return tx.rawAmount;
     const n = Number(tx.amount);
     return Number.isFinite(n) ? n : 0;
 }
 
-function extractBalance(tx: any) {
+function extractBalance(tx: TxKeyInput) {
     const b = tx.original?.Balance ?? tx.original?.balance;
     const num = Number(String(b).replace(/[$,]/g, ''));
     return Number.isFinite(num) ? num : null;
 }
 
-export function buildTxKey(tx: any) {
+export function buildTxKey(tx: TxKeyInput) {
     const acct = tx.accountNumber || 'NA';
     const signed = coerceSignedAmount(tx);
     const desc = normalizeDescription(tx.description);

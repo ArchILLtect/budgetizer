@@ -1,20 +1,21 @@
 import type { StateCreator } from "zustand";
 
 import { buildTxKey } from "../../ingest/buildTxKey";
+import type { TxKeyInput } from "../../ingest/buildTxKey";
 import type { Account, AccountMapping, Transaction } from "../../types";
 
-const getStrongTransactionKey = (tx: any, accountNumber: string) =>
-  buildTxKey({ ...tx, accountNumber: tx.accountNumber || accountNumber });
+const getStrongTransactionKey = (tx: TxKeyInput, accountNumber: string) =>
+  buildTxKey({ ...tx, accountNumber: tx.accountNumber ?? accountNumber });
 
 export type AccountsSlice = {
   accountMappings: { [accountNumber: string]: AccountMapping };
   accounts: { [accountNumber: string]: Account };
 
   clearAllAccounts: () => void;
-  addOrUpdateAccount: (accountNumber: any, data: any) => void;
-  addTransactionsToAccount: (accountNumber: any, transactions: Transaction[]) => void;
-  setAccountMapping: (accountNumber: any, mapping: any) => void;
-  removeAccount: (accountNumber: any) => void;
+  addOrUpdateAccount: (accountNumber: string, data: Partial<Account>) => void;
+  addTransactionsToAccount: (accountNumber: string, transactions: Transaction[]) => void;
+  setAccountMapping: (accountNumber: string, mapping: AccountMapping) => void;
+  removeAccount: (accountNumber: string) => void;
 };
 
 type SliceCreator<T> = StateCreator<any, [], [], T>;
@@ -25,8 +26,8 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
 
   clearAllAccounts: () => set(() => ({ accounts: {} })),
 
-  addOrUpdateAccount: (accountNumber: any, data: any) =>
-    set((state: any) => ({
+  addOrUpdateAccount: (accountNumber, data) =>
+    set((state: AccountsSlice) => ({
       accounts: {
         ...state.accounts,
         [accountNumber]: {
@@ -36,11 +37,11 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
       },
     })),
 
-  addTransactionsToAccount: (accountNumber: any, transactions: any) =>
-    set((state: any) => {
-      const existing = state.accounts[accountNumber]?.transactions || [];
-      const seen = new Set(existing.map((t: any) => getStrongTransactionKey(t, accountNumber)));
-      const newTxs = [];
+  addTransactionsToAccount: (accountNumber, transactions) =>
+    set((state: AccountsSlice) => {
+      const existing: Transaction[] = state.accounts[accountNumber]?.transactions ?? [];
+      const seen = new Set(existing.map((t) => getStrongTransactionKey(t, accountNumber)));
+      const newTxs: Transaction[] = [];
 
       for (const tx of transactions) {
         const key = getStrongTransactionKey(tx, accountNumber);
@@ -48,12 +49,12 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
           seen.add(key);
           newTxs.push({
             ...tx,
-            accountNumber: tx.accountNumber || accountNumber,
+            accountNumber: tx.accountNumber ?? accountNumber,
           });
         }
       }
 
-      const updated = [...existing, ...newTxs].sort((a, b) => a.date.localeCompare(b.date));
+      const updated = [...existing, ...newTxs].sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
 
       return {
         accounts: {
@@ -66,16 +67,16 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
       };
     }),
 
-  setAccountMapping: (accountNumber: any, mapping: any) =>
-    set((state: any) => ({
+  setAccountMapping: (accountNumber, mapping) =>
+    set((state: AccountsSlice) => ({
       accountMappings: {
         ...state.accountMappings,
         [accountNumber]: mapping,
       },
     })),
 
-  removeAccount: (accountNumber: any) =>
-    set((state: any) => {
+  removeAccount: (accountNumber) =>
+    set((state: AccountsSlice) => {
       const updated = { ...state.accounts };
       delete updated[accountNumber];
       return { accounts: updated };

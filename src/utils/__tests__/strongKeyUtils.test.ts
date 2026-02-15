@@ -6,7 +6,17 @@ import {
 } from '../storeHelpers.js';
 import { buildTxKey } from '../../ingest/buildTxKey.js';
 
-const baseTx = (over = {}) => ({
+type KeyableTx = {
+    id?: string;
+    accountNumber: string;
+    date: string;
+    description: string;
+    amount: number;
+    rawAmount: number;
+    [key: string]: unknown;
+};
+
+const baseTx = (over: Partial<KeyableTx> = {}): KeyableTx => ({
     accountNumber: '1111',
     date: '2025-09-01',
     description: 'Coffee Shop',
