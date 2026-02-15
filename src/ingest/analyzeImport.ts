@@ -30,6 +30,10 @@ export type AnalyzeImportProps = {
   sessionId?: string;
   importedAt?: string;
   now?: () => number;
+
+  // Optional: yield to the event loop every N rows to reduce main-thread jank
+  // for large imports (primarily used by streaming UI paths).
+  yieldEvery?: number;
 };
 
 function defaultNow(): number {
@@ -110,6 +114,7 @@ export async function analyzeImport({
   sessionId,
   importedAt,
   now,
+  yieldEvery,
 }: AnalyzeImportProps): Promise<ImportPlan> {
   const nowMs = now ?? defaultNow;
 
@@ -134,6 +139,13 @@ export async function analyzeImport({
   const parsedRowsContainer = coerceParsedRowsContainer(fileText || "", externalParsedRows);
   const parsedRows = parsedRowsContainer.rows;
   const parseErrors = parsedRowsContainer.errors;
+
+  const resolvedYieldEvery =
+    typeof yieldEvery === "number" && yieldEvery > 0
+      ? Math.floor(yieldEvery)
+      : parsedRows.length >= 5000
+        ? 500
+        : 0;
 
   // Surface parse errors first
   for (const pe of parseErrors.slice(0, 1000)) {
@@ -175,8 +187,14 @@ export async function analyzeImport({
   const seenFile = new Set<string>();
 
   const tLoopStart = nowMs();
+  let rowIndex = 0;
   for (const raw of parsedRows) {
     const tRowStart = nowMs();
+    rowIndex++;
+
+    if (resolvedYieldEvery && rowIndex % resolvedYieldEvery === 0) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
 
     // STEP 1: Normalize
     let norm: Transaction | null;
@@ -442,7 +460,8 @@ export async function analyzeImport({
     },
   };
 
-  const acceptedPreview = accepted.map((t) => ({
+  const PREVIEW_CAP = 2000;
+  const acceptedPreview = accepted.slice(0, PREVIEW_CAP).map((t) => ({
     id: t.id,
     date: t.date,
     rawAmount: t.rawAmount,

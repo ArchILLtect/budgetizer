@@ -18,21 +18,31 @@ import Papa from 'papaparse';
 
 type StreamParseOpts = {
     onRow?: (row: any, index: number) => void | boolean;
+    onChunk?: (
+        rows: any[],
+        startIndex: number,
+        meta: { bytes: number | null }
+    ) => void | boolean | Promise<void | boolean>;
     onProgress?: (progress: { rows: number; bytes: number | null; finished: boolean }) => void;
     onComplete?: (result: { rows: any[]; meta: { rowCount: number; aborted: boolean; parseErrors: any[] }; error?: any }) => void;
     header?: boolean;
     preview?: number;
     chunkSize?: number;
+    worker?: boolean | 'auto';
+    collectRows?: boolean;
 };
 
 export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts = {}) {
     const {
         onRow = () => {},
+        onChunk,
         onProgress = () => {},
         onComplete = () => {},
         header = true,
         preview,
         chunkSize = 1024 * 64, // 64KB
+        worker = 'auto',
+        collectRows = true,
     } = opts;
 
     let rowCount = 0; // counts data rows (excluding header)
@@ -54,11 +64,18 @@ export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts 
         },
     };
 
-    Papa.parse(fileOrText, {
+    const resolvedWorker =
+        worker === 'auto'
+            ? fileOrText instanceof File
+                ? (fileOrText.size || 0) > 500_000
+                : false
+            : worker;
+
+    Papa.parse(fileOrText as any, {
         header,
         preview,
         skipEmptyLines: true,
-        worker: false, // can set true; left false to simplify dev scenario
+        worker: resolvedWorker,
         chunkSize,
         chunk: (results: Papa.ParseResult<any>, parser: any) => {
             if (!parserRef) parserRef = parser;
@@ -66,6 +83,13 @@ export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts 
                 parser.abort();
                 return;
             }
+
+            const bytes: number | null =
+                typeof (results as any)?.meta?.cursor === 'number' ? (results as any).meta.cursor : null;
+
+            const rows = Array.isArray(results.data) ? results.data : [];
+            const startIndex = rowCount;
+
             for (const row of results.data) {
                 // Assign 1-based file line number: header assumed at line 1 when header=true
                 if (header) {
@@ -74,7 +98,7 @@ export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts 
                     row.__line = rowCount + 1;
                 }
                 const cont = onRow(row, rowCount);
-                collected.push(row);
+                if (collectRows) collected.push(row);
                 rowCount++;
                 if (cont === false) {
                     stopped = true;
@@ -82,7 +106,37 @@ export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts 
                     break;
                 }
             }
-            onProgress({ rows: rowCount, bytes: null, finished: false });
+
+            if (onChunk) {
+                try {
+                    parser.pause?.();
+                } catch {
+                    /* ignore */
+                }
+
+                Promise.resolve(onChunk(rows, startIndex, { bytes }))
+                    .then((cont) => {
+                        if (cont === false) {
+                            stopped = true;
+                            parser.abort();
+                            return;
+                        }
+                        try {
+                            parser.resume?.();
+                        } catch {
+                            /* ignore */
+                        }
+                    })
+                    .catch(() => {
+                        try {
+                            parser.resume?.();
+                        } catch {
+                            /* ignore */
+                        }
+                    });
+            }
+
+            onProgress({ rows: rowCount, bytes, finished: false });
         },
         complete: (results: Papa.ParseResult<any>) => {
             if (results && results.errors && results.errors.length) {
@@ -90,7 +144,9 @@ export function streamParseCsv(fileOrText: File | string, opts: StreamParseOpts 
                     parseErrors.push({ line: (err.row ?? -1) + 1, message: err.message });
                 }
             }
-            onProgress({ rows: rowCount, bytes: null, finished: true });
+            const bytes: number | null =
+                typeof (results as any)?.meta?.cursor === 'number' ? (results as any).meta.cursor : null;
+            onProgress({ rows: rowCount, bytes, finished: true });
             onComplete({
                 rows: collected,
                 meta: { rowCount, aborted: stopped, parseErrors },

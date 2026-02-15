@@ -91,6 +91,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
       Papa.parse(csvFile, {
         header: true,
         skipEmptyLines: true,
+        worker: (csvFile?.size || 0) > 500_000,
         complete: (results) => {
           const data = results.data;
 

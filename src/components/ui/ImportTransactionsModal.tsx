@@ -29,6 +29,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
   const commitImportPlan = useBudgetStore((s: any) => s.commitImportPlan);
 
   const [fileName, setFileName] = useState('');
+  const [fileObj, setFileObj] = useState<File | null>(null);
   const [fileText, setFileText] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [detectedAccounts, setDetectedAccounts] = useState([]);
@@ -37,11 +38,12 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
   const [streaming, setStreaming] = useState(false);
   const [useStreaming, setUseStreaming] = useState(false);
   const [streamRows, setStreamRows] = useState(0);
+  const [streamBytes, setStreamBytes] = useState<number | null>(null);
   const [streamFinished, setStreamFinished] = useState(false);
   const [autoStreaming, setAutoStreaming] = useState(false);
   const [autoStreamingReason, setAutoStreamingReason] = useState('');
   const [streamAborted, setStreamAborted] = useState(false);
-  const [streamController, setStreamController] = useState<AbortController | null>(null);
+  const [streamController, setStreamController] = useState<ReturnType<typeof streamParseCsv> | null>(null);
   const [result, setResult] = useState<null | {
     plan: ImportPlan;
     stats: any;
@@ -61,6 +63,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
 
   const resetState = () => {
     setFileName('');
+    setFileObj(null);
     setFileText('');
     setAccountNumber('');
     setDetectedAccounts([]);
@@ -71,6 +74,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
     setStreaming(false);
     setUseStreaming(false);
     setStreamRows(0);
+    setStreamBytes(null);
     setStreamFinished(false);
     setAutoStreaming(false);
     setAutoStreamingReason('');
@@ -101,6 +105,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
     const file = e.target.files?.[0];
     if (!file) return;
     setFileName(file.name);
+    setFileObj(file);
     setResult(null);
     setApplied(false);
     setDetectedAccounts([]);
@@ -108,26 +113,46 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
     setUseStreaming(false);
     setAutoStreaming(false);
     setAutoStreamingReason('');
+
+    const byteThresh = streamingAutoByteThreshold || 500_000;
+    const fileIsLarge = (file.size || 0) > byteThresh;
+    if (fileIsLarge) {
+      setUseStreaming(true);
+      setAutoStreaming(true);
+      setAutoStreamingReason(`Large file: ${(file.size / 1024).toFixed(1)} KB`);
+      setTotalLines(null);
+      setFileText('');
+
+      // Read a small slice for account detection without loading full file into memory.
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text: string = (evt.target?.result as string) || '';
+        const accountsFound = detectAccountNumbers(text);
+        if (accountsFound.length === 1) {
+          setAccountNumber((prev: any) => prev || accountsFound[0]);
+          setAutoDetected(true);
+        } else if (accountsFound.length > 1) {
+          setDetectedAccounts(accountsFound as any);
+        }
+      };
+      reader.readAsText(file.slice(0, 256_000));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const text: string = evt.target?.result as string || '';
+      const text: string = (evt.target?.result as string) || '';
       setFileText(text);
-      // Pre-compute total line count once for percentage estimation (cheap O(n) scan)
       try { setTotalLines(((text.match(/\n/g) || []).length + 1) || null); } catch { setTotalLines(null); }
       const accountsFound = detectAccountNumbers(text);
-      // Adaptive streaming heuristic
+      // Adaptive streaming heuristic (line-based only when we have full text)
       try {
         const lineCount = (text.match(/\n/g) || []).length + 1;
-        const bytes = file.size || text.length; // fallback to char length
         const lineThresh = streamingAutoLineThreshold || 3000;
-        const byteThresh = streamingAutoByteThreshold || 500_000;
-        if (!useStreaming && (lineCount > lineThresh || bytes > byteThresh)) {
+        if (!useStreaming && lineCount > lineThresh) {
           setUseStreaming(true);
           setAutoStreaming(true);
-          const reasonParts = [];
-            if (lineCount > lineThresh) reasonParts.push(`${lineCount.toLocaleString()} lines`);
-            if (bytes > byteThresh) reasonParts.push(`${(bytes/1024).toFixed(1)} KB`);
-          setAutoStreamingReason(`Large file: ${reasonParts.join(', ')}`);
+          setAutoStreamingReason(`Large file: ${lineCount.toLocaleString()} lines`);
         }
       } catch {/* heuristic failure ignored */}
       if (accountsFound.length === 1) {
@@ -142,7 +167,11 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
 
   // Run dry-run ingestion pipeline (sync or streaming path)
   const runPipeline = async () => {
-    if (!fileText) {
+    if (!useStreaming && !fileText) {
+      fireToast("warning", "No file selected", "Please select a CSV file to import.");
+      return;
+    }
+    if (useStreaming && !fileObj) {
       fireToast("warning", "No file selected", "Please select a CSV file to import.");
       return;
     }
@@ -154,20 +183,23 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
     setStreaming(false);
     try {
       const wallStart = (performance && performance.now) ? performance.now() : Date.now();
-      let ingestionInput = { fileText };
+      let ingestionInput: any = { fileText };
       // Streaming path: parse rows first, then hand to ingestion (skip internal parse)
       if (useStreaming) {
         setStreaming(true);
         setStreamRows(0);
+        setStreamBytes(null);
         setStreamFinished(false);
         setStreamAborted(false);
         const parseStart = (performance && performance.now) ? performance.now() : Date.now();
         const parsedRowsContainer = await new Promise((resolve, reject) => {
           try {
-            const controller = streamParseCsv(fileText, {
+            const controller = streamParseCsv(fileObj as File, {
               onRow: () => true,
-              onProgress: ({ rows, finished }) => {
+              worker: 'auto',
+              onProgress: ({ rows, bytes, finished }) => {
                 setStreamRows(rows);
+                if (typeof bytes === 'number') setStreamBytes(bytes);
                 if (finished) setStreamFinished(true);
               },
               onComplete: ({ rows, meta, error }) => {
@@ -195,6 +227,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
         ...(ingestionInput as any),
         accountNumber,
         existingTxns,
+        yieldEvery: useStreaming ? 500 : undefined,
       });
 
       // Preserve previous behavior: record hash/account association at dry-run time
@@ -513,6 +546,13 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
                             );
                           });
                         })()}
+                        {(() => {
+                          const filtered = result.errors.filter((e: any) => errorFilter==='all' || e.type===errorFilter);
+                          if (filtered.length <= 200) return null;
+                          return (
+                            <Text mt={1} color='gray.400'>Showing first 200 of {filtered.length}. Use Download CSV for full list.</Text>
+                          );
+                        })()}
                       </Box>
                     )}
                   </Box>
@@ -549,7 +589,16 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
             )}
             {result && useStreaming && !ingesting && (
               <Badge colorScheme={streamAborted ? 'red' : 'purple'} alignSelf='flex-start'>
-                {streamAborted ? `Aborted after ${streamRows}` : `Streamed ${streamRows} rows`}
+                {(() => {
+                  if (streamAborted) return `Aborted after ${streamRows}`;
+                  const bytes = typeof streamBytes === 'number' ? streamBytes : null;
+                  const total = fileObj?.size || 0;
+                  if (bytes !== null && total > 0) {
+                    const pct = Math.min(100, (bytes / total) * 100);
+                    return `Streamed ${streamRows} rows (${pct.toFixed(1)}%)`;
+                  }
+                  return `Streamed ${streamRows} rows`;
+                })()}
               </Badge>
             )}
           </VStack>
