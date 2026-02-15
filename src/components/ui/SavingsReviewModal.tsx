@@ -4,10 +4,25 @@ import { useBudgetStore } from '../../store/budgetStore';
 import { AppSelect } from './AppSelect';
 import { DialogModal } from './DialogModal';
 
+type SavingsReviewEntry = {
+  id: string;
+  date: string;
+  name: string;
+  amount: number;
+  month: string;
+  createdAt?: string;
+};
+
+type SavingsGoal = {
+  id: string;
+  name: string;
+  target?: number;
+};
+
 export default function SavingsReviewModal() {
-  const savingsGoals = useBudgetStore((s) => s.savingsGoals);
+  const savingsGoals = useBudgetStore((s) => s.savingsGoals) as SavingsGoal[];
   const addSavingsGoal = useBudgetStore((s) => s.addSavingsGoal);
-  const queue = useBudgetStore((s) => s.savingsReviewQueue);
+  const queue = useBudgetStore((s) => s.savingsReviewQueue) as SavingsReviewEntry[];
   const addSavingsLog = useBudgetStore((s) => s.addSavingsLog);
   const isOpen = useBudgetStore((s) => s.isSavingsModalOpen);
   const setIsOpen = useBudgetStore((s) => s.setSavingsModalOpen);
@@ -26,11 +41,11 @@ export default function SavingsReviewModal() {
     setSelectedGoals((prev) => {
       let changed = false;
       const next = { ...prev };
-      queue.forEach((entry: any) => {
+      queue.forEach((entry) => {
         if (next[entry.id] !== undefined) return;
         if (typeof entry?.name !== 'string') return;
         if (!entry.name.toLowerCase().includes('yearly')) return;
-        const match = savingsGoals.find((g: any) =>
+        const match = savingsGoals.find((g) =>
           typeof g?.name === 'string' ? g.name.toLowerCase().includes('yearly') : false
         );
         if (match?.id) {
@@ -73,7 +88,7 @@ export default function SavingsReviewModal() {
   }
 
   const handleSubmit = () => {
-    queue.forEach((entry: any) => {
+    queue.forEach((entry) => {
       const goalId = selectedGoals[entry.id] || null; // allow null
       addSavingsLog(entry.month, {
         goalId,
@@ -101,7 +116,7 @@ export default function SavingsReviewModal() {
       acceptDisabled={isAnyCreating}
       body={
         <VStack align="stretch" gap={4}>
-          {queue.map((entry: any) => (
+          {queue.map((entry) => (
             <div key={entry.id}>
               <Text>
                   {entry.date} — ${entry.amount.toFixed(2)} — {entry.name}
@@ -111,7 +126,7 @@ export default function SavingsReviewModal() {
                   value={selectedGoals[entry.id] || ''}
                   onChange={(e) => handleChange(entry.id, e.target.value)}
                 >
-                  {savingsGoals.map((goal: any) => (
+                  {savingsGoals.map((goal) => (
                     <option key={goal.id} value={goal.id}>
                       {goal.name}
                     </option>
@@ -153,7 +168,7 @@ export default function SavingsReviewModal() {
                 )}
 
                 <Text fontSize="sm" color="gray.500">
-                  Goal: {selectedGoals[entry.id] ? savingsGoals.find(g => g.id === selectedGoals[entry.id])?.name : "None"}
+                  Goal: {selectedGoals[entry.id] ? savingsGoals.find((g) => g.id === selectedGoals[entry.id])?.name : "None"}
                 </Text>
               </div>
             ))}

@@ -2,11 +2,6 @@ import { getUniqueTransactions, normalizeTransactionAmount } from './storeHelper
 import dayjs from 'dayjs';
 import { fireToast } from '../hooks/useFireToast';
 
-type BudgetStoreLike = {
-    getState: () => any;
-    setState: (partial: any, replace?: any) => void;
-};
-
 type Transaction = {
     id: string;
     date: string;
@@ -20,6 +15,48 @@ type ApplyOneMonthResult = {
     e: number; // new expenses applied
     i: number; // new income applied
     s: number; // new savings applied
+};
+
+type SavingsReviewEntry = {
+    id: string;
+    date: string;
+    name: string;
+    amount: number;
+    month: string;
+    createdAt?: string;
+};
+
+type SavingsLogEntry = {
+    goalId: string | null;
+    date: string;
+    amount: number;
+    name: string;
+    id: string;
+    createdAt: string;
+};
+
+type MonthlyActuals = {
+    actualExpenses: Transaction[];
+    actualFixedIncomeSources: Transaction[];
+    actualTotalNetIncome: number;
+    customSavings: number;
+};
+
+type BudgetStoreStateForApply = {
+    monthlyActuals: Record<string, MonthlyActuals | undefined>;
+    savingsLogs: Record<string, SavingsLogEntry[] | undefined>;
+
+    updateMonthlyActuals: (monthKey: string, patch: Partial<MonthlyActuals>) => void;
+    addActualExpense: (monthKey: string, tx: Transaction) => void;
+    setSavingsReviewQueue: (entries: SavingsReviewEntry[]) => void;
+    setSavingsModalOpen: (open: boolean) => void;
+
+    resolveSavingsPromise?: ((result: unknown) => void) | null;
+};
+
+type BudgetStoreLike = {
+    getState: () => unknown;
+    setState: (partial: any, replace?: any) => void;
 };
 
 type formatDateOptions = 'shortMonthAndDay' | 'shortMonth' | 'longMonth' | 'year' | 'monthNumber';
@@ -131,26 +168,26 @@ export function extractVendorDescription(raw: string) {
 }
 
 export function getUniqueOrigins(txs: Transaction[]) {
-    const unique = new Set();
+    const unique = new Set<string>();
     txs.forEach((tx) => {
         if (tx.origin) {
             unique.add(tx.origin);
         }
     });
-    return Array.from(unique).sort((a: any, b: unknown) => a.localeCompare(b));
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
 }
 export const applyOneMonth = async (
     budgetStore: BudgetStoreLike,
     monthKey: string,
     acct: { accountNumber: string; transactions: Transaction[] },
     showToast = true,
-    ignoreBeforeDate = null
+    ignoreBeforeDate: string | null = null
 ): Promise<ApplyOneMonthResult> => {
-    const store = budgetStore.getState() as any;
+    const store = budgetStore.getState() as BudgetStoreStateForApply;
 
     // Ensure month exists
     if (!store.monthlyActuals[monthKey]) {
-        budgetStore.setState((state: any) => ({
+        budgetStore.setState((state: BudgetStoreStateForApply) => ({
             monthlyActuals: {
                 ...state.monthlyActuals,
                 [monthKey]: {
@@ -163,7 +200,14 @@ export const applyOneMonth = async (
         }));
     }
 
-    const existing = store.monthlyActuals[monthKey] || {};
+    const existing =
+        store.monthlyActuals[monthKey] ??
+        ({
+            actualExpenses: [],
+            actualFixedIncomeSources: [],
+            actualTotalNetIncome: 0,
+            customSavings: 0,
+        } satisfies MonthlyActuals);
     const expenses = existing.actualExpenses || [];
     const income = (existing.actualFixedIncomeSources || []).filter(
         (i: Transaction) => i.id !== 'main'
@@ -228,7 +272,7 @@ export const applyOneMonth = async (
 
     // Savings handling
     if (newSavings.length > 0) {
-        let reviewEntries = newSavings.map((s) => ({
+        let reviewEntries: SavingsReviewEntry[] = newSavings.map((s) => ({
             id: s.id,
             date: s.date,
             name: s.name,
@@ -238,13 +282,13 @@ export const applyOneMonth = async (
 
         if (ignoreBeforeDate) {
             const cutoff = dayjs(ignoreBeforeDate);
-            const [toIgnore, toKeep] = partition(reviewEntries, (entry: any) =>
+            const [toIgnore, toKeep] = partition(reviewEntries, (entry) =>
                 dayjs(entry.date).isBefore(cutoff, 'day')
             );
 
             // Group logs by month
-            const logsByMonth: { [key: string]: any[] } = {};
-            toIgnore.forEach((entry: any) => {
+            const logsByMonth: Record<string, SavingsLogEntry[]> = {};
+            toIgnore.forEach((entry) => {
                 (logsByMonth[entry.month] ||= []).push({
                     goalId: null,
                     date: entry.date,
@@ -257,8 +301,8 @@ export const applyOneMonth = async (
 
             // 🔻 SINGLE Zustand update for all months
             if (Object.keys(logsByMonth).length) {
-                budgetStore.setState((state: any) => {
-                    const next = { ...state.savingsLogs };
+                budgetStore.setState((state: BudgetStoreStateForApply) => {
+                    const next: BudgetStoreStateForApply["savingsLogs"] = { ...state.savingsLogs };
                     for (const [month, logs] of Object.entries(logsByMonth)) {
                         const current = next[month] || [];
                         next[month] = current.concat(logs);
@@ -284,7 +328,7 @@ export const applyOneMonth = async (
         store.setSavingsReviewQueue(reviewEntries);
         store.setSavingsModalOpen(true);
 
-        await new Promise((resolve: any) => {
+        await new Promise<unknown>((resolve) => {
             budgetStore.setState({ resolveSavingsPromise: resolve });
         });
     }
@@ -300,13 +344,12 @@ export const applyOneMonth = async (
     return { e: newExpenses.length, i: newIncome.length, s: newSavings.length } as ApplyOneMonthResult;
 };
 
-const partition = (array: any[], predicate: (elem: any) => boolean) => {
-    return array.reduce(
+const partition = <T>(array: T[], predicate: (elem: T) => boolean): [T[], T[]] =>
+    array.reduce<[T[], T[]]>(
         ([pass, fail], elem) =>
             predicate(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]],
         [[], []]
     );
-};
 
 // Utility to organize the data (maybe move to helpers later)
 export function groupTransactions(transactions: Transaction[]) {

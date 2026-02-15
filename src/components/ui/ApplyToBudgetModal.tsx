@@ -11,13 +11,24 @@ import { DialogModal } from "./DialogModal";
 type ApplyToBudgetModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  acct: any; // should be typed to the account shape
+  acct: AccountLike;
   months: string[]; // list of all months with transactions for this account, in "YYYY-MM" format
 };
 
+type ApplyTransaction = Parameters<typeof applyOneMonth>[2]["transactions"][number];
+
+type AccountLike = {
+  accountNumber?: string;
+  account?: string;
+  label?: string;
+  transactions: ApplyTransaction[];
+};
+
+type ApplyScope = "month" | "year" | "all";
+
 export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: ApplyToBudgetModalProps) {
   const [loading, setLoading] = useState(false);
-  const [scope, setScope] = useState("month");
+  const [scope, setScope] = useState<ApplyScope>("month");
   const [ignoreBeforeEnabled, setIgnoreBeforeEnabled] = useState<boolean>(false);
   const [ignoreBeforeDate, setIgnoreBeforeDate] = useState(() =>
     dayjs().format("YYYY-MM-DD") // defaults to today
@@ -28,8 +39,8 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
   const selectedMonth = useBudgetStore(s => s.selectedMonth);
   const selectedYearFromStore = dayjs(selectedMonth).year().toString();
   const yearFromSelected = (selectedMonth || '').slice(0, 4);
-  const transactionsThisMonth = acct.transactions.filter((tx: any) => tx.date?.startsWith(selectedMonth));
-  const transactionsThisYear = acct.transactions.filter((tx: any) => tx.date?.startsWith(selectedYearFromStore));
+  const transactionsThisMonth = acct.transactions.filter((tx) => tx.date?.startsWith(selectedMonth));
+  const transactionsThisYear = acct.transactions.filter((tx) => tx.date?.startsWith(selectedYearFromStore));
   const monthsForYear = months?.filter(m => m.startsWith(yearFromSelected)) || [];
   const openProgress = useBudgetStore(s => s.openProgress);
   const updateProgress = useBudgetStore(s => s.updateProgress);
@@ -48,6 +59,11 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
     const total = { e: 0, i: 0, s: 0 };
 
     try {
+      const resolvedAccountNumber = acct.accountNumber || acct.account || acct.label;
+      if (!resolvedAccountNumber) {
+        throw new Error("Missing account number for this account.");
+      }
+
       if (scope === 'month' && selectedMonth) { targets = [selectedMonth] }
       else if (scope === 'year') { targets = monthsForYear }
       else if (scope === 'all') { targets = months || [] }
@@ -55,15 +71,16 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
       openProgress('Applying Transactions', targets.length);
       let processed = 0;
 
-      const ignoreBeforeDateForThisRun = ignoreBeforeEnabled && ignoreBeforeDate ? ignoreBeforeDate : null;
+      const ignoreBeforeDateForThisRun: string | null =
+        ignoreBeforeEnabled && ignoreBeforeDate ? ignoreBeforeDate : null;
 
       for (const m of targets) {
         const counts = await applyOneMonth(
           useBudgetStore,
           m,
-          acct,
+          { accountNumber: resolvedAccountNumber, transactions: acct.transactions },
           false,
-          ignoreBeforeDateForThisRun as any
+          ignoreBeforeDateForThisRun
         );
         total.e += counts.e;
         total.i += counts.i;
@@ -76,9 +93,9 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
 
       // Mark staged transactions as applied for selected scope
       const monthsApplied = targets;
-      markTransactionsBudgetApplied(acct.accountNumber || acct.account || acct.label, monthsApplied);
+      markTransactionsBudgetApplied(resolvedAccountNumber, monthsApplied);
       // Move any pending savings for these months into review queue
-      processPendingSavingsForAccount(acct.accountNumber || acct.account || acct.label, monthsApplied);
+      processPendingSavingsForAccount(resolvedAccountNumber, monthsApplied);
     } catch (err: any) {
       fireToast("error", "Error applying to budget", err.message || "An error occurred while applying transactions to the budget.");
     }
@@ -113,7 +130,10 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
       loading={loading}
       body={
         <>
-          <RadioGroup.Root value={scope} onValueChange={(value) => setScope(value as any)}>
+          <RadioGroup.Root
+            value={scope}
+            onValueChange={(details) => setScope(((details.value ?? "month") as ApplyScope))}
+          >
             <Text color={'GrayText'} fontSize={'sm'}>Make sure you have selected desired month or year before proceeding</Text>
             <Stack gap={3}>
               <RadioGroup.Item value="month" disabled={!selectedMonth || transactionsThisMonth?.length <= 0}>Current Month ({dayjs(selectedMonth).format("MMMM YYYY") || 'n/a'}) = ({transactionsThisMonth?.length.toLocaleString('en-US')})</RadioGroup.Item>

@@ -9,7 +9,53 @@ import {
   type ImportHistoryEntry,
   type ImportLifecycleState,
   type ImportSessionRuntime,
+  type PendingSavingsQueueEntry,
+  type TransactionForImportLifecycle,
 } from "./importLogic";
+
+type ImportManifestMeta = {
+  size?: number;
+  sampleName?: string;
+  newCount?: number;
+  dupes?: number;
+};
+
+type ImportManifest = {
+  firstImportedAt: string;
+  size: number;
+  sampleName: string;
+  accounts: Record<
+    string,
+    {
+      importedAt: string;
+      newCount: number;
+      dupes: number;
+    }
+  >;
+};
+
+type ImportSliceStoreState = Pick<
+  ImportLifecycleState,
+  | "accounts"
+  | "pendingSavingsByAccount"
+  | "importHistory"
+  | "importUndoWindowMinutes"
+  | "importHistoryMaxEntries"
+  | "importHistoryMaxAgeDays"
+  | "stagedAutoExpireDays"
+> & {
+  savingsReviewQueue?: unknown[];
+  isSavingsModalOpen?: boolean;
+  importManifests: Record<string, ImportManifest>;
+
+  streamingAutoLineThreshold: number;
+  streamingAutoByteThreshold: number;
+  showIngestionBenchmark: boolean;
+
+  lastIngestionTelemetry: unknown;
+
+  [key: string]: unknown;
+};
 
 export type ImportSlice = {
   pendingSavingsByAccount: ImportLifecycleState["pendingSavingsByAccount"];
@@ -25,16 +71,16 @@ export type ImportSlice = {
   streamingAutoByteThreshold: number;
   showIngestionBenchmark: boolean;
 
-  importManifests: Record<string, unknown>;
+  importManifests: Record<string, ImportManifest>;
   lastIngestionTelemetry: unknown;
 
   setLastIngestionTelemetry: (telemetry: unknown) => void;
-  registerImportManifest: (hash: string, accountNumber: string, meta: any) => void;
+  registerImportManifest: (hash: string, accountNumber: string, meta?: ImportManifestMeta) => void;
 
-  addPendingSavingsQueue: (accountNumber: string, entries: any[]) => void;
+  addPendingSavingsQueue: (accountNumber: string, entries: PendingSavingsQueueEntry[]) => void;
   clearPendingSavingsForAccount: (accountNumber: string) => void;
-  processSavingsQueue: (entries: any[]) => void;
-  setSavingsReviewQueue: (entries: any[]) => void;
+  processSavingsQueue: (entries: unknown[]) => void;
+  setSavingsReviewQueue: (entries: unknown[]) => void;
   clearSavingsReviewQueue: () => void;
   processPendingSavingsForAccount: (accountNumber: string, months: string[]) => void;
   markTransactionsBudgetApplied: (accountNumber: string, months: string[]) => void;
@@ -67,7 +113,7 @@ export type ImportSlice = {
   setShowIngestionBenchmark: (flag: boolean) => void;
 };
 
-type SliceCreator<T> = StateCreator<any, [], [], T>;
+type SliceCreator<T> = StateCreator<ImportSliceStoreState, [], [], T>;
 
 export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
   pendingSavingsByAccount: {},
@@ -89,7 +135,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
   setLastIngestionTelemetry: (telemetry) => set(() => ({ lastIngestionTelemetry: telemetry })),
 
   registerImportManifest: (hash, accountNumber, meta) =>
-    set((state: any) => {
+    set((state) => {
       const existing = state.importManifests[hash] || {
         firstImportedAt: new Date().toISOString(),
         accounts: {},
@@ -115,7 +161,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   processSavingsQueue: (entries) =>
-    set((state: any) => {
+    set((state) => {
       if (!entries || !entries.length) return {};
       const merged = [...(state.savingsReviewQueue || []), ...entries];
       return {
@@ -130,7 +176,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
   clearSavingsReviewQueue: () => set(() => ({ savingsReviewQueue: [] })),
 
   addPendingSavingsQueue: (accountNumber, entries) =>
-    set((state: any) => {
+    set((state) => {
       if (!entries || !entries.length) return {};
       const current = state.pendingSavingsByAccount[accountNumber] || [];
       return {
@@ -142,7 +188,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   clearPendingSavingsForAccount: (accountNumber) =>
-    set((state: any) => {
+    set((state) => {
       if (!state.pendingSavingsByAccount[accountNumber]) return {};
       const next = { ...state.pendingSavingsByAccount };
       delete next[accountNumber];
@@ -150,15 +196,15 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   markTransactionsBudgetApplied: (accountNumber, months) =>
-    set((state: any) => {
+    set((state) => {
       const acct = state.accounts[accountNumber];
       if (!acct?.transactions) return {};
       const monthSet = months ? new Set(months) : null; // null means all
       let changed = false;
-      const updated = acct.transactions.map((tx: any) => {
+      const updated = (acct.transactions as TransactionForImportLifecycle[]).map((tx) => {
         if (tx.staged && !tx.budgetApplied) {
           const txMonth = tx.date?.slice(0, 7);
-          if (!monthSet || monthSet.has(txMonth)) {
+          if (!monthSet || (txMonth ? monthSet.has(txMonth) : false)) {
             changed = true;
             return { ...tx, staged: false, budgetApplied: true };
           }
@@ -175,17 +221,17 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   markImportSessionBudgetApplied: (accountNumber, sessionId, months) =>
-    set((state: any) => {
+    set((state) => {
       const acct = state.accounts[accountNumber];
       if (!acct?.transactions) return {};
       if (!sessionId) return {};
       const monthSet = months ? new Set(months) : null; // null means all
       let changed = false;
-      const updated = acct.transactions.map((tx: any) => {
+      const updated = (acct.transactions as TransactionForImportLifecycle[]).map((tx) => {
         if (tx.importSessionId !== sessionId) return tx;
         if (tx.staged && !tx.budgetApplied) {
           const txMonth = tx.date?.slice(0, 7);
-          if (!monthSet || monthSet.has(txMonth)) {
+          if (!monthSet || (txMonth ? monthSet.has(txMonth) : false)) {
             changed = true;
             return { ...tx, staged: false, budgetApplied: true };
           }
@@ -202,13 +248,17 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   processPendingSavingsForAccount: (accountNumber, months) =>
-    set((state: any) => {
-      const pending = state.pendingSavingsByAccount[accountNumber] || [];
+    set((state) => {
+      const pending = (state.pendingSavingsByAccount[accountNumber] || []) as PendingSavingsQueueEntry[];
       if (!pending.length) return {};
       const monthSet = months ? new Set(months) : null;
-      const toQueue = monthSet ? pending.filter((e: any) => monthSet.has(e.month)) : pending;
+      const toQueue = monthSet
+        ? pending.filter((e) => (e.month ? monthSet.has(e.month) : false))
+        : pending;
       if (!toQueue.length) return {};
-      const remaining = monthSet ? pending.filter((e: any) => !monthSet.has(e.month)) : [];
+      const remaining = monthSet
+        ? pending.filter((e) => (e.month ? !monthSet.has(e.month) : true))
+        : [];
       return {
         pendingSavingsByAccount: {
           ...state.pendingSavingsByAccount,
@@ -223,19 +273,21 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   processPendingSavingsForImportSession: (accountNumber, sessionId, months) =>
-    set((state: any) => {
+    set((state) => {
       if (!sessionId) return {};
-      const pending = state.pendingSavingsByAccount[accountNumber] || [];
+      const pending = (state.pendingSavingsByAccount[accountNumber] || []) as PendingSavingsQueueEntry[];
       if (!pending.length) return {};
       const monthSet = months ? new Set(months) : null;
-      const toQueue = pending.filter((e: any) => {
+      const toQueue = pending.filter((e) => {
         if (e.importSessionId !== sessionId) return false;
-        return monthSet ? monthSet.has(e.month) : true;
+        if (!monthSet) return true;
+        return e.month ? monthSet.has(e.month) : false;
       });
       if (!toQueue.length) return {};
-      const remaining = pending.filter((e: any) => {
+      const remaining = pending.filter((e) => {
         if (e.importSessionId !== sessionId) return true;
-        return monthSet ? !monthSet.has(e.month) : false;
+        if (!monthSet) return false;
+        return e.month ? !monthSet.has(e.month) : true;
       });
       return {
         pendingSavingsByAccount: {
@@ -251,7 +303,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   recordImportHistory: (entry) =>
-    set((state: any) => {
+    set((state) => {
       const maxEntries = state.importHistoryMaxEntries || 30;
       return {
         importHistory: recordImportHistory(state.importHistory, entry, maxEntries),
@@ -259,7 +311,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   pruneImportHistory: (maxEntries = 30, maxAgeDays = 30) =>
-    set((state: any) => {
+    set((state) => {
       const effectiveMaxEntries = state.importHistoryMaxEntries || maxEntries;
       const effectiveMaxAgeDays = state.importHistoryMaxAgeDays || maxAgeDays;
       const pruned = pruneImportHistory(
@@ -273,12 +325,12 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     }),
 
   expireOldStagedTransactions: (maxAgeDays = 30) =>
-    set((state: any) =>
+    set((state) =>
       expireOldStagedTransactions(state, maxAgeDays, Date.now())
     ),
 
   undoStagedImport: (accountNumber, sessionId) =>
-    set((state: any) => undoStagedImport(state, accountNumber, sessionId, Date.now())),
+    set((state) => undoStagedImport(state, accountNumber, sessionId, Date.now())),
 
   getImportSessionRuntime: (accountNumber, sessionId) =>
     getImportSessionRuntime(get(), accountNumber, sessionId, Date.now()),
@@ -287,12 +339,13 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     getAccountStagedSessionSummaries(get(), accountNumber, Date.now()),
 
   updateImportSettings: (partial) =>
-    set((state: any) => {
-      const changes: any = {};
+    set((state) => {
+      const changes: Record<string, unknown> = {};
       let changed = false;
       for (const k of Object.keys(partial || {})) {
-        if (state[k] !== (partial as any)[k] && (partial as any)[k] !== undefined) {
-          changes[k] = (partial as any)[k];
+        const nextValue = (partial as Record<string, unknown>)[k];
+        if (state[k] !== nextValue && nextValue !== undefined) {
+          changes[k] = nextValue;
           changed = true;
         }
       }

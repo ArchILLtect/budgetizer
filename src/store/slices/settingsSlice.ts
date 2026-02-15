@@ -2,13 +2,13 @@ import type { StateCreator } from "zustand";
 
 export type SettingsSlice = {
   currentPage: string;
-  user: any;
+  user: unknown | null;
   sessionExpired: boolean;
   hasInitialized: boolean;
   isDemoUser: boolean;
 
   isSavingsModalOpen: boolean;
-  resolveSavingsPromise: any;
+  resolveSavingsPromise: ((result: unknown) => void) | null;
 
   isLoadingModalOpen: boolean;
   loadingHeader: string;
@@ -24,24 +24,24 @@ export type SettingsSlice = {
 
   setIsLoading: (val: boolean) => void;
 
-  awaitSavingsLink: (entries: any) => Promise<any>;
-  resolveSavingsLink: (result: any) => void;
+  awaitSavingsLink: (entries: unknown[]) => Promise<unknown>;
+  resolveSavingsLink: (result: unknown) => void;
 
-  openProgress: (header: any, total: any) => void;
-  updateProgress: (count: any) => void;
+  openProgress: (header: string, total: number) => void;
+  updateProgress: (count: number) => void;
   closeProgress: () => void;
 
-  openLoading: (header: any) => void;
+  openLoading: (header: string) => void;
   closeLoading: () => void;
 
-  setConfirmModalOpen: (open: any) => void;
-  setSavingsModalOpen: (open: any) => void;
+  setConfirmModalOpen: (open: boolean) => void;
+  setSavingsModalOpen: (open: boolean) => void;
 
-  setSessionExpired: (value: any) => void;
-  setHasInitialized: (value: any) => void;
-  setCurrentPage: (page: any) => void;
-  setUser: (user: any) => void;
-  setIsDemoUser: (val: any) => void;
+  setSessionExpired: (value: boolean) => void;
+  setHasInitialized: (value: boolean) => void;
+  setCurrentPage: (page: string) => void;
+  setUser: (user: unknown | null) => void;
+  setIsDemoUser: (val: boolean) => void;
 };
 
 type SliceCreator<T> = StateCreator<any, [], [], T>;
@@ -69,16 +69,16 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
   isLoading: false,
   setIsLoading: (val) => set({ isLoading: val }),
 
-  awaitSavingsLink: (entries: any) => {
+  awaitSavingsLink: (entries) => {
     // enqueue and open modal, then return a promise resolved by resolveSavingsLink
     set({ savingsReviewQueue: entries, isSavingsModalOpen: true });
-    return new Promise((resolve: any) => {
+    return new Promise<unknown>((resolve) => {
       set({ resolveSavingsPromise: resolve });
     });
   },
 
-  resolveSavingsLink: (result: any) => {
-    const resolver = (get() as any).resolveSavingsPromise;
+  resolveSavingsLink: (result) => {
+    const resolver = (get() as unknown as SettingsSlice).resolveSavingsPromise;
     if (typeof resolver === "function") {
       try {
         resolver(result);
@@ -93,7 +93,7 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
     });
   },
 
-  openProgress: (header: any, total: any) =>
+  openProgress: (header, total) =>
     set({
       isProgressOpen: true,
       progressHeader: header,
@@ -101,7 +101,7 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
       progressTotal: total,
     }),
 
-  updateProgress: (count: any) => set({ progressCount: count }),
+  updateProgress: (count) => set({ progressCount: count }),
 
   closeProgress: () =>
     set({
@@ -111,7 +111,7 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
       progressTotal: 0,
     }),
 
-  openLoading: (header: any) =>
+  openLoading: (header) =>
     set({
       isLoadingModalOpen: true,
       loadingHeader: header,
@@ -123,12 +123,12 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
       loadingHeader: "",
     }),
 
-  setConfirmModalOpen: (open: any) => set({ isConfirmModalOpen: open }),
-  setSavingsModalOpen: (open: any) => set({ isSavingsModalOpen: open }),
+  setConfirmModalOpen: (open) => set({ isConfirmModalOpen: open }),
+  setSavingsModalOpen: (open) => set({ isSavingsModalOpen: open }),
 
-  setSessionExpired: (value: any) => set({ sessionExpired: value }),
-  setHasInitialized: (value: any) => set({ hasInitialized: value }),
-  setCurrentPage: (page: any) => set({ currentPage: page }),
-  setUser: (user: any) => set({ user }),
-  setIsDemoUser: (val: any) => set({ isDemoUser: val }),
+  setSessionExpired: (value) => set({ sessionExpired: value }),
+  setHasInitialized: (value) => set({ hasInitialized: value }),
+  setCurrentPage: (page) => set({ currentPage: page }),
+  setUser: (user) => set({ user }),
+  setIsDemoUser: (val) => set({ isDemoUser: val }),
 });
