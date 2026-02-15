@@ -11,12 +11,14 @@ type SavingsReviewEntry = {
   amount: number;
   month: string;
   createdAt?: string;
+  importSessionId?: string;
 };
 
 type SavingsGoal = {
   id: string;
   name: string;
   target?: number;
+  createdFromImportSessionId?: string;
 };
 
 export default function SavingsReviewModal() {
@@ -75,7 +77,8 @@ export default function SavingsReviewModal() {
     const target = goalData?.target ? parseFloat(goalData.target) || 0 : 0;
     if (!name) return;
     const newGoalId = crypto.randomUUID();
-    addSavingsGoal({ id: newGoalId, name, target }); // adjust if your goal object has more fields
+    const originSessionId = queue.find((e) => e.id === entryId)?.importSessionId;
+    addSavingsGoal({ id: newGoalId, name, target, createdFromImportSessionId: originSessionId });
     // Assign the new goal to this entry
     setSelectedGoals(prev => ({ ...prev, [entryId]: newGoalId }));
     // Clear creation state
@@ -95,6 +98,7 @@ export default function SavingsReviewModal() {
         date: entry.date,
         amount: entry.amount,
         name: entry.name,
+        importSessionId: entry.importSessionId,
       });
     });
     // Resolve and cleanup centrally

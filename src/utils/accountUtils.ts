@@ -11,6 +11,7 @@ type Transaction = {
     rawAmount?: number;
     type?: 'expense' | 'income' | 'savings';
     origin?: string;
+    importSessionId?: string;
 };
 
 type ApplyOneMonthResult = {
@@ -27,6 +28,7 @@ type SavingsReviewEntry = {
     amount: number;
     month: string;
     createdAt?: string;
+    importSessionId?: string;
 };
 
 type SavingsLogEntry = {
@@ -36,6 +38,7 @@ type SavingsLogEntry = {
     name: string;
     id: string;
     createdAt: string;
+    importSessionId?: string;
 };
 
 type MonthlyActuals = {
@@ -279,6 +282,7 @@ export const applyOneMonth = async (
             name: s.name || s.description || '',
             amount: normalizeTransactionAmount(s),
             month: monthKey,
+            importSessionId: s.importSessionId,
         }));
 
         if (ignoreBeforeDate) {
@@ -297,6 +301,7 @@ export const applyOneMonth = async (
                     name: entry.name,
                     id: entry.id || crypto.randomUUID(),
                     createdAt: entry.createdAt || new Date().toISOString(),
+                    importSessionId: entry.importSessionId,
                 });
             });
 

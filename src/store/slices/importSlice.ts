@@ -14,6 +14,7 @@ import {
 } from "./importLogic";
 import { buildTxKey } from "../../ingest/buildTxKey";
 import type { ImportPlan } from "../../ingest/importPlan";
+import { normalizeTransactionAmount } from "../../utils/storeHelpers";
 
 type ImportManifestMeta = {
   size?: number;
@@ -107,6 +108,8 @@ export type ImportSlice = {
   expireOldStagedTransactions: (maxAgeDays?: number) => void;
   runImportMaintenance: () => void;
   undoStagedImport: (accountNumber: string, sessionId: string) => void;
+
+  clearImportSessionEverywhere: (accountNumber: string, sessionId: string) => void;
 
   getImportSessionRuntime: (
     accountNumber: string,
@@ -552,6 +555,161 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
   undoStagedImport: (accountNumber, sessionId) =>
     set((state) => undoStagedImport(state, accountNumber, sessionId, Date.now())),
+
+  clearImportSessionEverywhere: (accountNumber, sessionId) =>
+    set((state: any) => {
+      if (!accountNumber || !sessionId) return {};
+
+      const patch: Record<string, unknown> = {};
+
+      // 1) Remove imported transactions for this session from the account.
+      const acct = state.accounts?.[accountNumber];
+      if (acct?.transactions && Array.isArray(acct.transactions)) {
+        const before = acct.transactions.length;
+        const remaining = acct.transactions.filter((tx: any) => tx?.importSessionId !== sessionId);
+        if (remaining.length !== before) {
+          patch.accounts = {
+            ...state.accounts,
+            [accountNumber]: {
+              ...acct,
+              transactions: remaining,
+            },
+          };
+        }
+      }
+
+      // 2) Remove import history row.
+      if (Array.isArray(state.importHistory) && state.importHistory.length) {
+        const nextHistory = state.importHistory.filter(
+          (h: any) => !(h?.sessionId === sessionId && h?.accountNumber === accountNumber)
+        );
+        if (nextHistory.length !== state.importHistory.length) {
+          patch.importHistory = nextHistory;
+        }
+      }
+
+      // 3) Remove pending savings entries for this session.
+      const pendingForAcct = state.pendingSavingsByAccount?.[accountNumber];
+      if (Array.isArray(pendingForAcct) && pendingForAcct.length) {
+        const remaining = pendingForAcct.filter((e: any) => e?.importSessionId !== sessionId);
+        if (remaining.length !== pendingForAcct.length) {
+          const nextPendingByAccount = { ...(state.pendingSavingsByAccount || {}) };
+          if (remaining.length === 0) {
+            delete nextPendingByAccount[accountNumber];
+          } else {
+            nextPendingByAccount[accountNumber] = remaining;
+          }
+          patch.pendingSavingsByAccount = nextPendingByAccount;
+        }
+      }
+
+      // 4) Clear tracker-derived actuals (monthlyActuals) tagged with this session.
+      if (state.monthlyActuals && typeof state.monthlyActuals === "object") {
+        const nextMonthlyActuals: Record<string, any> = { ...state.monthlyActuals };
+        let changed = false;
+
+        for (const [month, actual] of Object.entries(state.monthlyActuals as Record<string, any>)) {
+          if (!actual || typeof actual !== "object") continue;
+
+          let monthChanged = false;
+          const nextActual = { ...actual };
+
+          if (Array.isArray(actual.actualExpenses)) {
+            const before = actual.actualExpenses.length;
+            const remaining = actual.actualExpenses.filter((e: any) => e?.importSessionId !== sessionId);
+            if (remaining.length !== before) {
+              nextActual.actualExpenses = remaining;
+              monthChanged = true;
+            }
+          }
+
+          if (Array.isArray(actual.actualFixedIncomeSources)) {
+            const before = actual.actualFixedIncomeSources.length;
+            const remaining = actual.actualFixedIncomeSources.filter((e: any) => e?.importSessionId !== sessionId);
+            if (remaining.length !== before) {
+              nextActual.actualFixedIncomeSources = remaining;
+              // Keep totals consistent after removing imported income sources.
+              const total = remaining
+                .filter((t: any) => String(t?.id || "") !== "main")
+                .reduce((sum: number, t: any) => sum + normalizeTransactionAmount(t), 0);
+              nextActual.actualTotalNetIncome = total;
+              monthChanged = true;
+            }
+          }
+
+          if (monthChanged) {
+            nextMonthlyActuals[month] = nextActual;
+            changed = true;
+          }
+        }
+
+        if (changed) {
+          patch.monthlyActuals = nextMonthlyActuals;
+        }
+      }
+
+      // 5) Clear savings logs tagged with this session.
+      if (state.savingsLogs && typeof state.savingsLogs === "object") {
+        const nextSavingsLogs: Record<string, any[]> = { ...state.savingsLogs };
+        let changed = false;
+
+        for (const [month, logs] of Object.entries(state.savingsLogs as Record<string, any[]>)) {
+          if (!Array.isArray(logs) || logs.length === 0) continue;
+          const remaining = logs.filter((e: any) => e?.importSessionId !== sessionId);
+          if (remaining.length !== logs.length) {
+            changed = true;
+            if (remaining.length === 0) delete nextSavingsLogs[month];
+            else nextSavingsLogs[month] = remaining;
+          }
+        }
+
+        if (changed) {
+          patch.savingsLogs = nextSavingsLogs;
+        }
+      }
+
+      // 5b) Remove savings goals created by this session, but only if nothing still references them.
+      if (Array.isArray(state.savingsGoals) && state.savingsGoals.length) {
+        // Build a set of goalIds still referenced anywhere.
+        const referencedGoalIds = new Set<string>();
+        const logsByMonth = (patch.savingsLogs as any) ?? state.savingsLogs;
+        if (logsByMonth && typeof logsByMonth === "object") {
+          for (const logs of Object.values(logsByMonth as Record<string, any[]>)) {
+            if (!Array.isArray(logs)) continue;
+            for (const e of logs) {
+              if (e?.goalId) referencedGoalIds.add(String(e.goalId));
+            }
+          }
+        }
+
+        const nextGoals = (state.savingsGoals as any[]).filter((g: any) => {
+          const createdFrom = g?.createdFromImportSessionId;
+          if (createdFrom !== sessionId) return true;
+          const goalId = g?.id;
+          // Only remove if it's not referenced anymore.
+          return goalId ? referencedGoalIds.has(String(goalId)) : true;
+        });
+
+        if (nextGoals.length !== state.savingsGoals.length) {
+          patch.savingsGoals = nextGoals;
+        }
+      }
+
+      // 6) If a savings-review modal queue exists, remove entries for this session.
+      if (Array.isArray(state.savingsReviewQueue) && state.savingsReviewQueue.length) {
+        const remaining = state.savingsReviewQueue.filter(
+          (e: any) => e?.importSessionId !== sessionId
+        );
+        if (remaining.length !== state.savingsReviewQueue.length) {
+          patch.savingsReviewQueue = remaining;
+          if (remaining.length === 0 && state.isSavingsModalOpen) {
+            patch.isSavingsModalOpen = false;
+          }
+        }
+      }
+
+      return patch;
+    }),
 
   getImportSessionRuntime: (accountNumber, sessionId) =>
     getImportSessionRuntime(get(), accountNumber, sessionId, Date.now()),

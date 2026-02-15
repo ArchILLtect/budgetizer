@@ -86,6 +86,7 @@ export type PlannerSlice = {
   setScenario: (name: any) => void;
 
   resetSavingsLogs: () => void;
+  resetMonthlyActuals: () => void;
 
   addSavingsGoal: (goal: any) => void;
   removeSavingsGoal: (id: any) => void;
@@ -239,6 +240,7 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
     setSelectedMonth: (month) => set(() => ({ selectedMonth: month })),
     setFilingStatus: (value) => set(() => ({ filingStatus: value })),
     resetSavingsLogs: () => set(() => ({ savingsLogs: {} })),
+    resetMonthlyActuals: () => set(() => ({ monthlyActuals: {} })),
     selectIncomeSource: (id) => set(() => ({ selectedSourceId: id })),
     setSavingsMode: (mode) => set(() => ({ savingsMode: mode })),
     setCustomSavings: (value) => set(() => ({ customSavings: value })),

@@ -171,9 +171,13 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
           <hr style={{marginTop: 15 + "px", marginBottom: 15 + "px"}}/>
           <Checkbox.Root
             checked={ignoreBeforeEnabled}
-            onCheckedChange={(details) => setIgnoreBeforeEnabled(details.checked as boolean)}
+            onCheckedChange={(details) => setIgnoreBeforeEnabled(details.checked === true)}
           >
-            Ignore all savings goal linking before this date
+            <Checkbox.HiddenInput />
+            <Checkbox.Control />
+            <Checkbox.Label>
+              <Text fontSize="sm">Ignore all savings goal linking before this date</Text>
+            </Checkbox.Label>
           </Checkbox.Root>
 
           {ignoreBeforeEnabled && (

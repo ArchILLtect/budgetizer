@@ -15,6 +15,8 @@ export default function AccountsTracker() {
   const clearAllAccounts = useBudgetStore((s: any) => s.clearAllAccounts);
   const clearAllAccountMappings = useBudgetStore((s: any) => s.clearAllAccountMappings);
   const clearAllImportData = useBudgetStore((s: any) => s.clearAllImportData);
+  const resetMonthlyActuals = useBudgetStore((s: any) => s.resetMonthlyActuals);
+  const resetSavingsLogs = useBudgetStore((s: any) => s.resetSavingsLogs);
   const syncModal = useDisclosure();
   const bg = config.theme?.semanticTokens?.colors?.bg.value?.toLocaleString('base'); // use semantic token for background color
   const isDev = import.meta.env.DEV;
@@ -44,6 +46,8 @@ export default function AccountsTracker() {
                   clearAllImportData?.();
                   clearAllAccounts?.();
                   clearAllAccountMappings?.();
+                  resetMonthlyActuals?.();
+                  resetSavingsLogs?.();
                 }}
               >
                 DEV: Clear Imported Data

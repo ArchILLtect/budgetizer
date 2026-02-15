@@ -3,10 +3,12 @@ import { useBudgetStore } from '../store/budgetStore';
 import { Box, Heading, Table, HStack, Text, Button, Checkbox, Flex, IconButton, Spacer } from '@chakra-ui/react';
 import { fireToast } from "../hooks/useFireToast";
 import { TiArrowRepeat, TiDownloadOutline } from "react-icons/ti";
+import { FiTrash2 } from "react-icons/fi";
 import { AppSelect } from '../components/ui/AppSelect';
 import { Tooltip } from '../components/ui/Tooltip';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { maskAccountNumber } from '../utils/maskAccountNumber';
+import { DialogModal } from '../components/ui/DialogModal';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type {
@@ -46,11 +48,13 @@ export default function ImportHistoryPage() {
   const undoStagedImport = useBudgetStore(s => s.undoStagedImport);
   const markImportSessionBudgetApplied = useBudgetStore((s) => s.markImportSessionBudgetApplied as (accountNumber: string, sessionId: string, months: string[]) => void);
   const processPendingSavingsForImportSession = useBudgetStore((s) => s.processPendingSavingsForImportSession as (accountNumber: string, sessionId: string, months: string[]) => void);
+  const clearImportSessionEverywhere = useBudgetStore((s) => s.clearImportSessionEverywhere as (accountNumber: string, sessionId: string) => void);
 
   const [filterAccount, setFilterAccount] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<Status | ''>('');
   const [selected, setSelected] = useState<{ [sessionId: string]: boolean }>({}); // sessionId -> bool
   const [nowTick, setNowTick] = useState<number>(Date.now());
+  const [clearTarget, setClearTarget] = useState<{ accountNumber: string; sessionId: string } | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNowTick(Date.now()), 60_000);
@@ -324,6 +328,21 @@ export default function ImportHistoryPage() {
                       >
                         Apply
                       </Button>
+
+                      <IconButton
+                        aria-label="Clear import session"
+                        size="xs"
+                        variant="ghost"
+                        colorScheme="red"
+                        onClick={() =>
+                          setClearTarget({
+                            accountNumber: entry.accountNumber,
+                            sessionId: entry.sessionId,
+                          })
+                        }
+                      >
+                        <FiTrash2 />
+                      </IconButton>
                     </HStack>
                   </Table.Cell>
                 </Table.Row>
@@ -345,6 +364,40 @@ export default function ImportHistoryPage() {
 
       <SavingsReviewModal />
       <ConfirmModal />
+
+      <DialogModal
+        title="Clear this import session?"
+        open={!!clearTarget}
+        setOpen={(open) => {
+          if (!open) setClearTarget(null);
+        }}
+        initialFocus="cancel"
+        enterKeyAction="cancel"
+        acceptLabel="Clear"
+        acceptColorPalette="red"
+        cancelLabel="Cancel"
+        onCancel={() => setClearTarget(null)}
+        onAccept={() => {
+          if (!clearTarget) return;
+          try {
+            clearImportSessionEverywhere(clearTarget.accountNumber, clearTarget.sessionId);
+            fireToast(
+              "success",
+              "Import cleared",
+              `Cleared session ${clearTarget.sessionId.slice(0, 8)} from account ${maskAccountNumber(clearTarget.accountNumber)}.`
+            );
+          } finally {
+            setClearTarget(null);
+          }
+        }}
+        body={
+          <Text fontSize="sm">
+            This permanently deletes all transactions imported in this session and removes any Tracker actuals/savings logs created when you applied them.
+            <br />
+            This action is not reversible.
+          </Text>
+        }
+      />
     </Box>
   );
 }
