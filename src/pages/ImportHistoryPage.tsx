@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, lazy } from 'react';
 import { useBudgetStore } from '../store/budgetStore';
 import { Box, Heading, Table, HStack, Text, Button, Checkbox, Flex, IconButton, Spacer } from '@chakra-ui/react';
 import { fireToast } from "../hooks/useFireToast";
@@ -6,6 +6,7 @@ import { TiArrowRepeat, TiDownloadOutline } from "react-icons/ti";
 import { AppSelect } from '../components/ui/AppSelect';
 import { Tooltip } from '../components/ui/Tooltip';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { maskAccountNumber } from '../utils/maskAccountNumber';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type {
@@ -14,6 +15,9 @@ import type {
 } from "../store/slices/importLogic";
 dayjs.extend(relativeTime);
 // Runtime computation centralized in store (getImportSessionRuntime)
+
+const SavingsReviewModal = lazy(() => import('../components/ui/SavingsReviewModal'));
+const ConfirmModal = lazy(() => import('../components/ui/ConfirmModal'));
 
 type Status = ImportSessionRuntime["status"] | "?";
 
@@ -67,7 +71,7 @@ export default function ImportHistoryPage() {
       return true;
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- nowTick is a deliberate time invalidation key
-  }, [importHistory, filterAccount, filterStatus, nowTick, getImportSessionRuntime]) as ImportHistoryRow[];
+  }, [importHistory, accounts, filterAccount, filterStatus, nowTick, getImportSessionRuntime]) as ImportHistoryRow[];
 
   const anySelected = Object.values(selected).some(v => v);
   const selectedEntries = rows.filter(r => selected[r.entry.sessionId]);
@@ -116,7 +120,11 @@ export default function ImportHistoryPage() {
         }
       }
     });
-    fireToast("success", 'Apply complete', `${appliedSessions} session(s) applied`);
+    if (appliedSessions > 0) {
+      fireToast("success", 'Apply complete', `${appliedSessions} session(s) applied`);
+    } else {
+      fireToast("info", 'Nothing to apply', 'No selected sessions had staged transactions to apply.');
+    }
   };
 
   const exportSelected = () => {
@@ -145,7 +153,11 @@ export default function ImportHistoryPage() {
         <Spacer />
         <HStack>
           <AppSelect size='sm' placeholder='Account' value={filterAccount} onChange={(e: event) => setFilterAccount(e.target.value)}>
-            {accountsList.map(acc => <option key={acc} value={acc}>{acc}</option>)}
+            {accountsList.map((acc) => (
+              <option key={acc} value={acc}>
+                {maskAccountNumber(acc)}
+              </option>
+            ))}
           </AppSelect>
 
           <AppSelect size='sm' placeholder='Status' value={filterStatus} onChange={(e: event) => setFilterStatus(e.target.value as Status | '')}>
@@ -242,11 +254,15 @@ export default function ImportHistoryPage() {
                   </Table.Cell>
 
                   <Table.Cell title={entry.hash}>{entry.sessionId.slice(0, 8)}</Table.Cell>
-                  <Table.Cell>{entry.accountNumber}</Table.Cell>
+                  <Table.Cell>{maskAccountNumber(entry.accountNumber)}</Table.Cell>
 
                   <Table.Cell>
-                    <Tooltip content={entry.importedAt}>
-                      {dayjs(entry.importedAt).fromNow?.() || dayjs(entry.importedAt).format("MMM D HH:mm")}
+                    <Tooltip content={entry.importedAt} disabled={!entry.importedAt}>
+                      <Text as="span">
+                        {entry.importedAt
+                          ? dayjs(entry.importedAt).fromNow?.() || dayjs(entry.importedAt).format("MMM D HH:mm")
+                          : "-"}
+                      </Text>
                     </Tooltip>
                   </Table.Cell>
 
@@ -280,7 +296,10 @@ export default function ImportHistoryPage() {
                         disabled={!(runtime.status === "active" && runtime.stagedNow > 0)}
                         onClick={() => {
                           const acct = accounts[entry.accountNumber];
-                          if (!acct?.transactions) return;
+                          if (!acct?.transactions) {
+                            fireToast("error", "Apply failed", "No transactions found for this account.");
+                            return;
+                          }
 
                           const months = new Set<string>();
                           acct.transactions.forEach((tx: Tx) => {
@@ -290,9 +309,17 @@ export default function ImportHistoryPage() {
                           });
 
                           const monthList = [...months];
+                          if (monthList.length === 0) {
+                            fireToast("info", "Nothing to apply", "No staged transactions found for this session.");
+                            return;
+                          }
                           markImportSessionBudgetApplied(entry.accountNumber, entry.sessionId, monthList);
                           processPendingSavingsForImportSession(entry.accountNumber, entry.sessionId, monthList);
-                          fireToast("success", "Session applied", `Import session ${entry.sessionId.slice(0,8)} has been applied.`);
+                          fireToast(
+                            "success",
+                            "Session applied",
+                            `Applied ${monthList.length} month(s) from session ${entry.sessionId.slice(0, 8)}.`
+                          );
                         }}
                       >
                         Apply
@@ -315,6 +342,9 @@ export default function ImportHistoryPage() {
           </Table.Body>
         </Table.Root>
       </Box>
+
+      <SavingsReviewModal />
+      <ConfirmModal />
     </Box>
   );
 }
