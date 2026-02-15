@@ -245,3 +245,11 @@ When adding Amplify‑native cloud sync:
 - Privacy‑first
 - UX‑preserving
 - Backend‑agnostic ingestion core
+
+---
+
+## 11) Large Import Guardrails (Current)
+
+- Large CSV imports are parsed with PapaParse streaming and may use worker mode to reduce main-thread parsing jank.
+- Ingestion processing yields periodically on large inputs to keep the UI responsive.
+- The import error panel renders a capped subset of errors; use the CSV export for full error lists.

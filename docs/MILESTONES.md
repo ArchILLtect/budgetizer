@@ -181,10 +181,10 @@ Acceptance:
 - [ ] After ImportPlan is manually testable in-browser, complete the deferred type-hardening follow-ups in `TODO.md` (root store typing, planner `any` cluster)
 
 **B) Proposed ingestion upgrades (from plan)**
-- [ ] Streaming parse worker mode (PapaParse worker) for large files
-- [ ] Backpressure/batching for classification/inference in streaming mode (reduce main-thread jank)
-- [ ] Memory profiling notes + guardrails for huge imports
-- [ ] Error panel scalability improvements (virtualization / export guardrails)
+- [x] Streaming parse worker mode (PapaParse worker) for large files (ImportTransactionsModal + SyncAccountsModal)
+- [x] Backpressure/batching for classification/inference in streaming mode (yield during `analyzeImport` for large inputs)
+- [x] Memory profiling notes + guardrails for huge imports (doc notes + preview caps)
+- [x] Error panel scalability improvements (render cap + CSV export guidance)
 
 ---
 
