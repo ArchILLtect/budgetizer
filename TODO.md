@@ -136,6 +136,9 @@ Docs (P1):
 <a id="p2"></a>
 ### TODO(P2)
 
+- [ ] TODO(P2): Imports — “Clear session” UX: offer advanced options (clear only import vs clear only tracker)
+- [ ] TODO(P2): Imports — add a DEV-only variant of “Clear session” with extra scoping toggles for experimentation
+
 ## Review needed — possible intentional identifiers
 
 - [ ] REVIEW: Amplify-generated auth/API identifiers still include `taskmaster` (do not rename unless you are rebuilding/updating the Amplify backend config)
