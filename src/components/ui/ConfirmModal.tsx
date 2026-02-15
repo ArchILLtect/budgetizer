@@ -24,6 +24,8 @@ export default function ConfirmModal() {
       title="Confirm Cancel Process"
       open={isOpen}
       setOpen={handleClose}
+      initialFocus="cancel"
+      enterKeyAction="cancel"
       onAccept={handleSubmit}
       onCancel={handleClose}
       body={

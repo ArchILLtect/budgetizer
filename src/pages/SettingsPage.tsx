@@ -270,6 +270,8 @@ export default function SettingsPage() {
                 }
                 open={isRemoveSampleOpen}
                 setOpen={setIsRemoveSampleOpen}
+                initialFocus="cancel"
+                enterKeyAction="cancel"
                 acceptLabel="Remove"
                 acceptColorPalette="red"
                 acceptVariant="solid"
@@ -385,6 +387,8 @@ export default function SettingsPage() {
                 }
                 open={isClearDemoOpen}
                 setOpen={setIsClearDemoOpen}
+                initialFocus="cancel"
+                enterKeyAction="cancel"
                 acceptLabel="Clear"
                 acceptColorPalette="red"
                 acceptVariant="solid"
@@ -438,6 +442,8 @@ export default function SettingsPage() {
                 }
                 open={isResetDemoOpen}
                 setOpen={setIsResetDemoOpen}
+                initialFocus="cancel"
+                enterKeyAction="cancel"
                 acceptLabel="Reset"
                 acceptColorPalette="orange"
                 acceptVariant="solid"
