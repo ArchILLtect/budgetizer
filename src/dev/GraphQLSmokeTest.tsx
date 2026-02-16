@@ -30,13 +30,13 @@ export function GraphQLSmokeTest() {
   }
 
   return (
-    <VStack align="start" gap={4} p={4} bg="white" rounded="md" boxShadow="sm">
+    <VStack align="start" gap={4} p={4} bg="bg" rounded="md" boxShadow="sm">
       <Heading size="md">GraphQL Smoke Test</Heading>
       <Button
         variant={"outline"}
         onClick={fetchAndLogAuthSession}
       >Check status</Button>
-      <Text color="gray.600">
+      <Text color="fg.muted">
         Quick end-to-end checks for Cognito + AppSync + @model/@auth(owner).
       </Text>
 
@@ -47,12 +47,12 @@ export function GraphQLSmokeTest() {
         <VStack align="stretch" gap={2}>
           {log.map((l, idx) => (
             <Box key={idx} borderWidth="1px" rounded="md" p={2}>
-              <Text fontSize="sm" color="gray.500">
+              <Text fontSize="sm" color="fg.muted">
                 {l.at}
               </Text>
               <Text fontWeight="600">{l.msg}</Text>
               {l.data !== undefined ? (
-                <Box mt={2} maxH="220px" overflow="auto" bg="gray.50" p={2} rounded="md">
+                <Box mt={2} maxH="220px" overflow="auto" bg="bg.subtle" p={2} rounded="md">
                   <pre style={{ fontSize: 12, margin: 0 }}>{JSON.stringify(l.data, null, 2)}</pre>
                 </Box>
               ) : null}

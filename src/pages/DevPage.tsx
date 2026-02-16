@@ -14,15 +14,15 @@ export function DevPage() {
   //if (loading) return <BasicSpinner />;
 
   return (
-    <VStack align="start" gap={2} minH="100%" p={4} bg="white" rounded="md" boxShadow="sm">
+    <VStack align="start" gap={2} minH="100%" p={4} bg="bg" rounded="md" boxShadow="sm">
       <Heading size="2xl">Dev</Heading>
-      <Text>This page is for development and testing purposes.</Text>
+      <Text color="fg.muted">This page is for development and testing purposes.</Text>
 
       <Tip storageKey="tip:dev-cache" title="Tip">
         “Clear user caches” clears persisted per-user caches for the current signed-in user.
       </Tip>
 
-      <VStack align="start" gap={2} w="100%" p={3} bg="gray.50" rounded="md" borderWidth="1px">
+      <VStack align="start" gap={2} w="100%" p={3} bg="bg.subtle" rounded="md" borderWidth="1px">
         <Heading size="sm">Budgeteer caches</Heading>
         <HStack gap={2} flexWrap="wrap">
           <Button
