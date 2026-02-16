@@ -36,11 +36,11 @@ export function Tip({ title = "Tip", children, action, storageKey }: TipProps) {
   if (!open) return null;
 
   return (
-    <Box w="100%" p={3} bg="blue.50" borderWidth="1px" borderColor="blue.200" rounded="md">
+    <Box w="100%" p={3} bg="bg.subtle" borderWidth="1px" borderColor="border" rounded="md">
       <HStack align="start" justify="space-between" gap={3}>
         <VStack align="start" gap={1} flex={1} minW={0}>
           <Text fontWeight={700}>{title}</Text>
-          <Text fontSize="sm" color="gray.700">
+          <Text fontSize="sm" color="fg.muted">
             {children}
           </Text>
           {action ? <Box pt={1}>{action}</Box> : null}

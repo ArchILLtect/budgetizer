@@ -19,22 +19,22 @@ export function DemoConfirmDialog({
       title="Start demo mode?"
       body={
         <VStack align="start" gap={3}>
-          <Text color="gray.700">
+          <Text color="fg">
             Demo mode creates a temporary demo account, signs you in, and seeds sample data.
           </Text>
 
-          <Box bg="gray.50" borderWidth="1px" borderColor="gray.200" rounded="md" p={3} w="100%">
+          <Box bg="bg.subtle" borderWidth="1px" borderColor="border" rounded="md" p={3} w="100%">
             <VStack align="start" gap={1}>
               <HStack justify="space-between" w="100%">
                 <Text fontWeight="700">What to expect</Text>
               </HStack>
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="fg.muted">
                 - No email/signup required
               </Text>
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="fg.muted">
                 - Takes ~5 seconds
               </Text>
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="fg.muted">
                 - You can reset demo data in Settings
               </Text>
             </VStack>

@@ -55,10 +55,11 @@ export default function ScenarioModal({ isOpen, onClose }: ScenarioModalProps) {
               py={4}
               fontWeight="bold"
               fontSize="sm"
-              color="gray.600"
+              color="fg.muted"
               border={"1px solid"}
-              borderColor="gray.200"
+              borderColor="border"
               borderRadius="md"
+              bg="bg.subtle"
             >
               <RadioGroup.Label>Start Preference</RadioGroup.Label>
               <Flex direction="row" gap={2} wrap="wrap" justifyContent={"space-around"} mt={4}>

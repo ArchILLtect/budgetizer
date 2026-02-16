@@ -49,7 +49,7 @@ export function AppTable<T>({
         {rows.length === 0 && (
           <Table.Row>
             <Table.Cell colSpan={columns.length}>
-              <Text fontSize="sm" color="gray.500" textAlign="center" py={6}>
+              <Text fontSize="sm" color="fg.muted" textAlign="center" py={6}>
                 {emptyText}
               </Text>
             </Table.Cell>

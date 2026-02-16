@@ -381,7 +381,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
           <Dialog.Body>
             {step === 'select' && (
               <Stack gap={4}>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="fg.muted">
                   First we’ll detect accounts and collect labels/institutions. Then we’ll import transactions from the same CSV.
                 </Text>
                 {isDemo && (
@@ -409,7 +409,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                     }}>
                       Load Sample CSV (Demo)
                     </Button>
-                    <Text fontSize="sm" color="gray.500" alignContent={'center'}>-- OR --</Text>
+                    <Text fontSize="sm" color="fg.muted" alignContent={'center'}>-- OR --</Text>
                   </>
                 )}
                 <RadioGroup.Root
@@ -438,7 +438,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                   <>
                     <Input type="file" accept={`.${sourceType}`} onChange={handleFileChange} />
                     {((sourceType === "csv" && csvFile) || (sourceType === "ofx" && ofxFile)) && (
-                      <Text fontSize="sm" color="gray.500">
+                      <Text fontSize="sm" color="fg.muted">
                         Selected: {(sourceType === "csv" ? csvFile?.name : ofxFile?.name)}
                       </Text>
                     )}
@@ -478,7 +478,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
 
             {step === 'accounts' && (
               <Stack gap={3}>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="fg.muted">
                   Accounts are set up. Next we’ll analyze and import transactions from the same CSV.
                 </Text>
                 <Box maxH='160px' overflow='auto' borderWidth='1px' borderRadius='md' p={2} fontSize='sm'>
@@ -487,7 +487,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                     return (
                       <Box key={acctNum} mb={2}>
                         <Text fontWeight='bold'>{acctNum}</Text>
-                        <Text color='gray.600'>
+                        <Text color='fg.muted'>
                           {mapping?.label || acctNum} • {mapping?.institution || 'Unknown'}
                         </Text>
                       </Box>
@@ -502,7 +502,7 @@ export default function SyncAccountsModal({ isOpen, onClose }: SyncAccountsModal
                 {isLargeFile && !dryRunStarted && (
                   <Box borderWidth='1px' borderRadius='md' p={3}>
                     <Text fontSize='sm' fontWeight='bold'>Large import detected</Text>
-                    <Text fontSize='sm' color='gray.600'>
+                    <Text fontSize='sm' color='fg.muted'>
                       This file looks large, so analysis won’t start until you click “Run Dry Run”.
                     </Text>
                   </Box>

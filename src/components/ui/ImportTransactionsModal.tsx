@@ -560,7 +560,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
                 {/* Legacy brief error preview removed in favor of panel */}
                 <Separator my={3} />
                 {lastIngestionTelemetry && !showConfirm && (
-                  <Box mb={3} p={2} borderWidth={1} borderRadius="md" bg="blue.50">
+                  <Box mb={3} p={2} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
                     <Text fontSize="xs" fontWeight="semibold" mb={1}>Last Import Telemetry</Text>
                     <Text fontSize="10px" mb={1}>At: {lastIngestionTelemetry.at} | Account: {lastIngestionTelemetry.accountNumber} | New: {lastIngestionTelemetry.newCount} | DupEx: {lastIngestionTelemetry.dupesExisting} | DupIntra: {lastIngestionTelemetry.dupesIntraFile}</Text>
                     {lastIngestionTelemetry.categorySources && (
@@ -574,7 +574,7 @@ export default function ImportTransactionsModal({ isOpen, onClose }: ImportTrans
                     )}
                   </Box>
                 )}
-                <Text fontSize="xs" color="gray.600">Preview of accepted (first 10)</Text>
+                <Text fontSize="xs" color="fg.muted">Preview of accepted (first 10)</Text>
                 <Box mt={1} maxH="180px" overflowY="auto" fontFamily="mono" fontSize="xs" p={2} borderWidth={1} borderRadius="md" bg="gray.800" color="green.200">
                   {(() => {
                     const merged = [...(existingTxns || []), ...(result?.plan?.accepted || [])].sort((a: any, b: any) =>

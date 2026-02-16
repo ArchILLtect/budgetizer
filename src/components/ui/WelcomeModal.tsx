@@ -1,9 +1,9 @@
-import { Box, Checkbox, Heading, Text, VStack } from "@chakra-ui/react";
+import { Box, Checkbox, Heading, Text, VStack, HStack, Button } from "@chakra-ui/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DialogModal } from "./DialogModal";
-//import { useDemoMode } from "../../hooks/useDemoMode";
-//import { useDemoTourStore } from "../../store/demoTourStore";
+import { useDemoMode } from "../../hooks/useDemoMode";
+import { useDemoTourStore } from "../../store/demoTourStore";
 import {
   getWelcomeModalSeenVersion,
   onWelcomeModalPrefChange,
@@ -12,7 +12,7 @@ import {
   type WelcomeModalOpenReason,
 } from "../../services/welcomeModalPreference";
 import { shouldShowWelcomeModal, WELCOME_MODAL_VERSION } from "./welcomeModalLogic";
-//import { setDemoModeOptIn } from "../../services/demoModeOptIn";
+import { setDemoModeOptIn } from "../../services/demoModeOptIn";
 import {
   getWelcomeModalLastShownAtMs,
   isWelcomeModalReminderDue,
@@ -36,10 +36,10 @@ const WHATS_NEW: Array<{ title: string; body: string }> = [
 ];
 
 export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; authLoading?: boolean }) {
-  //const { isDemo, isDemoIdentity } = useDemoMode(signedIn);
-  //const openDemoTour = useDemoTourStore((s) => s.openTour);
-  //const demoTourDisabled = useDemoTourStore((s) => s.disabled);
-  //const resetDemoTourDisabled = useDemoTourStore((s) => s.resetDisabled);
+  const { isDemo, isDemoIdentity } = useDemoMode(signedIn);
+  const openDemoTour = useDemoTourStore((s) => s.openTour);
+  const demoTourDisabled = useDemoTourStore((s) => s.disabled);
+  const resetDemoTourDisabled = useDemoTourStore((s) => s.resetDisabled);
   const [neverShowAgainChecked, setNeverShowAgainChecked] = useState(false);
   const [seenVersion, setSeenVersion] = useState(() => getWelcomeModalSeenVersion());
   const [openRequested, setOpenRequested] = useState(false);
@@ -164,24 +164,23 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
     wasOpenRef.current = open;
   }, [open]);
 
-  /*
   const startDemoTour = () => {
     if (demoTourDisabled) {
       resetDemoTourDisabled();
     }
     openDemoTour();
-  };*/
+  };
 
   return (
     <DialogModal
       title="Welcome to Budgeteer"
       body={
         <VStack align="start" gap={4}>
-          <Text color="gray.700">
+          <Text color="fg.muted">
             Welcome! Here’s a quick orientation and a summary of recent changes.
           </Text>
 
-          <Box w="100%" bg="gray.50" borderWidth="1px" borderColor="gray.200" rounded="md" p={3}>
+          <Box w="100%" bg="bg.subtle" borderWidth="1px" borderColor="border" rounded="md" p={3}>
             <Heading size="sm" mb={2}>
               What’s new
             </Heading>
@@ -191,7 +190,7 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
                   <Text fontSize="sm" fontWeight={700}>
                     {item.title}
                   </Text>
-                  <Text fontSize="sm" color="gray.700">
+                  <Text fontSize="sm" color="fg.muted">
                     {item.body}
                   </Text>
                 </Box>
@@ -199,13 +198,19 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
             </VStack>
           </Box>
 
-          {/*
-          <Box w="100%" bg={isDemo ? "orange.50" : "blue.50"} borderWidth="1px" borderColor={isDemo ? "orange.200" : "blue.200"} rounded="md" p={3}>
-            <Heading size="sm" mb={1}>
+          <Box
+            w="100%"
+            bg={isDemo ? { base: "orange.100", _dark: "orange.900" } : { base: "blue.100", _dark: "blue.900" }}
+            borderColor={isDemo ? { base: "orange.200", _dark: "orange.300" } : { base: "blue.200", _dark: "blue.300" }}
+            borderWidth="1px"
+            rounded="md"
+            p={3}
+          >
+            <Heading size="sm" mb={1} color={isDemo ? { base: "orange.800", _dark: "orange.200" } : { base: "blue.800", _dark: "blue.200" }}>
               Demo tour
             </Heading>
 
-            <Text fontSize="sm" color="gray.700" mb={3}>
+            <Text fontSize="sm" color="fg.muted" mb={3}>
               {isDemo
                 ? "You can start the guided tour any time."
                 : "Want the guided demo tour and demo-mode UI? You can opt in for this account on this device."}
@@ -230,18 +235,18 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
               )}
 
               {isDemoIdentity ? (
-                <Text fontSize="xs" color="gray.600">
+                <Text fontSize="xs" color="fg.muted">
                   Demo identity detected (Cognito group).
                 </Text>
               ) : null}
             </HStack>
 
             {demoTourDisabled ? (
-              <Text fontSize="xs" color="gray.600" mt={2}>
+              <Text fontSize="xs" color="fg.muted" mt={2}>
                 Tour is currently disabled. Starting the tour will re-enable it.
               </Text>
             ) : null}
-          </Box>*/}
+          </Box>
 
           <Checkbox.Root
             checked={neverShowAgainChecked}
@@ -254,7 +259,7 @@ export function WelcomeModal({ signedIn, authLoading }: { signedIn: boolean; aut
             </Checkbox.Label>
           </Checkbox.Root>
 
-          <Text fontSize="xs" color="gray.600">
+          <Text fontSize="xs" color="fg.muted">
             You can re-enable this later in Settings.
           </Text>
         </VStack>

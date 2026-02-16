@@ -47,12 +47,12 @@ export function StorageDisclosureBanner() {
       zIndex={1000}
     >
       <HStack justify="space-between" gap={4} flexWrap="wrap">
-        <Text fontSize="lg" color="gray.100">
+        <Text fontSize="lg" color="fg">
           This app uses cookies and local storage to keep you signed in and to remember your settings.
         </Text>
 
         <HStack gap={2} flexShrink={0}>
-          <Button size="sm" color="gray.800" fontWeight="bold" bg="gray.200" onClick={acknowledge}>
+          <Button size="sm" color="gray.800" fontWeight="bold" bg="fg" onClick={acknowledge}>
             OK
           </Button>
         </HStack>

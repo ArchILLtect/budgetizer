@@ -173,7 +173,7 @@ export default function SavingsReviewModal() {
                   </VStack>
                 )}
 
-                <Text fontSize="sm" color="gray.500">
+                <Text fontSize="sm" color="fg.muted">
                   Goal: {selectedGoals[entry.id] ? savingsGoals.find((g) => g.id === selectedGoals[entry.id])?.name : "None"}
                 </Text>
               </div>
