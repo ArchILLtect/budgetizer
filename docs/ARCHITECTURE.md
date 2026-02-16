@@ -1,7 +1,7 @@
 
 # Budgeteer — Architecture
 
-Last updated: 2026-02-14
+Last updated: 2026-02-15
 
 This document describes **how Budgeteer is built today** (as reflected in `src/`) and the intended direction as it evolves into a cohesive personal finance app.
 
@@ -186,6 +186,15 @@ Undo semantics (current):
 Auto-expire semantics (current):
 
 - Staged transactions can be auto-applied after `stagedAutoExpireDays`.
+
+Clear semantics (current):
+
+- Import sessions can be permanently cleared from Import History.
+- Clearing a session removes:
+	- imported transactions for that session from the account
+	- pending savings entries for that session
+	- tracker artifacts derived from applying those transactions (monthly actuals + savings logs)
+	- any savings goals that were created during savings review for that session (only if not referenced by other remaining logs)
 
 ---
 

@@ -1,6 +1,6 @@
 # Tracker-Facing Ingestion Contract
 
-Last Updated: 2026-02-14
+Last Updated: 2026-02-15
 
 This document defines the **ingestion outputs and invariants** that the Tracker depends on.
 
@@ -100,6 +100,13 @@ Undo:
 
 Apply:
 - Apply-to-budget must be able to operate session-scoped when applying a specific session.
+
+Clear (session delete):
+- The UI may offer a “clear import session” action that permanently removes the session’s imported transactions.
+- Any tracker-derived artifacts created by applying those imported transactions should be removable in a session-scoped way.
+
+Tracker artifact scoping:
+- Savings logs created during savings review may include `importSessionId` so they can be cleared when the originating import session is cleared.
 
 ---
 

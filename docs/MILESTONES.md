@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-14
+Last updated: 2026-02-15
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -75,7 +75,7 @@ Use this as the running “ship list” for Milestone 1. Keep it honest and conc
 
 ## Milestone 2 — Domain boundaries and type hardening
 
-Status: Planned
+Status: Done (core)
 
 Goal:
 - Reduce risk by making budgeting logic easier to change.
@@ -153,11 +153,37 @@ Acceptance:
 - Planner can be used standalone
 - Tracker explains numbers and sources
 
+### Milestone 3 checklist
+
+**A) Tracker correctness & clarity**
+- [ ] Tracker — fix “Total Override” checkbox not working
+- [ ] Tracker — income delete confirmation copy: don’t call it an “expense”, include the income source name, and fire success/error toast appropriately
+- [ ] Tracker — updating/adding income sources updates the “Monthly Income” total at top of card (not just the “Actual Net Income” stat)
+- [ ] Tracker — clarify stat bar layout above “<year> Summary”; remove duplicate/confusing stats (“Total Saved” / “Leftover”) and ensure intended set is unique
+
+**B) Savings goals UX (Tracker)**
+- [ ] Tracker — savings goal card display: fix incorrect/missing info rendering
+- [ ] Tracker — savings goal edit: clicking “Edit” only opens the selected item
+- [ ] Tracker — savings goal save persists changes and refreshes UI correctly
+- [ ] Tracker — savings goal delete removes item and refreshes UI correctly
+
+**C) Planner UX polish (baseline)**
+- [ ] Planner — add basic validation/constraints for income/expense inputs (no negative or NaN totals)
+- [ ] Planner — improve empty states/help text so a new user can complete a first plan without guesswork
+
+**D) Console/runtime hygiene (must be clean during normal use)**
+- [ ] Tracker — fix duplicate React key warning `same key, NaN` from SavingsGoalsTracker list rendering (stable unique keys)
+- [ ] Tracker — fix Chakra `Progress` error: value receives `[object Object],[object Object]` and exceeds max 100
+- [ ] Settings — fix controlled/uncontrolled input warning (text input has both `value` and `defaultValue`)
+
+**E) Verification**
+- [ ] `npm run check` stays green for Milestone 3 changes
+
 ---
 
 ## Milestone 4 — CSV ingestion enhancements
 
-Status: Planned (intentionally later)
+Status: In Progress (core done)
 
 Goal:
 - Improve ingestion correctness, transparency, and performance.
@@ -185,6 +211,9 @@ Acceptance:
 - [x] Backpressure/batching for classification/inference in streaming mode (yield during `analyzeImport` for large inputs)
 - [x] Memory profiling notes + guardrails for huge imports (doc notes + preview caps)
 - [x] Error panel scalability improvements (render cap + CSV export guidance)
+
+**C) Import session UX (adjacent to ingestion)**
+- [x] Import History — allow permanently clearing an import session (remove imported txns + tracker artifacts) with a risky confirm dialog
 
 ---
 

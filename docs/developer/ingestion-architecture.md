@@ -128,11 +128,14 @@ Import history and undo behavior live in the store:
 - Undo (time-window guarded): `undoStagedImport(accountNumber, sessionId)`
 - Apply-to-budget: `markTransactionsBudgetApplied(accountNumber, months)`
 
-### Known gap (selected session apply)
+Session-scoped APIs (current):
 
-Import History operates on selected `sessionId`s, but `markTransactionsBudgetApplied(accountNumber, months)` is month-scoped and does not filter by session. If two sessions have staged txns in the same month, “Apply selected session” can unintentionally apply transactions from a different session.
+- Apply a specific session: `markImportSessionBudgetApplied(accountNumber, sessionId, months)`
+- Process pending savings for a specific session: `processPendingSavingsForImportSession(accountNumber, sessionId, months)`
 
-Planned fix: add a session-scoped apply API and update Import History to use it. See `./ingestion-plan.md`.
+### Previously known gap (now resolved)
+
+Import History now uses the session-scoped APIs when applying selected sessions, so overlapping staged sessions in the same month remain isolated.
 
 Savings behavior:
 

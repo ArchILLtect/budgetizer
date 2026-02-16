@@ -1,7 +1,7 @@
 
 # Budgeteer — PRD (Product Requirements Document)
 
-Last updated: 2026-02-10
+Last updated: 2026-02-15
 
 Budgeteer is a privacy-aware personal finance app focused on **planning-first budgeting**, **CSV-based transaction imports**, and **clear monthly tracking**.
 
@@ -85,7 +85,7 @@ Success: the plan is saved and visible in the tracker.
 3. Imports a CSV.
 4. System dedupes idempotently, stages new rows, and records an import session.
 5. User reviews Import History.
-6. User applies the staged transactions (month-scoped apply) or undoes the session.
+6. User applies the staged transactions for the selected import session (session-scoped apply) or undoes the session.
 
 Success: staged/apply/undo is understandable, safe, and reversible.
 
@@ -154,9 +154,13 @@ Acceptance criteria:
 Requirements:
 
 - Users can undo staged imports within a configurable window.
-- Users can apply staged transactions (month-scoped) to mark them budget-applied.
+- Users can apply staged transactions for a selected import session to mark them budget-applied.
 - Users can see import session status: active, expired, applied, partial states.
 - Staged sessions can auto-expire into applied state after N days.
+- Users can permanently clear an import session (destructive), removing that session’s staged transactions and associated tracker artifacts.
+
+Notes:
+- Detailed “clear session” semantics are documented in [ARCHITECTURE](./ARCHITECTURE.md).
 
 Acceptance criteria:
 

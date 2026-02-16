@@ -184,7 +184,9 @@ Store‑managed metadata:
 - Undo:
   - `undoStagedImport(accountId, sessionId)`
 - Apply‑to‑budget:
-  - `markTransactionsBudgetApplied(accountId, months)`
+  - Month-scoped apply (legacy/general): `markTransactionsBudgetApplied(accountId, months)`
+  - Session-scoped apply (Import History selection): `markImportSessionBudgetApplied(accountId, sessionId, months)`
+  - Session-scoped savings processing: `processPendingSavingsForImportSession(accountId, sessionId, months)`
 
 ### Savings Behavior
 

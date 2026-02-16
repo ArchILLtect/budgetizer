@@ -1,7 +1,7 @@
 
 # Budgeteer — Roadmap
 
-Last updated: 2026-02-10
+Last updated: 2026-02-15
 
 This roadmap sequences work to "tighten the main app" first (UX correctness, naming/route cleanup, store boundaries, reliability), while intentionally deferring deeper CSV ingestion enhancements until the core product surface is coherent.
 
@@ -110,6 +110,7 @@ Deliverables:
 - Better review tooling for staged imports:
 	- preview staged transactions per session
 	- show dedupe reasons (same key, same hash)
+	- allow permanently clearing an import session (remove imported txns + tracker artifacts)
 - Category inference improvements and category rules UX (if/when desired)
 - Performance work:
 	- tune streaming thresholds

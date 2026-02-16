@@ -1,6 +1,6 @@
 # Budgeteer — Data Model
 
-Last updated: 2026-02-14
+Last updated: 2026-02-15
 
 This document describes the **data domains and shapes** Budgeteer uses today, plus the key conventions (dates, amounts, transaction identity) that make imports safe and deterministic.
 
@@ -156,6 +156,11 @@ Two related domains:
 
 - `savingsGoals`: user-defined targets
 - `savingsLogs[YYYY-MM]`: month-keyed log entries
+
+Additional scoping fields (current):
+
+- Savings logs created from imported transactions should carry `importSessionId` so a session can be cleared safely without touching unrelated logs.
+- Savings goals created during savings review may carry `createdFromImportSessionId` so “clear session” can remove goals created by that session (only if unreferenced elsewhere).
 
 Savings queue behavior:
 - Ingestion collects savings-like transactions into a `savingsQueue`.
