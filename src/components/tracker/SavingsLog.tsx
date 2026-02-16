@@ -70,13 +70,18 @@ export default function SavingsLog() {
         <Heading size="md">Savings Logs</Heading>
         <Heading size="md">Total: ${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
       </Flex>
-      <Center>
-        <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowInputs(!showInputs)}>
-          {showInputs ? '▲ Hide All Logs ▲' : '▼ Show/Edit Logs ▼'}
-        </Button>
-      </Center>
 
-      <AppCollapsible title="Savings Logs" defaultOpen={showInputs}>
+      <AppCollapsible
+        mb={4}
+        defaultOpen={showInputs}
+        open={showInputs}
+        onOpenChange={(open) => setShowInputs(open)}
+        headerCenter={
+          <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowInputs(!showInputs)}>
+            {showInputs ? '▲ Hide All Logs ▲' : '▼ Show/Edit Logs ▼'}
+          </Button>
+        }
+      >
         {logsForMonth.length === 0 ? (
           <Text color="gray.500" fontSize="sm">
             No savings recorded for this month yet.

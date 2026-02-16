@@ -115,27 +115,30 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
   }
 
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4} mt={6}>
-      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg">
+    <Box borderWidth="1px" borderRadius="lg" p={4} mt={6} bg={"gray.100"}>
+      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="white">
         <Heading size="md">Expenses (Monthly)</Heading>
         {!isTracker &&
           <Button variant={'outline'} colorScheme="blue" onClick={() => handleTempButton()}>Use Fixed Expense Total</Button>
         }
         <Heading size="md">${displayedTotalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
       </Flex>
-      <Flex justifyContent={'end'} my={2}>
-        <Button size="xs" variant="outline" colorScheme="blue" ml={2} onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
-          {showExpenseInputs ? 'Hide Expense Inputs' : 'Show Expense Inputs'}
-        </Button>
-      </Flex>
 
-      <Box p={2} mt={3}>
+      <Box p={2} mt={3} borderWidth={1} borderColor={"gray.200"} borderRadius={"lg"} bg={"white"}>
         <Stack gap={3}>
           <AppCollapsible
             mb={"4px"}
-            defaultOpen={showExpenseInputs}
+            fontSize='md'
             title={"Expense Details"}
             ariaLabel="Toggle expense details"
+            defaultOpen={showExpenseInputs}
+            open={showExpenseInputs}
+            onOpenChange={(open) => setShowExpenseInputs(open)}
+            headerCenter={
+              <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
+                {showExpenseInputs ? '▲ Hide Expense Inputs ▲' : '▼ Show Expense Inputs ▼'}
+              </Button>
+            }
           >
             <Stack gap={3}>
               {expenses.length === 0 ? (
@@ -153,6 +156,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     onChange={(e) =>
                       updateExpense(expense.id, { name: e.target.value })
                     }
+                    bg={"gray.100"}
                     placeholder="Expense name"
                   />
                   <Input
@@ -163,6 +167,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     onChange={(e) =>
                       updateExpense(expense.id, { amount: parseFloat(e.target.value) || 0 })
                     }
+                    bg={expense.isSavings ? "green.50" : "gray.50"}
                     placeholder="Amount"
                   />
                   {expense.id !== 'rent' && !expense.isSavings && (

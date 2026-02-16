@@ -66,19 +66,24 @@ export default function MonthlyActualSummary() {
       {actual &&
       <>
         <Flex justifyContent="space-between" alignItems="center" mb={3}>
-          <Heading size="md">This Month's Summary</Heading>
-          <Button size="xs" variant="plain" colorScheme="blue" ml={2} onClick={() => setShowActualInputs(!showActualInputs)}>
-            {showActualInputs ? 'Hide All Inputs' : 'Show All Inputs'}
-          </Button>
+          <Heading size="lg">This Month's Summary</Heading>
         </Flex>
 
         <Stack gap={3}>
-          <AppCollapsible title="Actual Inputs" mb={4} defaultOpen={showActualInputs}>
-
+          <AppCollapsible
+            title="Actual Inputs"
+            mb={6}
+            defaultOpen={showActualInputs}
+            open={showActualInputs}
+            onOpenChange={(open) => setShowActualInputs(open)}
+            headerCenter={
+              <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowActualInputs(!showActualInputs)}>
+                {showActualInputs ? '▲ Hide All Inputs ▲' : '▼ Show All Inputs ▼'}
+              </Button>
+            }
+          >
             <IncomeCalculator origin='Tracker' selectedMonth={selectedMonth} />
             <ExpenseTracker origin='Tracker' selectedMonth={selectedMonth} />
-            
-            <hr style={{marginTop: 15 + "px", marginBottom: 15 + "px"}}/>
           </AppCollapsible>
         </Stack>
       </>
@@ -107,7 +112,11 @@ export default function MonthlyActualSummary() {
       {plan?.totalSavings > 0 ? (
         <Box mt={4}>
           <Text fontSize="sm" color="gray.500">Savings progress toward this month's savings plan:</Text>
-          <Progress.Root value={percentComplete} size="sm" colorScheme="green" mt={1} borderRadius="md" />
+          <Progress.Root value={percentComplete} size="sm" colorScheme="green" mt={1} borderRadius="md">
+            <Progress.Track borderRadius="md">
+              <Progress.Range borderRadius="md" />
+            </Progress.Track>
+          </Progress.Root>
           <Text fontSize="xs" mt={1}>({savings?.toLocaleString()} of {plan.totalSavings?.toLocaleString()} planned)</Text>
         </Box>
       ) : ('')}

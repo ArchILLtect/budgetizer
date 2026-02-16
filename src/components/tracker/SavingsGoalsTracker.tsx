@@ -96,14 +96,18 @@ export default function SavingsGoalsTracker() {
         <Heading size="md"># of Goals: {goals.length}</Heading>
       </Flex>
 
-      <Center>
-        <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowGoalInputs(!showGoalInputs)}>
-          {showGoalInputs ? '▲ Hide All Goals ▲' : '▼ Show/Edit Goals ▼'}
-        </Button>
-      </Center>
-
-      <AppCollapsible title="Savings Goals" mb={4} defaultOpen={showGoalInputs}>
-      {progressData.map(({ goal, total, progress }: { goal: any; total: number; progress: number }) => (
+      <AppCollapsible
+        mb={4}
+        defaultOpen={showGoalInputs}
+        open={showGoalInputs}
+        onOpenChange={(open) => setShowGoalInputs(open)}
+        headerCenter={
+          <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowGoalInputs(!showGoalInputs)}>
+            {showGoalInputs ? '▲ Hide All Goals ▲' : '▼ Show/Edit Goals ▼'}
+          </Button>
+        }
+      >
+        {progressData.map(({ goal, total, progress }: { goal: any; total: number; progress: number }) => (
         <Card.Root p={4} mb={4} borderWidth={1} borderColor={'gray.100'} bg={'whitesmoke'} key={String(goal.id)}>
           <Flex justify="space-between" align="center" mb={4}>
             <Button
@@ -113,16 +117,22 @@ export default function SavingsGoalsTracker() {
             >
               {editGoalId === goal.id ? 'Close' : 'Edit'}
             </Button>
-            <Stat.Root mb={4} textAlign="center">
+            <Stat.Root mb={4}>
+              <Box justifyContent="center" display="flex" flexDirection="column" alignItems="center">
               <Stat.Label fontSize={'lg'}>{goal.name} {goal.id === 'yearly' ? selectedYear : ''}</Stat.Label>
               <Stat.ValueText color="green.500">
                 {/* ${total?.toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${goal?.target?.toLocaleString(undefined, { minimumFractionDigits: 2 })} */}
                 ${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--" } / ${Number.isFinite(goal?.target) ? goal.target.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--"}
               </Stat.ValueText>
+              </Box>
             </Stat.Root>
             <Button size="xs" colorScheme="red" onClick={() => resetGoal(goal.id)}>Reset</Button>
           </Flex>
-          <Progress.Root value={progress} size="lg" colorScheme="green" bg={'gray.200'} borderRadius="xl" mb={4} />
+          <Progress.Root value={progress} size="lg" colorScheme="green" bg={'gray.200'} borderRadius="xl" mb={4}>
+            <Progress.Track borderRadius="xl">
+              <Progress.Range borderRadius="xl" />
+            </Progress.Track>
+          </Progress.Root>
           {editGoalId === goal.id && (
             <Box borderWidth={1} borderRadius="lg" bg="gray.50" boxShadow="sm">
               <VStack align="start" gap={2} p={4}>
