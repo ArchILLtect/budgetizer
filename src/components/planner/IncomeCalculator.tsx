@@ -83,11 +83,11 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
   }
 
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4} mb={6} bg={"gray.100"}>
-      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="white">
+    <Box borderWidth="1px" borderRadius="lg" p={4} mb={6} bg="bg.muted" borderColor="border">
+      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="bg.panel" borderColor="border">
         <Heading size="md">Income (Monthly)</Heading>
         {!isTracker &&
-          <Button variant={'outline'} colorScheme="blue" bg={"gray.200"} onClick={() => handleTempButton()}>Use Fixed Income</Button>
+          <Button variant={'outline'} colorScheme="blue" bg="bg.emphasized" onClick={() => handleTempButton()}>Use Fixed Income</Button>
         }
         {!isTracker ? (
           <Heading size="md">${(net/12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
@@ -106,7 +106,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
         )}
       </Flex>
 
-      <Box border={"1px solid"} borderColor={"gray.200"} borderRadius={"lg"} my={3} p={2} bg={"white"}>
+      <Box border={"1px solid"} borderColor="border" borderRadius={"lg"} my={3} p={2} bg="bg.panel">
       <AppCollapsible
         mt={0}
         mb={"4px"}
@@ -130,14 +130,13 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
           <Field.Root mb={4}>
             <Field.Label>Filing Status</Field.Label>
             <RadioGroup.Root
-              value={scenarios[currentScenario].filingStatus}
-              onChange={handleUpdateFilingStatus as any}
+              value={effectiveFilingStatus}
               onValueChange={(details) => {
                 const next = details.value as FilingStatus;
-                if (next === scenarios[currentScenario].filingStatus) return;
+                if (!currentScenario) return;
+                if (next === effectiveFilingStatus) return;
                 
-                updateScenario(currentScenario, { filingStatus: next });
-                setFilingStatus(next);
+                handleUpdateFilingStatus(next);
               }}
             >
               <HStack gap={4} wrap={'wrap'}>
@@ -167,7 +166,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
             }}
             variant="enclosed"
           >
-            <Tabs.List borderTopRadius="lg" borderBottomRadius={"none"} borderX={"1px solid"} borderTop={"1px solid"} borderColor="gray.200">
+            <Tabs.List borderTopRadius="lg" borderBottomRadius={"none"} borderX={"1px solid"} borderTop={"1px solid"} borderColor="border">
               {sources.map((source) => (
                 <Tabs.Trigger key={source.id} value={source.id}>
                   {source.description}
@@ -176,7 +175,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
 
               <Tabs.Trigger value="__add__">+ Add</Tabs.Trigger>
             </Tabs.List>
-            <Box p={4} borderWidth={1} borderBottomRadius="lg" borderTopRightRadius={"lg"} bg="gray.50">
+            <Box p={4} borderWidth={1} borderColor="border" borderBottomRadius="lg" borderTopRightRadius={"lg"} bg="bg.subtle">
             {sources.map((source) => (
               <Tabs.Content key={source.id} value={source.id} pt={0}>
                 <IncomeSourceForm source={source} onUpdate={updateSource} />
@@ -191,7 +190,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
 
       {/* Estimated Income Output */}
       {grossTotal > 0 && !isTracker ? (
-        <Box mt={2} px={4} py={3} borderWidth={1} borderRadius="md" bg="gray.50">
+        <Box mt={2} px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
           <StatGroup>
             <Stat.Root>
               <Flex justifyContent={'center'} flexDirection={'column'} alignItems={'center'} gap={1}>
@@ -206,7 +205,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                 <Stat.Label>
                   💰 Est. Net Salary
                   <Tooltip content="Includes federal, state, SS, and Medicare taxes" placement="right">
-                    <Icon as={MdInfo} color="gray.500" ml={1} />
+                    <Icon as={MdInfo} color="fg.muted" ml={1} />
                   </Tooltip>
                 </Stat.Label>
                 <Stat.ValueText color="green.600">
@@ -215,7 +214,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                 <Stat.HelpText mb={2}>
                   <Text fontSize={'xs'} textAlign={'center'}>After taxes</Text>
 
-                  <Box mt={2} width={'100%'} border={'1px solid gray'} borderRadius={'md'} p={0}>
+                  <Box mt={2} width={'100%'} borderWidth={1} borderColor="border" borderRadius={'md'} p={0}>
                     <AppCollapsible
                       title="Tax Breakdown"
                       fontSize='sm'
@@ -231,19 +230,19 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                       }
                     >
                       <Stack mt={3} gap={1}>
-                        <Flex bg="gray.200" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
+                        <Flex bg="bg.emphasized" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Estimated Federal Tax:</Text>
                           <Text>${breakdown.federalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </Flex>
-                        <Flex bg="gray.100" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
+                        <Flex bg="bg.muted" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">State Tax (WI):</Text>
                           <Text>${breakdown.stateTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </Flex>
-                        <Flex bg="gray.200" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
+                        <Flex bg="bg.emphasized" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Social Security:</Text>
                           <Text>${breakdown.ssTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </Flex>
-                        <Flex bg="gray.100" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
+                        <Flex bg="bg.muted" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Medicare:</Text>
                           <Text>${breakdown.medicareTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
                         </Flex>

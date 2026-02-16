@@ -136,9 +136,9 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               Add Source
             </Button>
             </Box>
-            <Flex gap={2} alignItems="center" p={2} borderWidth={1} borderColor={'lightpink'}>
+            <Flex gap={2} alignItems="center" p={2} borderWidth={1} borderColor="border.error">
               <Flex gap={2} alignItems="center" py={'7px'} px={4} borderWidth={1}
-                  borderColor={'gray.200'} borderRadius={'md'}>
+                  borderColor="border" borderRadius={'md'}>
                   <Checkbox.Root
                     checked={overrideEnabled}
                     onCheckedChange={(e: any) =>

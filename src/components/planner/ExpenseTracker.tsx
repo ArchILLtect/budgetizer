@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useBudgetStore } from '../../store/budgetStore'
 import {
   Box, Flex, Heading, Stack, Input, Button, HStack, Text,
-  IconButton, Stat, StatGroup, StatLabel, Checkbox,
+  IconButton, Stat, StatGroup, StatLabel, Checkbox, Icon,
 } from '@chakra-ui/react'
 import { MdAdd, MdDelete, MdInfo } from "react-icons/md";
 import SavingsPlanner from '../SavingsPlanner.js';
@@ -115,8 +115,8 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
   }
 
   return (
-    <Box borderWidth="1px" borderRadius="lg" p={4} mt={6} bg={"gray.100"}>
-      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="white">
+    <Box borderWidth="1px" borderRadius="lg" p={4} mt={6} bg="bg.muted" borderColor="border">
+      <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="bg.panel" borderColor="border">
         <Heading size="md">Expenses (Monthly)</Heading>
         {!isTracker &&
           <Button variant={'outline'} colorScheme="blue" onClick={() => handleTempButton()}>Use Fixed Expense Total</Button>
@@ -124,7 +124,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
         <Heading size="md">${displayedTotalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
       </Flex>
 
-      <Box p={2} mt={3} borderWidth={1} borderColor={"gray.200"} borderRadius={"lg"} bg={"white"}>
+      <Box p={2} mt={3} borderWidth={1} borderColor="border" borderRadius={"lg"} bg="bg.panel">
         <Stack gap={3}>
           <AppCollapsible
             mb={"4px"}
@@ -142,7 +142,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
           >
             <Stack gap={3}>
               {expenses.length === 0 ? (
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="sm" color="fg.muted">
                   No expenses yet. Add one to start tracking.
                 </Text>
               ) : null}
@@ -156,7 +156,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     onChange={(e) =>
                       updateExpense(expense.id, { name: e.target.value })
                     }
-                    bg={"gray.100"}
+                    bg="bg.muted"
                     placeholder="Expense name"
                   />
                   <Input
@@ -167,7 +167,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     onChange={(e) =>
                       updateExpense(expense.id, { amount: parseFloat(e.target.value) || 0 })
                     }
-                    bg={expense.isSavings ? "green.50" : "gray.50"}
+                    bg={expense.isSavings ? "bg.success" : "bg.subtle"}
                     placeholder="Amount"
                   />
                   {expense.id !== 'rent' && !expense.isSavings && (
@@ -218,7 +218,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                       </Checkbox.Label>
                     </Checkbox.Root>
                     <Tooltip content="Use this to override the system-calculated total." placement="top">
-                        <MdInfo color="gray.500" />
+                        <Icon as={MdInfo} color="fg.muted" />
                     </Tooltip>
                   </Flex>
                   <Input
@@ -239,7 +239,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
             </Stack>
           </AppCollapsible>
           {!isTracker &&
-            <Box mt={2} px={4} py={3} borderWidth={1} borderRadius="md" bg="gray.50">
+            <Box mt={2} px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
               <StatGroup>
                 <Stat.Root textAlign={'center'}>
                   <StatLabel>Est. Net Income</StatLabel>

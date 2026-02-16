@@ -27,6 +27,9 @@ export default function ScenarioSelector({ isOpen, onOpen, onClose }: ScenarioSe
             <NativeSelect.Field
               value={selectedScenario}
               onChange={(e) => loadScenario(e.target.value)}
+              bg="bg.panel"
+              color="fg"
+              borderColor="border"
             >
               {scenarioNames.map((name) => (
                 <option key={name} value={name}>{name}</option>
