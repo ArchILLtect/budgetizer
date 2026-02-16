@@ -11,8 +11,9 @@ export const AppSwitch = ({ show, setShow }: AppSwitchProps) => {
     <Switch.Root
       size="md" 
       checked={show} 
-      onCheckedChange={(details: { checked: boolean }) => setShow(details.checked)}
+      onCheckedChange={(details: { checked: boolean | string }) => setShow(details.checked === true)}
     >
+      <Switch.HiddenInput />
       <Switch.Control>
         <Switch.Thumb />
       </Switch.Control>
