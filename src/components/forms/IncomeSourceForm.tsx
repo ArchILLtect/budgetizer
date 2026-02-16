@@ -68,7 +68,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               onChange={(e) =>
                 onUpdate(source.id, { hourlyRate: parseFloat(e.target.value) || 0 })
               }
-              bg={"white"}
+              bg="bg.panel"
             />
           </Field.Root>
           <Field.Root>
@@ -80,7 +80,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               onChange={(e) =>
                 onUpdate(source.id, { hoursPerWeek: parseFloat(e.target.value) || 0 })
               }
-              bg={"white"}
+              bg="bg.panel"
             />
           </Field.Root>
         </Stack>
@@ -100,7 +100,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             onChange={(e) =>
               onUpdate(source.id, { grossSalary: parseFloat(e.target.value) || 0 })
             }
-            bg={"white"}
+            bg="bg.panel"
           />
         </Field.Root>
       )}
@@ -115,7 +115,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             onChange={(e) =>
                 onUpdate(source.id, { state: e.target.value })
               }
-            bg={"white"}
+            bg="bg.panel"
           >
             <option value="WI">Wisconsin</option>
           </NativeSelect.Field>

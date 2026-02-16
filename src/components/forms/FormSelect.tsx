@@ -62,19 +62,19 @@ export function FormSelect({
 
   const helper = helperText ? (
     helperMode === "below" ? (
-      <Text fontSize="xs" color="gray.500" mt={1}>
+      <Text fontSize="xs" color="fg.muted" mt={1}>
         {helperText}
       </Text>
     ) : (
       <Tooltip content={helperText} showArrow>
-        <Box as="span" color="gray.500" cursor="help" lineHeight="0">
+        <Box as="span" color="fg.muted" cursor="help" lineHeight="0">
           <FiInfo />
         </Box>
       </Tooltip>
     )
   ) : null;
 
-  const computedLabelColor = labelColor ?? "gray.600";
+  const computedLabelColor = labelColor ?? "fg.muted";
 
   return (
     <Select.Root
@@ -98,7 +98,7 @@ export function FormSelect({
             {helperMode === "tooltip" ? helper : null}
           </HStack>
 
-          <Select.Control bg="white" minW={minW ?? "200px"} maxW={maxW ?? "200px"}>
+          <Select.Control bg="bg.panel" minW={minW ?? "200px"} maxW={maxW ?? "200px"}>
             <Select.Trigger>
               <Select.ValueText placeholder={placeholder ?? "Select an option"} />
               <Select.Indicator />
@@ -129,7 +129,7 @@ export function FormSelect({
             {helperMode === "tooltip" ? helper : null}
           </HStack>
 
-          <Select.Control bg="white" minW={minW ?? "220px"} maxW={maxW}>
+          <Select.Control bg="bg.panel" minW={minW ?? "220px"} maxW={maxW}>
             <Select.Trigger>
               <Select.ValueText placeholder={placeholder ?? "Select an option"} />
               <Select.Indicator />
