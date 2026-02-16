@@ -1,15 +1,22 @@
-import { Box, Button, Heading, HStack, VStack, Text, Checkbox, NumberInput, Badge, Flex, Field, Separator } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, VStack, Text, Checkbox, NumberInput, Badge, Flex, Field, Separator, Input, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSettingsPageData } from "./useSettingsPageData";
 import { BasicSpinner } from "../components/ui/BasicSpinner";
 import { useBudgetStore } from '../store/budgetStore';
 import { AppSwitch } from '../components/Switch';
 import {
+  useApplyAlwaysExtractVendorName,
+  useExpenseNameOverrides,
   useDefaultLandingRoute,
+  useIncomeNameOverrides,
+  useSetApplyAlwaysExtractVendorName,
   useSetDefaultLandingRoute,
+  useSetExpenseNameOverrides,
+  useSetIncomeNameOverrides,
   useSetSidebarWidthPreset,
   useSidebarWidthPreset,
   type DefaultLandingRoute,
+  type NameOverrideRule,
   type SidebarWidthPreset,
 } from "../store/localSettingsStore";
 import { clearUserScopedKeysByPrefix } from "../services/userScopedStorage";
@@ -29,6 +36,7 @@ import {
   // resetDemoDataPreservingNonDemo, // TODO(P4): keep this for now to use for demo data counts in the success message after we surface those counts from the API; remove it when we no longer need it for that
 } from "../services/demoDataService";
 import { AppCollapsible } from "../components/ui/AppCollapsible";
+import { MdAdd, MdDelete } from "react-icons/md";
 
 export default function SettingsPage() {
 
@@ -110,6 +118,45 @@ export default function SettingsPage() {
 
   const defaultLandingRoute = useDefaultLandingRoute();
   const setDefaultLandingRoute = useSetDefaultLandingRoute();
+
+  const applyAlwaysExtractVendorName = useApplyAlwaysExtractVendorName();
+  const setApplyAlwaysExtractVendorName = useSetApplyAlwaysExtractVendorName();
+
+  const expenseNameOverrides = useExpenseNameOverrides();
+  const setExpenseNameOverrides = useSetExpenseNameOverrides();
+  const incomeNameOverrides = useIncomeNameOverrides();
+  const setIncomeNameOverrides = useSetIncomeNameOverrides();
+
+  const applyActualNameOverrides = useBudgetStore((s) => s.applyActualNameOverrides);
+
+  const [expenseNameOverridesLocal, setExpenseNameOverridesLocal] = useState<NameOverrideRule[]>(() => expenseNameOverrides ?? []);
+  const [incomeNameOverridesLocal, setIncomeNameOverridesLocal] = useState<NameOverrideRule[]>(() => incomeNameOverrides ?? []);
+
+  useEffect(() => {
+    setExpenseNameOverridesLocal(expenseNameOverrides ?? []);
+  }, [expenseNameOverrides]);
+
+  useEffect(() => {
+    setIncomeNameOverridesLocal(incomeNameOverrides ?? []);
+  }, [incomeNameOverrides]);
+
+  const normalizeRuleList = (rules: NameOverrideRule[]) =>
+    (Array.isArray(rules) ? rules : [])
+      .map((r) => ({
+        match: String(r?.match ?? "").replace(/\s+/g, " ").trim(),
+        displayName: String(r?.displayName ?? "").replace(/\s+/g, " ").trim(),
+      }))
+      .filter((r) => r.match && r.displayName);
+
+  const saveNameOverrides = () => {
+    const nextExpense = normalizeRuleList(expenseNameOverridesLocal);
+    const nextIncome = normalizeRuleList(incomeNameOverridesLocal);
+
+    setExpenseNameOverrides(nextExpense);
+    setIncomeNameOverrides(nextIncome);
+    applyActualNameOverrides({ expense: nextExpense, income: nextIncome });
+    fireToast('success', 'Name overrides saved', 'Existing tracker items were updated using your override mappings.');
+  };
 
   const { isDemo, isDemoIdentity, isDemoSession, isDemoOptIn } = useDemoMode(true);
   const demoTourDisabled = useDemoTourStore((s) => s.disabled);
@@ -195,6 +242,154 @@ export default function SettingsPage() {
               helperMode="below"
             />
           </VStack>
+        </Box>
+
+        <Box pt={6} w="100%"> {/* Apply to Budget */}
+          <Heading size="lg">Apply to Budget</Heading>
+          <Text color="fg.muted" fontSize="sm">
+            Controls how expense names are created when you apply imported transactions into the Tracker.
+          </Text>
+
+          <Box pt={3}>
+            <HStack justify="space-between" align="center">
+              <Box>
+                <Text fontWeight={600}>Always extract vendor-like names</Text>
+                <Text color="fg.muted" fontSize="sm">
+                  When on, Budgeteer tries to extract a vendor-like name from every expense description. When off (default), only known vendors are extracted and everything else uses the raw (sanitized) description.
+                </Text>
+              </Box>
+              <AppSwitch show={applyAlwaysExtractVendorName} setShow={setApplyAlwaysExtractVendorName} />
+            </HStack>
+          </Box>
+
+          <Box pt={4}>
+            <Heading size="sm">Name Overrides (Exact Match)</Heading>
+            <Text color="fg.muted" fontSize="sm">
+              Map an exact shown name to a preferred display name. First match wins. These apply regardless of the extraction toggle above.
+            </Text>
+
+            <Box pt={3}>
+              <Heading size="xs" mb={2}>Expenses (includes Savings)</Heading>
+              <VStack align="stretch" gap={2}>
+                {expenseNameOverridesLocal.length === 0 ? (
+                  <Text fontSize="sm" color="fg.muted">No overrides yet.</Text>
+                ) : null}
+                {expenseNameOverridesLocal.map((rule, idx) => (
+                  <HStack key={`exp-ovr-${idx}`}>
+                    <Input
+                      value={rule.match}
+                      onChange={(e) =>
+                        setExpenseNameOverridesLocal((prev) => {
+                          const next = prev.slice();
+                          next[idx] = { ...next[idx], match: e.target.value };
+                          return next;
+                        })
+                      }
+                      placeholder="Match (exact)"
+                      bg="bg.muted"
+                    />
+                    <Input
+                      value={rule.displayName}
+                      onChange={(e) =>
+                        setExpenseNameOverridesLocal((prev) => {
+                          const next = prev.slice();
+                          next[idx] = { ...next[idx], displayName: e.target.value };
+                          return next;
+                        })
+                      }
+                      placeholder="Display name"
+                      bg="bg.muted"
+                    />
+                    <IconButton
+                      aria-label="Remove override"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setExpenseNameOverridesLocal((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      <MdDelete />
+                    </IconButton>
+                  </HStack>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  alignSelf="flex-start"
+                  onClick={() => setExpenseNameOverridesLocal((prev) => prev.concat({ match: "", displayName: "" }))}
+                >
+                  <MdAdd /> Add expense override
+                </Button>
+              </VStack>
+            </Box>
+
+            <Box pt={4}>
+              <Heading size="xs" mb={2}>Income</Heading>
+              <VStack align="stretch" gap={2}>
+                {incomeNameOverridesLocal.length === 0 ? (
+                  <Text fontSize="sm" color="fg.muted">No overrides yet.</Text>
+                ) : null}
+                {incomeNameOverridesLocal.map((rule, idx) => (
+                  <HStack key={`inc-ovr-${idx}`}>
+                    <Input
+                      value={rule.match}
+                      onChange={(e) =>
+                        setIncomeNameOverridesLocal((prev) => {
+                          const next = prev.slice();
+                          next[idx] = { ...next[idx], match: e.target.value };
+                          return next;
+                        })
+                      }
+                      placeholder="Match (exact)"
+                      bg="bg.muted"
+                    />
+                    <Input
+                      value={rule.displayName}
+                      onChange={(e) =>
+                        setIncomeNameOverridesLocal((prev) => {
+                          const next = prev.slice();
+                          next[idx] = { ...next[idx], displayName: e.target.value };
+                          return next;
+                        })
+                      }
+                      placeholder="Display name"
+                      bg="bg.muted"
+                    />
+                    <IconButton
+                      aria-label="Remove override"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIncomeNameOverridesLocal((prev) => prev.filter((_, i) => i !== idx))}
+                    >
+                      <MdDelete />
+                    </IconButton>
+                  </HStack>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  alignSelf="flex-start"
+                  onClick={() => setIncomeNameOverridesLocal((prev) => prev.concat({ match: "", displayName: "" }))}
+                >
+                  <MdAdd /> Add income override
+                </Button>
+              </VStack>
+            </Box>
+
+            <HStack pt={4}>
+              <Button size="sm" colorScheme="teal" onClick={saveNameOverrides}>
+                Save overrides
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setExpenseNameOverridesLocal(expenseNameOverrides ?? []);
+                  setIncomeNameOverridesLocal(incomeNameOverrides ?? []);
+                }}
+              >
+                Reset
+              </Button>
+            </HStack>
+          </Box>
         </Box>
 
         <Box pt={6} w="100%"> {/* Demo */}
