@@ -7,6 +7,7 @@ import { waitForIdleAndPaint } from "../../utils/appUtils";
 import { startTransition } from 'react';
 import { fireToast } from "../../hooks/useFireToast";
 import { DialogModal } from "./DialogModal";
+import { useApplyAlwaysExtractVendorName, useExpenseNameOverrides, useIncomeNameOverrides } from "../../store/localSettingsStore";
 
 type ApplyToBudgetModalProps = {
   isOpen: boolean;
@@ -29,6 +30,9 @@ type ApplyScope = "month" | "year" | "all";
 
 export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: ApplyToBudgetModalProps) {
   const [loading, setLoading] = useState(false);
+  const applyAlwaysExtractVendorName = useApplyAlwaysExtractVendorName();
+  const expenseNameOverrides = useExpenseNameOverrides();
+  const incomeNameOverrides = useIncomeNameOverrides();
   const [scope, setScope] = useState<ApplyScope>("month");
   const [ignoreBeforeEnabled, setIgnoreBeforeEnabled] = useState<boolean>(false);
   const [ignoreBeforeDate, setIgnoreBeforeDate] = useState(() =>
@@ -90,7 +94,12 @@ export default function ApplyToBudgetModal({ isOpen, onClose, acct, months }: Ap
           m,
           { accountNumber: resolvedAccountNumber, transactions: acct.transactions },
           false,
-          ignoreBeforeDateForThisRun
+          ignoreBeforeDateForThisRun,
+          {
+            alwaysExtractVendorName: applyAlwaysExtractVendorName,
+            expenseNameOverrides,
+            incomeNameOverrides,
+          }
         );
         total.e += counts.e;
         total.i += counts.i;
