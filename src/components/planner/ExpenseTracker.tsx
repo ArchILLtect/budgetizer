@@ -5,9 +5,11 @@ import {
   IconButton, Stat, StatGroup, StatLabel, Checkbox, Icon,
 } from '@chakra-ui/react'
 import { MdAdd, MdDelete, MdInfo } from "react-icons/md";
+import { MdContentCopy } from "react-icons/md";
 import SavingsPlanner from '../SavingsPlanner.js';
 import { AppCollapsible } from '../ui/AppCollapsible.js';
 import { Tooltip } from '../ui/Tooltip';
+import { fireToast } from '../../hooks/useFireToast';
 
 type Expense = {
   id: string;
@@ -114,6 +116,20 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
     window.alert('This feature coming soon')
   }
 
+  const copyExpenseName = async (name: string) => {
+    const text = String(name ?? '');
+    if (!text.trim()) {
+      fireToast('info', 'Nothing to copy', 'This expense name is empty.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      fireToast('success', 'Copied', 'Expense name copied to clipboard.');
+    } catch {
+      fireToast('error', 'Copy failed', 'Could not copy to clipboard.');
+    }
+  };
+
   return (
     <Box borderWidth="1px" borderRadius="lg" p={4} mt={6} bg="bg.muted" borderColor="border">
       <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="bg.panel" borderColor="border">
@@ -159,6 +175,16 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     bg="bg.muted"
                     placeholder="Expense name"
                   />
+                  <Tooltip content="Copy name" placement="top">
+                    <IconButton
+                      aria-label="Copy expense name"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void copyExpenseName(expense?.name)}
+                    >
+                      <MdContentCopy />
+                    </IconButton>
+                  </Tooltip>
                   <Input
                     type="number"
                     value={expense.amount}

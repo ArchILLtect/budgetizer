@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBudgetStore } from '../../store/budgetStore'
 import { Box, Flex, Stack, Input, Button, HStack, IconButton, Checkbox } from '@chakra-ui/react'
-import { MdAdd, MdDelete, MdInfo } from "react-icons/md";
+import { MdAdd, MdDelete, MdInfo, MdContentCopy } from "react-icons/md";
 import { Tooltip } from '../ui/Tooltip';
 import { fireToast } from '../../hooks/useFireToast';
 
@@ -64,6 +64,20 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
     }
   }
 
+  const copyIncomeName = async (value: string) => {
+    const text = String(value ?? '');
+    if (!text.trim()) {
+      fireToast('info', 'Nothing to copy', 'This income name is empty.');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      fireToast('success', 'Copied', 'Income name copied to clipboard.');
+    } catch {
+      fireToast('error', 'Copy failed', 'Could not copy to clipboard.');
+    }
+  };
+
   // Sync toggle state when the month changes. Avoid overriding the user's toggle
   // within the same month when the override total is still 0.
   useEffect(() => {
@@ -92,6 +106,16 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               }
               placeholder="Source name"
             />
+            <Tooltip content="Copy name" placement="top">
+              <IconButton
+                aria-label="Copy income name"
+                size="sm"
+                variant="outline"
+                onClick={() => void copyIncomeName(source.description ?? '')}
+              >
+                <MdContentCopy />
+              </IconButton>
+            </Tooltip>
             <Input
               type="number"
               value={String(source.amount ?? '')}
