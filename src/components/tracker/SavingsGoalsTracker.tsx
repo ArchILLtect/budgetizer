@@ -102,9 +102,9 @@ export default function SavingsGoalsTracker() {
         open={showGoalInputs}
         onOpenChange={(open) => setShowGoalInputs(open)}
         headerCenter={
-          <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowGoalInputs(!showGoalInputs)}>
+          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowGoalInputs(!showGoalInputs)}>
             {showGoalInputs ? '▲ Hide All Goals ▲' : '▼ Show/Edit Goals ▼'}
-          </Button>
+          </Text>
         }
       >
         {progressData.map(({ goal, total, progress }: { goal: any; total: number; progress: number }) => (

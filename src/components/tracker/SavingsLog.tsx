@@ -76,9 +76,9 @@ export default function SavingsLog() {
         open={showInputs}
         onOpenChange={(open) => setShowInputs(open)}
         headerCenter={
-          <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowInputs(!showInputs)}>
+          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowInputs(!showInputs)}>
             {showInputs ? '▲ Hide All Logs ▲' : '▼ Show/Edit Logs ▼'}
-          </Button>
+          </Text>
         }
       >
         {logsForMonth.length === 0 ? (

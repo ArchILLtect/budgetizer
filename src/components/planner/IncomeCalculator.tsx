@@ -117,9 +117,9 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
         open={showIncomeInputs}
         onOpenChange={(open) => setShowIncomeInputs(open)}
         headerCenter={
-          <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowIncomeInputs(!showIncomeInputs)}>
+          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowIncomeInputs(!showIncomeInputs)}>
             {showIncomeInputs ? '▲ Hide Income Inputs ▲' : '▼ Show Income Inputs ▼'}
-          </Button>
+          </Text>
         }
       >
       {isTracker ? (
@@ -224,9 +224,9 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                       open={showDetails}
                       onOpenChange={(open) => setShowDetails(open)}
                       headerRight={
-                        <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowDetails(!showDetails)} minW={"150px"}>
+                        <Text fontSize="xs" colorScheme="blue" onClick={() => setShowDetails(!showDetails)} minW={"150px"}>
                           {showDetails ? '▲ Hide Breakdown ▲' : '▼ Show Breakdown ▼'}
-                        </Button>
+                        </Text>
                       }
                     >
                       <Stack mt={3} gap={1}>

@@ -3,6 +3,14 @@ import { Heading, Table, Button, HStack, Text, Card  } from "@chakra-ui/react";
 import { findRecurringTransactions } from "../../utils/analysisUtils";
 import { useBudgetStore } from "../../store/budgetStore";
 
+/* Note: this component is focused on displaying recurring transactions
+// identified in the system, and providing basic management (save/delete).
+// It does not currently support creating new recurring transactions or
+// editing details beyond amount - these would require additional inputs
+// and complexity around scheduling, which can be considered for future
+// iterations if desired by users. */
+const noop = () => {};
+
 type RecurringPaymentsCardProps = {
   account: {
     accountNumber: string;
@@ -22,8 +30,8 @@ type RecurringPaymentsCardProps = {
 };
 
 export default function RecurringPaymentsCard({ account }: RecurringPaymentsCardProps) {
-  const updateRecurring = useBudgetStore((s: any) => s.updateRecurring ?? (() => {}));
-  const removeRecurring = useBudgetStore((s: any) => s.removeRecurring ?? (() => {}));
+  const updateRecurring = useBudgetStore((s: any) => s.updateRecurring ?? noop);
+  const removeRecurring = useBudgetStore((s: any) => s.removeRecurring ?? noop);
 
   const currentAccount = account;
   const currentTransactions = useMemo(() => currentAccount.transactions ?? [], [currentAccount]);
@@ -84,8 +92,7 @@ export default function RecurringPaymentsCard({ account }: RecurringPaymentsCard
               <Table.Cell borderRightWidth="2px" borderRightColor="border"><Text fontWeight={'bold'}>{totalRecurring.toLocaleString()}</Text></Table.Cell>
               <Table.Cell><Button size="xs" colorScheme="red" variant="outline" onClick={() => {/* TODO: implement bulk clear in store if desired */}}>Clear all transactions</Button></Table.Cell>
             </Table.Row>
-          )
-        }
+          )}
         </Table.Body>
       </Table.Root>
     </Card.Root>

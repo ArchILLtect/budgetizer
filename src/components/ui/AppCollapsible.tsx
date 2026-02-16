@@ -20,7 +20,7 @@ type AppCollapsibleProps = {
   mb?: string | number;
 };
 
-export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, midChevronToggler, fontSize = "lg", fontWeight = "600", fontColor = "black", children, defaultOpen = false, open, onOpenChange, width = "100%", mt = "5", mb = "5" }: AppCollapsibleProps) {
+export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, midChevronToggler, fontSize = "lg", fontWeight = "600", fontColor = "fg", children, defaultOpen = false, open, onOpenChange, width = "100%", mt = "5", mb = "5" }: AppCollapsibleProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const isOpen = open ?? uncontrolledOpen;
   return (

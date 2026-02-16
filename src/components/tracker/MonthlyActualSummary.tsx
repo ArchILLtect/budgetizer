@@ -1,5 +1,5 @@
 import { Box, Text, Heading, Stat, Stack,
-  StatGroup, Progress, Flex, Button } from '@chakra-ui/react';
+  StatGroup, Progress, Flex } from '@chakra-ui/react';
 import { useBudgetStore } from '../../store/budgetStore';
 import ExpenseTracker from '../planner/ExpenseTracker';
 import IncomeCalculator from '../planner/IncomeCalculator';
@@ -76,9 +76,9 @@ export default function MonthlyActualSummary() {
             open={showActualInputs}
             onOpenChange={(open) => setShowActualInputs(open)}
             headerCenter={
-              <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowActualInputs(!showActualInputs)}>
+              <Text fontSize="xs" colorScheme="blue" onClick={() => setShowActualInputs(!showActualInputs)}>
                 {showActualInputs ? '▲ Hide All Inputs ▲' : '▼ Show All Inputs ▼'}
-              </Button>
+              </Text>
             }
           >
             <IncomeCalculator origin='Tracker' selectedMonth={selectedMonth} />

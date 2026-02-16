@@ -135,9 +135,9 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
             open={showExpenseInputs}
             onOpenChange={(open) => setShowExpenseInputs(open)}
             headerCenter={
-              <Button size="xs" variant="plain" colorScheme="blue" onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
+              <Text fontSize="xs" colorScheme="blue" onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
                 {showExpenseInputs ? '▲ Hide Expense Inputs ▲' : '▼ Show Expense Inputs ▼'}
-              </Button>
+              </Text>
             }
           >
             <Stack gap={3}>
