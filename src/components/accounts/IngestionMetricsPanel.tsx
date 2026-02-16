@@ -41,7 +41,7 @@ export default function IngestionMetricsPanel({ metrics, sessionId }: { metrics?
     ['Consensus', stageTimings.consensusMs, 'teal'],
   ] : [];
   return (
-    <Box p={4} borderWidth="1px" borderRadius="md" bg="gray.50" _dark={{ bg: 'gray.700' }} fontSize="sm">
+    <Box p={4} borderWidth="1px" borderRadius="md" bg="bg" fontSize="sm">
       <HStack mb={2} justify="space-between">
         <Heading as="h3" size="sm">Ingestion Timing</Heading>
         {sessionId && <Tag.Root size="sm" colorScheme="blue">{sessionId.slice(0,8)}</Tag.Root>}

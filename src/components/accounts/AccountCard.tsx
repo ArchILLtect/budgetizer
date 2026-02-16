@@ -129,10 +129,10 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
       <Flex key={acct.id} justifyContent="space-between" alignItems="center" mb={3}>
         <VStack align="start" gap={0}>
           <Text fontWeight="bold">{displayLabel}</Text>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="fg.muted">
             {institution}
           </Text>
-          <Text fontSize="sm" color="gray.500">
+          <Text fontSize="sm" color="fg.muted">
             Imported {acct.importedAt ? dayjs(acct.importedAt).format("MMM D, YYYY @ h:mm A") : "—"}
           </Text>
         </VStack>
@@ -174,7 +174,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                         key={se.sessionId}
                         //closeOnSelect={false}
                         _focus={{ outline: 'none', bg: 'transparent' }}
-                        _hover={{ bg: 'gray.50' }}
+                        _hover={{ bg: 'bg.subtle' }}
                       >
                         <Flex direction="column" w="100%" gap={1}>
                           <Flex justify="space-between" align="center" gap={2}>
@@ -198,7 +198,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                               </Button>
                             </HStack>
                           </Flex>
-                          <Text fontSize="9px" color="gray.600">Staged: {se.stagedNow || se.count} / New: {se.newCount ?? '—'}{se.removed ? ` | Removed: ${se.removed}` : ''}</Text>
+                          <Text fontSize="9px" color="fg.muted">Staged: {se.stagedNow || se.count} / New: {se.newCount ?? '—'}{se.removed ? ` | Removed: ${se.removed}` : ''}</Text>
                           {se.status === 'partial-applied' && (
                             <Box h='4px' bg='purple.100' borderRadius='sm'>
                               <Box h='100%' w={`${progressPct}%`} bg='purple.400' borderRadius='sm'></Box>
@@ -210,10 +210,10 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                             </Box>
                           )}
                           {se.savingsCount !== undefined && (
-                            <Text fontSize="9px" color="gray.600">Savings: {se.savingsCount} | Hash: {se.hash?.slice(0,8)}</Text>
+                            <Text fontSize="9px" color="fg.muted">Savings: {se.savingsCount} | Hash: {se.hash?.slice(0,8)}</Text>
                           )}
                           {se.importedAt && (
-                            <Text fontSize="8px" color="gray.500">{dayjs(se.importedAt).format('MMM D HH:mm')} • {se.status}</Text>
+                            <Text fontSize="8px" color="fg.muted">{dayjs(se.importedAt).format('MMM D HH:mm')} • {se.status}</Text>
                           )}
                         </Flex>
                       </Menu.Content>
@@ -257,7 +257,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
           return (
             <Tabs.Content value={monthRaw} key={monthRaw} p={0} m={2}>
               <Box maxHeight={'md'} overflowY={'scroll'}>
-                <Table.Root size="sm" striped>
+                <Table.Root size="sm" striped bg="bg.panel" borderWidth={1} borderColor="border" borderRadius="md">
                   <Table.Header>
                     <Table.Row>
                       <Table.ColumnHeader>Date</Table.ColumnHeader>
@@ -268,7 +268,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
-                    {monthRows.map((tx) => {
+                    {monthRows.map((tx, idx) => {
                       const appliedFromSession = tx.importSessionId && !tx.staged && tx.budgetApplied;
                       const signedAmount =
                         typeof tx.rawAmount === "number"
@@ -278,10 +278,22 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                             : typeof tx.amount === "string"
                               ? Number.parseFloat(tx.amount)
                               : 0;
+
+                      const stripedBg =
+                        idx % 2 === 1
+                          ? ({ base: "gray.50", _dark: "gray.800" } as const)
+                          : undefined;
+
+                      const rowBg = tx.staged
+                        ? ({ base: "yellow.50", _dark: "yellow.900" } as const)
+                        : appliedFromSession
+                          ? ({ base: "teal.50", _dark: "teal.900" } as const)
+                          : stripedBg;
+
                       return (
                         <Table.Row
                           key={tx.id}
-                          bg={tx.staged ? 'yellow.50' : (appliedFromSession ? 'teal.50' : undefined)}
+                          bg={rowBg}
                           opacity={tx.staged ? 0.85 : 1}
                         >
                           <Table.Cell whiteSpace={'nowrap'}>{formatDate(tx.date)}</Table.Cell>
@@ -311,7 +323,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                 </Table.Root>
               </Box>
 
-              <Box my={6} px={4} py={2} borderWidth={1} borderRadius="md" bg="gray.100">
+              <Box my={6} px={4} py={2} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
                 <Flex justifyContent="space-between" alignItems="center" wrap="wrap" gap={2}>
                   <Text fontWeight="medium">Income: <span style={{ color: 'green' }}>${totals.income.toFixed(2)}</span></Text>
                   <Text fontWeight="medium">Expenses: <span style={{ color: 'orange' }}>${totals.expenses.toFixed(2)}</span></Text>
