@@ -237,12 +237,11 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
       {/* Monthly Tabbed View */}
       <Tabs.Root
         variant="enclosed"
-        colorScheme="teal"
         mt={4}
         value={activeMonth}
         onValueChange={(details) => setSelectedMonth(details.value as BudgetMonthKey)}
       >
-        <Tabs.List>
+        <Tabs.List gap={0} bg={"bg.emphasized"} mb={2}>
           {monthsForYear.map((m) => (
             <Tabs.Trigger key={m} value={m} minWidth={1} fontWeight="bold" fontSize={22}>
               {dayjs(m).format('MMM')}

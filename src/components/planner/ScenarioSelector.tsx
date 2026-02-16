@@ -40,7 +40,8 @@ export default function ScenarioSelector({ isOpen, onOpen, onClose }: ScenarioSe
           {/* Delete */}
           {selectedScenario !== "Main" && (
             <Button
-              colorScheme="red"
+              bg={"bg.error"}
+              variant={"outline"}
               onClick={() => {
                 if (confirm(`Delete scenario "${selectedScenario}"? This cannot be undone.`)) {
                   deleteScenario(selectedScenario);

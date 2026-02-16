@@ -17,13 +17,12 @@ export default function AccountsTracker() {
   const resetMonthlyActuals = useBudgetStore((s: any) => s.resetMonthlyActuals);
   const resetSavingsLogs = useBudgetStore((s: any) => s.resetSavingsLogs);
   const syncModal = useDisclosure();
-  const bg = "bg";
   const isDev = import.meta.env.DEV;
   
 
   return (
     <>
-      <VStack gap={2} mb={4}>
+      <VStack gap={2} mb={4} borderRadius="md">
         <Heading size="lg">Accounts</Heading>
         <Text fontSize="sm" color="fg.muted">
           Import a CSV in two steps: set up accounts, then import transactions.
@@ -66,13 +65,13 @@ export default function AccountsTracker() {
           </Heading>
 
           {Object.entries(accounts).map(([accountNumber, acct]) => (
-            <Box key={accountNumber} borderWidth="1px" borderRadius="lg" p={4} mb={6} mx={4} bg={bg}>
+            <Box key={accountNumber} borderWidth="1px" borderRadius="lg" p={4} mb={6} mx={4} bg={"bg.panel"}>
               <AccountCard acct={acct} acctNumber={accountNumber} />
             </Box>
           ))}
         </Box>
       ) : (
-        <Box mx={4} borderWidth="1px" borderRadius="lg" p={4}>
+        <Box mx={4} borderWidth="1px" borderRadius="lg" p={4} bg={"bg.panel"}>
           <Text fontSize="sm" color="fg.muted">
             No accounts yet. Click “Import CSV” to get started.
           </Text>

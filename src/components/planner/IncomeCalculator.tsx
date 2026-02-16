@@ -166,7 +166,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
             }}
             variant="enclosed"
           >
-            <Tabs.List borderTopRadius="lg" borderBottomRadius={"none"} borderX={"1px solid"} borderTop={"1px solid"} borderColor="border">
+            <Tabs.List borderTopRadius="lg" borderBottomRadius={"none"} borderX={"1px solid"} borderTop={"1px solid"} borderColor="border" bg={"bg.emphasized"}>
               {sources.map((source) => (
                 <Tabs.Trigger key={source.id} value={source.id}>
                   {source.description}

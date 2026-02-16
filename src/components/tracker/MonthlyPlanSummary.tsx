@@ -11,7 +11,7 @@ export default function MonthlyPlanSummary() {
   const plan = monthlyPlans[selectedMonth];
 
   return (
-    <Box p={4} boxShadow="md" bg="bg.subtle" borderWidth={2} borderColor="border" borderRadius="md">
+    <Box p={4} boxShadow="md" bg="bg.subtle" borderWidth={2} borderColor="border">
     {plan ? (
       <>
         <Flex justifyContent="space-between" alignItems="center" mb={3}>

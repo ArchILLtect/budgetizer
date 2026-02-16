@@ -13,7 +13,7 @@ export const AppSelect = ({ size, width, value, placeholder, children, onChange 
   
   return (
     <NativeSelect.Root size={size} width={width}>
-      <NativeSelect.Field placeholder={placeholder} onChange={onChange} value={value}>
+      <NativeSelect.Field placeholder={placeholder} onChange={onChange} value={value} bg={"bg.panel"}>
         {/* Options should be passed as children */}
         {children}
       </NativeSelect.Field>

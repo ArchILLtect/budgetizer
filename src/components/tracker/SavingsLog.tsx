@@ -1,4 +1,5 @@
 import { Box, Flex, Center, Heading, Stack, List, Text, Input, Button, VStack } from "@chakra-ui/react";
+import { Tooltip } from "../ui/Tooltip";
 import { MdDelete } from "react-icons/md";
 import { useState } from "react";
 import { useBudgetStore } from "../../store/budgetStore";
@@ -97,6 +98,7 @@ export default function SavingsLog() {
                         {entry.date}
                       </Text>
                     </VStack>
+                    {/* TODO(P4): Needs functionality for editing amount */}
                     {editingLogId === entry.id ? (
                       <Flex gap={2} align="center">
                         <AppSelect
@@ -130,8 +132,10 @@ export default function SavingsLog() {
                         </Button>
                       </Flex>
                     ) : (
+                      <Tooltip content="Click to edit this entry">
                       <Button
                         size="xs"
+                        bg={"bg.panel"}
                         variant="outline"
                         onClick={() => beginEditRow(entry)}
                       >
@@ -141,10 +145,11 @@ export default function SavingsLog() {
                           ? `(${savingsGoals.find((g) => g.id === entry.goalId)?.target ?? '---'})`
                           : ''}
                       </Button>
+                      </Tooltip>
                     )}
                     <Button
                       size="xs"
-                      colorScheme="red"
+                      bg={"bg.error"}
                       onClick={() => handleRemove(selectedMonth, index)}
                     >
                       <MdDelete />
@@ -158,7 +163,7 @@ export default function SavingsLog() {
             <Center>
               <Button
                 size="sm"
-                colorScheme="red"
+                bg={"bg.error"}
                 variant="outline"
                 onClick={() => resetSavingsLog(selectedMonth)}
                 mt={2}
@@ -174,6 +179,7 @@ export default function SavingsLog() {
               type="number"
               placeholder="Enter amount"
               value={amount}
+              bg={"bg.panel"}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value);
                 if (!Number.isFinite(raw)) return setAmount("");

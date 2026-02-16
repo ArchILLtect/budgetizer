@@ -121,7 +121,6 @@ export default function SavingsGoalsTracker() {
               <Box justifyContent="center" display="flex" flexDirection="column" alignItems="center">
               <Stat.Label fontSize={'lg'}>{goal.name} {goal.id === 'yearly' ? selectedYear : ''}</Stat.Label>
               <Stat.ValueText color="green.500">
-                {/* ${total?.toLocaleString(undefined, { minimumFractionDigits: 2 })} / ${goal?.target?.toLocaleString(undefined, { minimumFractionDigits: 2 })} */}
                 ${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--" } / ${Number.isFinite(goal?.target) ? goal.target.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--"}
               </Stat.ValueText>
               </Box>
@@ -129,8 +128,8 @@ export default function SavingsGoalsTracker() {
             <Button size="xs" colorScheme="red" onClick={() => resetGoal(goal.id)}>Reset</Button>
           </Flex>
           <Progress.Root value={progress} size="lg" colorScheme="green" bg="bg.subtle" borderRadius="xl" mb={4}>
-            <Progress.Track borderRadius="xl">
-              <Progress.Range borderRadius="xl" />
+            <Progress.Track borderRadius="xl" bg={"bg.panel"}>
+              <Progress.Range borderRadius="xl"/>
             </Progress.Track>
           </Progress.Root>
           {editGoalId === goal.id && (
