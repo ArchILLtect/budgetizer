@@ -3,7 +3,6 @@ import { MdDelete } from "react-icons/md";
 import { useState } from "react";
 import { useBudgetStore } from "../../store/budgetStore";
 import dayjs from "dayjs";
-import { config } from "../../config/theme";
 import { fireToast } from "../../hooks/useFireToast";
 import { AppCollapsible } from "../ui/AppCollapsible";
 import { AppSelect } from "../ui/AppSelect";
@@ -25,7 +24,7 @@ export default function SavingsLog() {
   const [editingLogId, setEditingLogId] = useState<number | null>(null);
   const [editGoalId, setEditGoalId] = useState("");
   const [amount, setAmount] = useState<number | "">("");
-  const bg = config.theme?.semanticTokens?.colors?.bg.value?.toLocaleString('base'); // use semantic token for background color
+  const bg = "bg";
   const totalSavings = logsForMonth.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0;
   const goal = savingsGoals.find((g) => g.id === selectedGoal);
   const hasSelectedGoal = !!goal;
@@ -83,7 +82,7 @@ export default function SavingsLog() {
         }
       >
         {logsForMonth.length === 0 ? (
-          <Text color="gray.500" fontSize="sm">
+          <Text color="fg.muted" fontSize="sm">
             No savings recorded for this month yet.
           </Text>
         ) : (
@@ -94,7 +93,7 @@ export default function SavingsLog() {
                   <Flex justify="space-between" alignItems="center">
                     <VStack align="start" gap={0}>
                       <Text fontWeight="medium">${entry.amount?.toFixed(2)}</Text>
-                      <Text fontSize="xs" color="gray.500">
+                      <Text fontSize="xs" color="fg.muted">
                         {entry.date}
                       </Text>
                     </VStack>

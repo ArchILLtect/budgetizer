@@ -11,13 +11,13 @@ export default function MonthlyPlanSummary() {
   const plan = monthlyPlans[selectedMonth];
 
   return (
-    <Box p={4} boxShadow="md" bg='gray.700' borderWidth={2}>
+    <Box p={4} boxShadow="md" bg="bg.subtle" borderWidth={2} borderColor="border" borderRadius="md">
     {plan ? (
       <>
         <Flex justifyContent="space-between" alignItems="center" mb={3}>
           <Heading size="md">Plan Summary</Heading>
           {plan.createdAt && (
-            <Text fontSize="xs" color="gray.500">
+            <Text fontSize="xs" color="fg.muted">
               Plan Created: {dayjs(plan.createdAt).format('MMM D, YYYY')}
             </Text>
           )}
@@ -26,7 +26,7 @@ export default function MonthlyPlanSummary() {
           </Button>
         </Flex>
 
-        <Box px={4} py={3} borderWidth={1} borderRadius="md" bg="gray.50">
+        <Box px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.panel">
           <StatGroup>
             <Stat.Root textAlign={'center'}>
                 <Stat.Label>Planned Net Income</Stat.Label>
@@ -55,7 +55,7 @@ export default function MonthlyPlanSummary() {
         </Box>
       </>
     ) : (
-      <Text fontSize="sm" color="gray.500" textAlign="center" py={6}>
+      <Text fontSize="sm" color="fg.muted" textAlign="center" py={6}>
         No plan set for this month.
       </Text>
     )}

@@ -90,7 +90,7 @@ export default function SavingsGoalsTracker() {
   
 
   return (
-    <Box mt={4} borderWidth={1} p={4} borderRadius="lg" bg="white" boxShadow="md">
+    <Box mt={4} borderWidth={1} borderColor="border" p={4} borderRadius="lg" bg="bg.panel" boxShadow="md">
       <Flex justify="space-between" align="center">
         <Heading size="md">Savings Goals</Heading>
         <Heading size="md"># of Goals: {goals.length}</Heading>
@@ -108,7 +108,7 @@ export default function SavingsGoalsTracker() {
         }
       >
         {progressData.map(({ goal, total, progress }: { goal: any; total: number; progress: number }) => (
-        <Card.Root p={4} mb={4} borderWidth={1} borderColor={'gray.100'} bg={'whitesmoke'} key={String(goal.id)}>
+        <Card.Root p={4} mb={4} borderWidth={1} borderColor="border" bg="bg.subtle" key={String(goal.id)}>
           <Flex justify="space-between" align="center" mb={4}>
             <Button
               size="xs"
@@ -128,13 +128,13 @@ export default function SavingsGoalsTracker() {
             </Stat.Root>
             <Button size="xs" colorScheme="red" onClick={() => resetGoal(goal.id)}>Reset</Button>
           </Flex>
-          <Progress.Root value={progress} size="lg" colorScheme="green" bg={'gray.200'} borderRadius="xl" mb={4}>
+          <Progress.Root value={progress} size="lg" colorScheme="green" bg="bg.subtle" borderRadius="xl" mb={4}>
             <Progress.Track borderRadius="xl">
               <Progress.Range borderRadius="xl" />
             </Progress.Track>
           </Progress.Root>
           {editGoalId === goal.id && (
-            <Box borderWidth={1} borderRadius="lg" bg="gray.50" boxShadow="sm">
+            <Box borderWidth={1} borderColor="border" borderRadius="lg" bg="bg.panel" boxShadow="sm">
               <VStack align="start" gap={2} p={4}>
                 {goal.id !== 'yearly' ? (
                   <Flex justify="space-between" width="100%">
@@ -146,6 +146,8 @@ export default function SavingsGoalsTracker() {
                         value={goal.name ?? ''}
                         aria-invalid={goal.name == ''}
                         _invalid={{ borderColor: "red.500" }}
+                        bg="bg.panel"
+                        borderColor="border"
                         onChange={(e) =>
                           updateSavingsGoal(goal.id, { name: e.target.value })
                         }
@@ -163,6 +165,8 @@ export default function SavingsGoalsTracker() {
                       type="number"
                       placeholder="Enter savings goal"
                       value={String(goal.target ?? '')}
+                      bg="bg.panel"
+                      borderColor="border"
                       onChange={(e) => {
                         const next = parseFloat(e.target.value);
                         updateSavingsGoal(goal.id, { target: Number.isFinite(next) ? next : 0 });
@@ -170,13 +174,13 @@ export default function SavingsGoalsTracker() {
                     />
                   </HStack>
                 </Flex>
-                <Text fontSize="sm" color="gray.500">
+                <Text fontSize="sm" color="fg.muted">
                   You have
                   saved ${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--"} towards
                   this goal. Your goal is to
                   save ${goal?.target?.toLocaleString(undefined, { minimumFractionDigits: 2 })}.
                 </Text>
-                <Text fontSize="sm" color="gray.500">
+                <Text fontSize="sm" color="fg.muted">
                   Adjust your monthly savings goals to stay on track with your budget.
                 </Text>
               </VStack>

@@ -10,7 +10,7 @@ export default function RecurringManager() {
   const accounts = useBudgetStore((s) => s.accounts);
 
   return (
-    <Box mt={6} p={4} borderWidth="1px" borderRadius="lg" bg="white" boxShadow="md">
+    <Box mt={6} p={4} borderWidth="1px" borderColor="border" borderRadius="lg" bg="bg.panel" boxShadow="md">
       <Flex justifyContent="space-between" alignItems="center" mb={3}>
         <Heading size="md">Recurring Payments Tracker</Heading>
         <Button size="xs" variant="plain" colorScheme="blue" ml={2} onClick={() => setShowRecurringTXs(!showRecurringTXs)}>
@@ -18,17 +18,17 @@ export default function RecurringManager() {
         </Button>
       </Flex>
       
-      <AppCollapsible title="Recurring Payments" mb={4} defaultOpen={showRecurringTXs}>
+      <AppCollapsible title="Recurring Payments" mb={4} open={showRecurringTXs} onOpenChange={setShowRecurringTXs}>
         {accounts && Object.keys(accounts).length > 0 ? (
           <>
-            {Object.values(accounts).map((account: any) => {
-              <Box key={account.id} mt={4} color="gray.600">
+            {Object.values(accounts).map((account: any) => (
+              <Box key={account.id} mt={4} color="fg.muted">
                 <RecurringPaymentsCard account={account} />
               </Box>
-            })}
+            ))}
           </>
         ) : (
-          <Box mt={4} color="gray.600">
+          <Box mt={4} color="fg.muted">
             No accounts found. Please add an account to manage recurring payments.
           </Box>
         )}

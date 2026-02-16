@@ -4,7 +4,6 @@ import { useBudgetStore } from '../../store/budgetStore';
 import ExpenseTracker from '../planner/ExpenseTracker';
 import IncomeCalculator from '../planner/IncomeCalculator';
 import dayjs from 'dayjs';
-import { config } from '../../config/theme';
 import { AppCollapsible } from '../ui/AppCollapsible';
 
 export default function MonthlyActualSummary() {
@@ -16,7 +15,7 @@ export default function MonthlyActualSummary() {
   const savingsSoFar = useBudgetStore((s: any) => s.getSavingsForMonth(selectedMonth));
   const overiddenIncomeTotal = useBudgetStore((s: any) => s.monthlyActuals[selectedMonth]?.overiddenIncomeTotal);
   const overiddenExpenseTotal = useBudgetStore((s: any) => s.monthlyActuals[selectedMonth]?.overiddenExpenseTotal);
-  const bg = config.theme?.semanticTokens?.colors?.bg.value?.toLocaleString('base'); // use semantic token for background color
+  const bg = "bg";
   const calculateWithOverride = (overrideValue: number | undefined, fallbackFn: () => number) =>
       overrideValue != null && overrideValue >= 1 ? overrideValue : fallbackFn();
   const netIncome = calculateWithOverride(overiddenIncomeTotal, () =>
@@ -88,7 +87,7 @@ export default function MonthlyActualSummary() {
         </Stack>
       </>
       }
-      <Box px={4} py={3} borderWidth={1} borderRadius="md" bg="gray.50">
+      <Box px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.panel">
         <StatGroup>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>Actual Net Income</Stat.Label>
@@ -111,7 +110,7 @@ export default function MonthlyActualSummary() {
 
       {plan?.totalSavings > 0 ? (
         <Box mt={4}>
-          <Text fontSize="sm" color="gray.500">Savings progress toward this month's savings plan:</Text>
+          <Text fontSize="sm" color="fg.muted">Savings progress toward this month's savings plan:</Text>
           <Progress.Root value={percentComplete} size="sm" colorScheme="green" mt={1} borderRadius="md">
             <Progress.Track borderRadius="md">
               <Progress.Range borderRadius="md" />
@@ -121,7 +120,7 @@ export default function MonthlyActualSummary() {
         </Box>
       ) : ('')}
       <Heading size="md" my={3}>{selectedYear} Summary</Heading>
-      <Box mb={4} px={4} py={3} borderWidth={1} borderRadius="md" bg="gray.50">
+      <Box mb={4} px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.panel">
         <StatGroup>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>{selectedYear} Total Income</Stat.Label>

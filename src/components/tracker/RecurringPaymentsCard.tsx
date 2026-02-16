@@ -39,12 +39,12 @@ export default function RecurringPaymentsCard({ account }: RecurringPaymentsCard
   // debug: recurring analysis results available via recurring variable
 
   return (
-    <Card.Root p={4} borderWidth="1px" borderRadius="lg" bg="white" boxShadow="sm">
+    <Card.Root p={4} borderWidth="1px" borderColor="border" borderRadius="lg" bg="bg.panel" boxShadow="sm">
       <Card.Header><Heading size="md">{currentAccount.label}</Heading></Card.Header>
       <Table.Root size="sm" variant="line">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeader borderRightWidth="2px" borderRightColor="gray.200">Name</Table.ColumnHeader>
+            <Table.ColumnHeader borderRightWidth="2px" borderRightColor="border">Name</Table.ColumnHeader>
             <Table.ColumnHeader>Category</Table.ColumnHeader>
             <Table.ColumnHeader>Freq</Table.ColumnHeader>
             <Table.ColumnHeader>Day/Week</Table.ColumnHeader>
@@ -57,7 +57,7 @@ export default function RecurringPaymentsCard({ account }: RecurringPaymentsCard
              .filter((r) => r.status === 'confirmed')
              .map((r: any) => (
             <Table.Row key={`${currentAccount.accountNumber}:${r.description}:${r.dayOfMonth ?? r.weekday ?? r.start ?? 'n'}`}>
-            <Table.Cell borderRightWidth="2px" borderRightColor="gray.200">{r.description}</Table.Cell>
+            <Table.Cell borderRightWidth="2px" borderRightColor="border">{r.description}</Table.Cell>
             <Table.Cell>{r.category || "—"}</Table.Cell>
             <Table.Cell textTransform="capitalize">{r.frequency}</Table.Cell>
             <Table.Cell>
@@ -65,7 +65,7 @@ export default function RecurringPaymentsCard({ account }: RecurringPaymentsCard
                 : r.frequency === 'weekly' ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][r.weekday ?? 0]
                 : r.frequency === 'biweekly' ? `Every 14d from ${r.start}` : '—'}
             </Table.Cell>
-            <Table.Cell borderRightWidth="2px" borderRightColor="gray.200">{Number(r.avgAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Table.Cell>
+            <Table.Cell borderRightWidth="2px" borderRightColor="border">{Number(r.avgAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Table.Cell>
             <Table.Cell>
               <HStack gap={2}>
                 <Button size="xs" colorScheme="blackAlpha" variant="solid" onClick={() => updateRecurring(r.id, { amount: Number(r.avgAmount) })}>Save</Button>
@@ -76,12 +76,12 @@ export default function RecurringPaymentsCard({ account }: RecurringPaymentsCard
           ))}
           {recurring
              .filter((r) => r.status === 'confirmed').length === 0 ? (
-            <Table.Row><Table.Cell colSpan={9}><Text color="gray.500">No recurring transactions for this account.</Text></Table.Cell></Table.Row>
+            <Table.Row><Table.Cell colSpan={9}><Text color="fg.muted">No recurring transactions for this account.</Text></Table.Cell></Table.Row>
           ) : (
             <Table.Row>
-              <Table.Cell borderRightWidth="2px" borderRightColor="gray.200"><Text color="gray.700" fontWeight={'bold'}>Total</Text></Table.Cell>
+              <Table.Cell borderRightWidth="2px" borderRightColor="border"><Text fontWeight={'bold'}>Total</Text></Table.Cell>
               <Table.Cell colSpan={3}></Table.Cell>
-              <Table.Cell borderRightWidth="2px" borderRightColor="gray.200"><Text color="gray.700" fontWeight={'bold'}>{totalRecurring.toLocaleString()}</Text></Table.Cell>
+              <Table.Cell borderRightWidth="2px" borderRightColor="border"><Text fontWeight={'bold'}>{totalRecurring.toLocaleString()}</Text></Table.Cell>
               <Table.Cell><Button size="xs" colorScheme="red" variant="outline" onClick={() => {/* TODO: implement bulk clear in store if desired */}}>Clear all transactions</Button></Table.Cell>
             </Table.Row>
           )

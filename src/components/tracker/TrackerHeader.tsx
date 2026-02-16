@@ -41,9 +41,9 @@ export default function TrackerHeader() {
     }
 
     return (
-        <Box p={2} borderTopRadius="lg" boxShadow="md" bg="gray.50" borderWidth={2}>
+        <Box p={2} borderTopRadius="lg" boxShadow="md" bg="bg.subtle" borderWidth={2} borderColor="border">
             <Center my={1}>
-                <Flex bg={'white'}>
+                <Flex bg="bg.panel" borderWidth={1} borderColor="border" borderRadius="md">
                     <IconButton
                         size="sm"
                         onClick={() => shiftMonth(-1)}
@@ -73,7 +73,7 @@ export default function TrackerHeader() {
                 </Center>
             ) : (
                 <Center alignContent="center" gap={3}>
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="sm" color="fg.muted">
                         Plan: {plan.scenarioName || 'Unnamed'}
                     </Text>
                     <Button size="xs" variant="outline" colorScheme="blue" onClick={() => handleTempButton()}>
