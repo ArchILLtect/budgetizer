@@ -15,6 +15,13 @@ type IncomeSourceFormProps = {
   onUpdate: (id: string, updates: Partial<IncomeSourceFormProps['source']>) => void
 }
 
+type IncomeType = "hourly" | "salary";
+
+const IncomeTypeOptions = [
+    { value: "hourly", label: "Hourly" },
+    { value: "salary", label: "Salary" },
+  ];
+
 export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormProps) {
 
   const removeIncomeSource = useBudgetStore((s) => s.removeIncomeSource)
@@ -36,8 +43,15 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
           }
         >
           <HStack gap={4}>
-              <RadioGroup.Item value="hourly">Hourly</RadioGroup.Item>
-              <RadioGroup.Item value="salary">Salary</RadioGroup.Item>
+            {IncomeTypeOptions.map((opt) => (
+              <RadioGroup.Item key={opt.value} value={opt.value as IncomeType}>
+                <RadioGroup.ItemHiddenInput />
+                <RadioGroup.ItemControl>
+                  <RadioGroup.ItemIndicator />
+                </RadioGroup.ItemControl>
+                <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
+              </RadioGroup.Item>
+            ))}
           </HStack>
         </RadioGroup.Root>
       </Field.Root>
@@ -54,6 +68,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               onChange={(e) =>
                 onUpdate(source.id, { hourlyRate: parseFloat(e.target.value) || 0 })
               }
+              bg={"white"}
             />
           </Field.Root>
           <Field.Root>
@@ -65,6 +80,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               onChange={(e) =>
                 onUpdate(source.id, { hoursPerWeek: parseFloat(e.target.value) || 0 })
               }
+              bg={"white"}
             />
           </Field.Root>
         </Stack>
@@ -84,12 +100,13 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             onChange={(e) =>
               onUpdate(source.id, { grossSalary: parseFloat(e.target.value) || 0 })
             }
+            bg={"white"}
           />
         </Field.Root>
       )}
 
       {/* State Selector */}
-      <Field.Root mt={5} mb={4}>
+      <Field.Root mt={5} mb={1}>
         <Field.Label>Select State (for tax estimate)</Field.Label>
         <NativeSelect.Root>
           <NativeSelect.Field
@@ -98,6 +115,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             onChange={(e) =>
                 onUpdate(source.id, { state: e.target.value })
               }
+            bg={"white"}
           >
             <option value="WI">Wisconsin</option>
           </NativeSelect.Field>
