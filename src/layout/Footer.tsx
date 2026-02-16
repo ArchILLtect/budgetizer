@@ -8,14 +8,20 @@ type FooterProps = {
 
 export default function Footer({ signedIn, onSignOut }: FooterProps) {
   return (
-    <HStack justify="space-around" flexWrap="wrap" py={2} bg={{ base: "teal.500", _dark: "teal.700" }}>
-      <Text textAlign="center" color="whiteAlpha.700" fontSize="sm">
+    <HStack
+      justify="space-around"
+      flexWrap="wrap"
+      py={2}
+      bg={{ base: "teal.300", _dark: "teal.700" }}
+    >
+      <Text textAlign="center" color="fg" fontSize="sm">
         &copy; {new Date().getFullYear()} Budgeteer. A privacy-aware personal finance app.
       </Text>
       <HStack gap={4} justify="center" flexWrap="wrap">
         <Button
           asChild
           size="sm"
+          textAlign="center"
           variant="ghost"
           color="gray.800"
           bg={"gray.300"}
@@ -30,9 +36,11 @@ export default function Footer({ signedIn, onSignOut }: FooterProps) {
           <Button
             size="sm"
             variant="outline"
+            textAlign="center"
             fontWeight={"700"}
-            bg={"teal.700"}
-            _hover={{ bg: "teal.700" }}
+            pb={1}
+            bg={"teal.300"}
+            _hover={{ bg: "teal.700", color: "white", borderColor: "teal.300" }}
             onClick={onSignOut}
           >
             Sign out
@@ -46,8 +54,9 @@ export default function Footer({ signedIn, onSignOut }: FooterProps) {
                 variant="outline"
                 borderColor={"teal.800"}
                 fontWeight={"500"}
-                bg={"teal.500"}
-                _hover={{ bg: "teal.600", color: "white", borderColor: "teal.300" }}
+                pb={1}
+                bg={"teal.300"}
+                _hover={{ bg: "teal.700", color: "white", borderColor: "teal.300" }}
               >
                 Sign in
               </Button>

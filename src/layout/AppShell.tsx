@@ -26,7 +26,7 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
   useBootstrapUserProfile(user);
 
   return (
-    <Flex direction="column" h="100vh" bg="gray.50" overflow={"hidden"} className="AppShell" position="relative">
+    <Flex direction="column" h="100vh" bg="bg.subtle" color="fg" overflow={"hidden"} className="AppShell" position="relative">
       <Link
         href="#main-content"
         position="absolute"
@@ -34,9 +34,9 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
         top={2}
         px={3}
         py={2}
-        bg="white"
+        bg="bg.panel"
         borderWidth="1px"
-        borderColor="blue.200"
+        borderColor="border"
         rounded="md"
         boxShadow="sm"
         zIndex={9999}
@@ -57,6 +57,7 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
         <Box
           flexShrink={0}
           h="100%"
+          bg="bg"
           overflowY="auto"
           borderRightWidth="1px"
         >

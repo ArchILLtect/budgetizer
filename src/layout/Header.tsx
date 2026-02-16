@@ -1,13 +1,15 @@
-import { Box, Flex, Button, HStack, Heading, Badge } from '@chakra-ui/react';
+import { Box, Flex, Button, HStack, Heading, Badge, IconButton } from '@chakra-ui/react';
 import { RouterLink } from "../components/RouterLink";
 import { Tooltip } from '../components/ui/Tooltip';
 import { requestOpenWelcomeModal } from '../services/welcomeModalPreference';
 import { IoSettingsSharp } from 'react-icons/io5';
+import { MdDarkMode, MdLightMode } from "react-icons/md";
 import { formatUsernameForDisplay } from '../services/userDisplay';
 import type { AuthUserLike, UserUI } from '../types';
 import { useUserUI } from '../hooks/useUserUI';
 import { useDemoMode } from "../hooks/useDemoMode";
 import { useDemoTourStore } from "../store/demoTourStore";
+import { useColorModeClass } from "../hooks/useColorModeClass";
 
 type NavigationProps = {
   user?: AuthUserLike | null;
@@ -15,6 +17,8 @@ type NavigationProps = {
 };
 
 export default function Navigation({ user, userUI }: NavigationProps) {
+
+  const { mode, toggle } = useColorModeClass();
 
   const { userUI: hookUserUI } = useUserUI();
   const effectiveUserUI = userUI ?? hookUserUI;
@@ -47,7 +51,7 @@ export default function Navigation({ user, userUI }: NavigationProps) {
       top="0"
       zIndex="1000"
       bg={{ base: "teal.300", _dark: "teal.700" }}
-      color="white"
+      color="teal.800"
       boxShadow="sm"
       px={4}
       py={3}
@@ -57,7 +61,19 @@ export default function Navigation({ user, userUI }: NavigationProps) {
       borderBottomColor={{ base: "teal.400", _dark: "teal.600" }}
     >
       <Flex justifyContent="space-between" alignItems="center" width="100%">
-        <RouterLink to="/">{() => <Heading size="lg">{"Budgeteer"}</Heading>}</RouterLink>
+        <RouterLink to="/">{() =>
+          <Heading
+            size="2xl"
+            pb={1}
+            px={2}
+            borderRadius={"xl"}
+            fontWeight={"bolder"}
+            color={{ base: "teal.800", _dark: "teal.300" }}
+            _hover={{ bg: { base: "teal.800", _dark: "teal.300" }, color: { base: "teal.300", _dark: "teal.800" } }}
+          >
+            {"Budgeteer"}
+          </Heading>
+        }</RouterLink>
           {signedIn ? (
             <Tooltip content="What’s new" showArrow>
               <Button
@@ -65,6 +81,7 @@ export default function Navigation({ user, userUI }: NavigationProps) {
                 variant="ghost"
                 fontWeight="600"
                 color={"blue.600"}
+                _hover={{ bg: "blue.100" }}
                 onClick={() => {
                   requestOpenWelcomeModal();
                 }}
@@ -90,8 +107,9 @@ export default function Navigation({ user, userUI }: NavigationProps) {
                         py={1}
                         rounded="md"
                         fontWeight="600"
-                        bg={isActive ? "blackAlpha.100" : "transparent"}
-                        _hover={{ bg: "blackAlpha.100" }}
+                        color={{ base: "teal.800", _dark: "teal.300" }}
+                        _hover={{ bg: { base: "teal.800", _dark: "teal.300" }, color: { base: "teal.300", _dark: "teal.800" } }}
+                        bg={isActive ? "teal.600" : { base: "teal.300", _dark: "teal.700" }}
                     >
                         {displayUsername}
                     </Box>
@@ -132,6 +150,19 @@ export default function Navigation({ user, userUI }: NavigationProps) {
             ) : (
               <RouterLink to="/login">{() => <Button as="span" size="sm" variant="solid">Sign in</Button>}</RouterLink>
             )}
+
+            <Tooltip content={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"} showArrow>
+              <IconButton
+                aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                variant="ghost"
+                onClick={toggle}
+                color={{ base: "teal.800", _dark: "teal.300" }}
+                _hover={{ bg: { base: "teal.800", _dark: "teal.300" }, color: { base: "teal.300", _dark: "teal.800" } }}
+              >
+                {mode === "dark" ? <MdLightMode /> : <MdDarkMode />}
+              </IconButton>
+            </Tooltip>
+
             {signedIn ? (
               <RouterLink to={"/settings"} aria-label="Settings">
                 {({ isActive }) => (
@@ -142,9 +173,9 @@ export default function Navigation({ user, userUI }: NavigationProps) {
                     width="100%"
                     paddingX={2}
                     fontWeight="700"
-                    color="black"
-                    bg={isActive ? "blackAlpha.100" : "transparent"}
-                    _hover={{ bg: "blackAlpha.100" }}
+                    color={{ base: "teal.800", _dark: "teal.300" }}
+                    _hover={{ bg: { base: "teal.800", _dark: "teal.300" }, color: { base: "teal.300", _dark: "teal.800" } }}
+                    bg={isActive ? "teal.00" : { base: "teal.300", _dark: "teal.700" }}
                   >
                     <IoSettingsSharp />
                   </Button>

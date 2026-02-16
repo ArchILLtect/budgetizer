@@ -21,7 +21,8 @@ export function Sidebar() {
       minH="100%"
       zIndex="1000"
       shadow="md"
-      borderY={"2px solid lightgray"}
+      borderY={"1px solid"}
+      borderColor={{ base: "teal.400", _dark: "teal.600" }}
       padding={3}
       >
       <Box>
