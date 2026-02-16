@@ -3,33 +3,42 @@ import { MdOutlineKeyboardArrowDown, MdOutlineKeyboardArrowUp } from "react-icon
 import { useState, type ReactNode } from "react";
 
 type AppCollapsibleProps = {
-  title: ReactNode;
+  title?: ReactNode;
   ariaLabel?: string;
   headerCenter?: ReactNode;
+  headerRight?: ReactNode;
+  midChevronToggler?: ReactNode; // if provided, will show a toggler in the middle of the header instead of the right
   fontSize?: string;
   fontWeight?: string;
   fontColor?: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   width?: string | number;
   mt?: string | number;
   mb?: string | number;
 };
 
-export function AppCollapsible({ title, ariaLabel, headerCenter, fontSize = "lg", fontWeight = "600", fontColor = "black", children, defaultOpen = false, width = "100%", mt = "5", mb = "5" }: AppCollapsibleProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, midChevronToggler, fontSize = "lg", fontWeight = "600", fontColor = "black", children, defaultOpen = false, open, onOpenChange, width = "100%", mt = "5", mb = "5" }: AppCollapsibleProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+  const isOpen = open ?? uncontrolledOpen;
   return (
     <Collapsible.Root
-      defaultOpen={defaultOpen}
+      {...(open != null ? { open } : { defaultOpen })}
       w={width}
       mt={mt}
       mb={mb}
-      onOpenChange={(e) => setIsOpen(e.open)}
+      onOpenChange={(e) => {
+        if (open == null) setUncontrolledOpen(e.open);
+        onOpenChange?.(e.open);
+      }}
     >
       <Collapsible.Trigger asChild>
         <Box
           as="button"
           w="100%"
+          mb={2}
           bg="transparent"
           border="0"
           cursor="pointer"
@@ -46,17 +55,21 @@ export function AppCollapsible({ title, ariaLabel, headerCenter, fontSize = "lg"
             gap={2}
           >
             {/* LEFT */}
-            <HStack align="center" gap={2}>
-              {typeof title === "string" ? (
-                <Text fontSize={fontSize} fontWeight={fontWeight} color={fontColor}>
-                  {title}
-                </Text>
-              ) : (
-                <Box fontSize={fontSize} fontWeight={fontWeight} color={fontColor}>
-                  {title}
-                </Box>
-              )}
-            </HStack>
+            {title ? (
+              <HStack align="center" gap={2} px={"10px"}>
+                {typeof title === "string" ? (
+                  <Text fontSize={fontSize} fontWeight={fontWeight} color={fontColor}>
+                    {title}
+                  </Text>
+                ) : (
+                  <Box fontSize={fontSize} fontWeight={fontWeight} color={fontColor}>
+                    {title}
+                  </Box>
+                )}
+              </HStack>
+            ) : (
+              <Box />
+            )}
 
             {/* CENTER (interactive content should NOT toggle collapse) */}
             {headerCenter ? (
@@ -73,15 +86,28 @@ export function AppCollapsible({ title, ariaLabel, headerCenter, fontSize = "lg"
             )}
 
             {/* RIGHT */}
-            <Box justifySelf="end" />
+            {headerRight ? (
+              <Box
+                justifySelf="end"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerDownCapture={(e) => e.stopPropagation()}
+              >
+                {headerRight}
+              </Box>
+            ) : (
+              <Box />
+            )}
           </Grid>
-
-          <Box w="100%" display="flex" justifyContent="center">
-            {isOpen ? <Icon as={MdOutlineKeyboardArrowDown} /> : <Icon as={MdOutlineKeyboardArrowUp} />}
-          </Box>
+          {/* TODO(P4): Add carry-over for centered show/hide toggle display */} 
+          {midChevronToggler &&
+            <Box w="100%" display="flex" justifyContent="center">
+              {isOpen ? <Icon as={MdOutlineKeyboardArrowDown} /> : <Icon as={MdOutlineKeyboardArrowUp} />}
+            </Box>
+          }
         </Box>
       </Collapsible.Trigger>
-      <Collapsible.Content>
+      <Collapsible.Content px="4">
         {children}
       </Collapsible.Content>
     </Collapsible.Root>
