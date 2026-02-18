@@ -1,9 +1,9 @@
 import { Box, Heading, Stat, StatGroup, Text, Button, Flex } from "@chakra-ui/react";
 import { useBudgetStore } from '../../store/budgetStore';
-import dayjs from "dayjs";
+import { formatCurrency } from '../../utils/formatters';
+import { formatLocalIsoDate } from '../../services/dateTime';
 
 export default function MonthlyPlanSummary() {
-
   const showPlanInputs = useBudgetStore((s: any) => s.showPlanInputs);
   const setShowPlanInputs = useBudgetStore((s: any) => s.setShowPlanInputs);
   const selectedMonth = useBudgetStore((s: any) => s.selectedMonth);
@@ -18,7 +18,7 @@ export default function MonthlyPlanSummary() {
           <Heading size="md">Plan Summary</Heading>
           {plan.createdAt && (
             <Text fontSize="xs" color="fg.muted">
-              Plan Created: {dayjs(plan.createdAt).format('MMM D, YYYY')}
+              Plan Created: {formatLocalIsoDate(plan.createdAt)}
             </Text>
           )}
           <Button size="xs" variant="plain" colorScheme="blue" ml={2} onClick={() => setShowPlanInputs(!showPlanInputs)}>
@@ -30,25 +30,25 @@ export default function MonthlyPlanSummary() {
           <StatGroup>
             <Stat.Root textAlign={'center'}>
                 <Stat.Label>Planned Net Income</Stat.Label>
-                <Stat.ValueText color="teal.500">${plan.netIncome?.toLocaleString()}</Stat.ValueText>
+              <Stat.ValueText color="teal.500">{formatCurrency(plan.netIncome)}</Stat.ValueText>
             </Stat.Root>
 
             <Stat.Root textAlign={'center'}>
                 <Stat.Label>Planned Expenses</Stat.Label>
-                <Stat.ValueText color="orange.500">${plan.totalExpenses?.toLocaleString()}</Stat.ValueText>
+              <Stat.ValueText color="orange.500">{formatCurrency(plan.totalExpenses)}</Stat.ValueText>
             </Stat.Root>
 
             <Stat.Root textAlign="center">
               <Stat.Label>Planned Savings</Stat.Label>
               <Stat.ValueText color="blue.500">
-                {plan.totalSavings > 0 ? `$${plan.totalSavings?.toLocaleString()}` : '--'}
+                {Number(plan.totalSavings) > 0 ? formatCurrency(plan.totalSavings) : '--'}
               </Stat.ValueText>
             </Stat.Root>
 
             <Stat.Root textAlign={'center'}>
-                <Stat.Label>Leftover</Stat.Label>
+                <Stat.Label>Planned Leftover</Stat.Label>
                 <Stat.ValueText color={plan.estLeftover >= 0 ? "green.500" : "red.500"} fontSize="2xl">
-                  ${plan.estLeftover?.toLocaleString()}
+                  {formatCurrency(plan.estLeftover)}
                 </Stat.ValueText>
             </Stat.Root>
           </StatGroup>

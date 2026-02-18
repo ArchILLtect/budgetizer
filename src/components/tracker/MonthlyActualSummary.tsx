@@ -3,8 +3,9 @@ import { Box, Text, Heading, Stat, Stack,
 import { useBudgetStore } from '../../store/budgetStore';
 import ExpenseTracker from '../planner/ExpenseTracker';
 import IncomeCalculator from '../planner/IncomeCalculator';
-import dayjs from 'dayjs';
 import { AppCollapsible } from '../ui/AppCollapsible';
+import { formatCurrency } from '../../utils/formatters';
+import { getYearFromMonthKey } from '../../services/dateTime';
 
 export default function MonthlyActualSummary() {
   const selectedMonth = useBudgetStore((s: any) => s.selectedMonth);
@@ -15,7 +16,6 @@ export default function MonthlyActualSummary() {
   const savingsSoFar = useBudgetStore((s: any) => s.getSavingsForMonth(selectedMonth));
   const overiddenIncomeTotal = useBudgetStore((s: any) => s.monthlyActuals[selectedMonth]?.overiddenIncomeTotal);
   const overiddenExpenseTotal = useBudgetStore((s: any) => s.monthlyActuals[selectedMonth]?.overiddenExpenseTotal);
-  const bg = "bg";
   const calculateWithOverride = (overrideValue: number | undefined, fallbackFn: () => number) =>
       overrideValue != null && overrideValue >= 1 ? overrideValue : fallbackFn();
   const netIncome = calculateWithOverride(overiddenIncomeTotal, () =>
@@ -31,7 +31,7 @@ export default function MonthlyActualSummary() {
   const actuals = useBudgetStore((s) => s.monthlyActuals);
   const savingsLogs = useBudgetStore((s) => s.savingsLogs);
 
-  const selectedYear = dayjs(selectedMonth).format('YYYY');
+  const selectedYear = getYearFromMonthKey(selectedMonth) ?? (selectedMonth || '').slice(0, 4);
   // Get all monthlyActual objects for the selected year
   const actualsThisYear = Object.fromEntries(
     Object.entries(actuals).filter(([key]) => key.startsWith(selectedYear))
@@ -61,7 +61,7 @@ export default function MonthlyActualSummary() {
       }, 0);
 
   return (
-    <Box p={4} borderBottomRadius="lg" boxShadow="md" bg={bg} borderWidth={2}>
+    <Box p={4} borderBottomRadius="lg" boxShadow="md" bg="bg" borderWidth={2}>
       {actual &&
       <>
         <Flex justifyContent="space-between" alignItems="center" mb={3}>
@@ -91,19 +91,19 @@ export default function MonthlyActualSummary() {
         <StatGroup>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>Actual Net Income</Stat.Label>
-            <Stat.ValueText color="teal.500">${overiddenIncomeTotal ? overiddenIncomeTotal : netIncome.toLocaleString()}</Stat.ValueText>
+            <Stat.ValueText color="teal.500">{formatCurrency(netIncome)}</Stat.ValueText>
           </Stat.Root>
           <Stat.Root textAlign={'center'}>
-            <Stat.Label>Total Expenses</Stat.Label>
-            <Stat.ValueText color="orange.500">${overiddenExpenseTotal ? overiddenExpenseTotal : totalExpenses.toLocaleString()}</Stat.ValueText>
+            <Stat.Label>Actual Expenses</Stat.Label>
+            <Stat.ValueText color="orange.500">{formatCurrency(totalExpenses)}</Stat.ValueText>
           </Stat.Root>
           <Stat.Root textAlign={'center'}>
-            <Stat.Label>Total Saved</Stat.Label>
-            <Stat.ValueText color="blue.500">${savings.toLocaleString()}</Stat.ValueText>
+            <Stat.Label>Actual Savings</Stat.Label>
+            <Stat.ValueText color="blue.500">{formatCurrency(savings)}</Stat.ValueText>
           </Stat.Root>
           <Stat.Root textAlign={'center'}>
-            <Stat.Label>Leftover</Stat.Label>
-            <Stat.ValueText color={leftover >= 0 ? 'green.500' : 'red.500'}>${leftover.toLocaleString()}</Stat.ValueText>
+            <Stat.Label>Actual Leftover</Stat.Label>
+            <Stat.ValueText color={leftover >= 0 ? 'green.500' : 'red.500'}>{formatCurrency(leftover)}</Stat.ValueText>
           </Stat.Root>
         </StatGroup>
       </Box>
@@ -116,7 +116,7 @@ export default function MonthlyActualSummary() {
               <Progress.Range borderRadius="md" />
             </Progress.Track>
           </Progress.Root>
-          <Text fontSize="xs" mt={1}>({savings?.toLocaleString()} of {plan.totalSavings?.toLocaleString()} planned)</Text>
+          <Text fontSize="xs" mt={1}>({formatCurrency(savings)} of {formatCurrency(plan.totalSavings)} planned)</Text>
         </Box>
       ) : ('')}
       <Heading size="md" my={3}>{selectedYear} Summary</Heading>
@@ -124,15 +124,15 @@ export default function MonthlyActualSummary() {
         <StatGroup>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>{selectedYear} Total Income</Stat.Label>
-            <Stat.ValueText color="teal.600">${totalNetIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+            <Stat.ValueText color="teal.600">{formatCurrency(totalNetIncome)}</Stat.ValueText>
           </Stat.Root>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>{selectedYear} Total Expenses</Stat.Label>
-            <Stat.ValueText color="teal.600">${totalExpensesThisYear.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+            <Stat.ValueText color="teal.600">{formatCurrency(totalExpensesThisYear)}</Stat.ValueText>
           </Stat.Root>
           <Stat.Root textAlign={'center'}>
             <Stat.Label>{selectedYear} Total Savings</Stat.Label>
-            <Stat.ValueText color="teal.600">${totalSavingsThisYear.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+            <Stat.ValueText color="teal.600">{formatCurrency(totalSavingsThisYear)}</Stat.ValueText>
           </Stat.Root>
         </StatGroup>
       </Box>

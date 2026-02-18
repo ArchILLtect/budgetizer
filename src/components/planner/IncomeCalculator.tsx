@@ -9,6 +9,7 @@ import { MdInfo } from "react-icons/md";
 import { Tooltip } from "../ui/Tooltip";
 import { AppCollapsible } from '../ui/AppCollapsible'
 import { calculateTotalTaxes } from '../../utils/calcUtils'
+import { formatCurrency } from '../../utils/formatters'
 
 type IncomeCalculatorProps = {
   origin?: 'Planner' | 'Tracker';
@@ -39,6 +40,11 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
   const setFilingStatus = useBudgetStore((s) => s.setFilingStatus)
   const grossTotal = useBudgetStore((s) => s.getTotalGrossIncome());
   const monthlyActuals = useBudgetStore((s) => s.monthlyActuals[selectedMonth]);
+  const trackerIncomeTotal = useBudgetStore((s: any) => {
+    const actualSources = s.monthlyActuals[selectedMonth]?.actualFixedIncomeSources;
+    if (!Array.isArray(actualSources)) return 0;
+    return actualSources.reduce((sum: number, src: any) => sum + (Number(src?.amount) || 0), 0);
+  });
   const overiddenIncomeTotal = useBudgetStore(
     (s) => s.monthlyActuals[selectedMonth]?.overiddenIncomeTotal
   );
@@ -92,17 +98,15 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
           <Button variant={'outline'} colorScheme="blue" bg="bg.emphasized" onClick={() => handleTempButton()}>Use Fixed Income</Button>
         }
         {!isTracker ? (
-          <Heading size="md">${(net/12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
+          <Heading size="md">{formatCurrency(net / 12)}</Heading>
         ) : (
           <Heading size="md">
             {monthlyActuals
-              ? `$${(overiddenIncomeTotal != null && overiddenIncomeTotal >= 1
-                  ? overiddenIncomeTotal
-                  : monthlyActuals.actualTotalNetIncome
-                ).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
+              ? formatCurrency(
+                  overiddenIncomeTotal != null && overiddenIncomeTotal >= 1
+                    ? overiddenIncomeTotal
+                    : trackerIncomeTotal
+                )
               : 'No actual income yet'}
           </Heading>
         )}
@@ -197,7 +201,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
             <Stat.Root>
               <Flex justifyContent={'center'} flexDirection={'column'} alignItems={'center'} gap={1}>
                 <Stat.Label>Est. Gross Salary</Stat.Label>
-                <Stat.ValueText color="teal.600">${grossTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+                <Stat.ValueText color="teal.600">{formatCurrency(grossTotal)}</Stat.ValueText>
                 <Stat.HelpText mb={0}>Before taxes</Stat.HelpText>
               </Flex>
             </Stat.Root>
@@ -211,7 +215,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                   </Tooltip>
                 </Stat.Label>
                 <Stat.ValueText color="green.600">
-                  ${net.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrency(net)}
                 </Stat.ValueText>
                 <Stat.HelpText mb={2}>
                   <Text fontSize={'xs'} textAlign={'center'}>After taxes</Text>
@@ -234,19 +238,19 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                       <Stack mt={3} gap={1}>
                         <Flex bg="bg.emphasized" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Estimated Federal Tax:</Text>
-                          <Text>${breakdown.federalTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                          <Text>{formatCurrency(breakdown.federalTax)}</Text>
                         </Flex>
                         <Flex bg="bg.muted" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">State Tax (WI):</Text>
-                          <Text>${breakdown.stateTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                          <Text>{formatCurrency(breakdown.stateTax)}</Text>
                         </Flex>
                         <Flex bg="bg.emphasized" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Social Security:</Text>
-                          <Text>${breakdown.ssTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                          <Text>{formatCurrency(breakdown.ssTax)}</Text>
                         </Flex>
                         <Flex bg="bg.muted" p={3} borderRadius="md" justifyContent="space-between" alignItems="center" flexDirection={"row"}>
                           <Text fontWeight="semibold">Medicare:</Text>
-                          <Text>${breakdown.medicareTax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                          <Text>{formatCurrency(breakdown.medicareTax)}</Text>
                         </Flex>
                       </Stack>
                     </AppCollapsible>
