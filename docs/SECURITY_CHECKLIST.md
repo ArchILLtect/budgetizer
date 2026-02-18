@@ -1,6 +1,6 @@
 # Budgeteer — Security Checklist
 
-Last updated: 2026-02-10
+Last updated: 2026-02-18
 
 This checklist is meant to keep Budgeteer aligned with its stated goals:
 
@@ -79,7 +79,19 @@ Reference:
 
 ---
 
-## 7) Build and deploy
+## 7) Output sanitization (HTML/SVG)
+
+React escapes strings by default. The main risk is any usage of `dangerouslySetInnerHTML`.
+
+- Avoid `dangerouslySetInnerHTML` unless you must render markup.
+- If you must render SVG/HTML from a string (especially user-controlled sources):
+  - sanitize with DOMPurify
+  - prefer the shared component `src/components/ui/SanitizedSvg.tsx` for SVG strings
+  - keep length/size guardrails to reduce worst-case performance
+
+---
+
+## 8) Build and deploy
 
 - Ensure `VITE_*` env vars do not include secrets.
 - Verify the deployed bundle does not include accidental credential material.
@@ -87,7 +99,7 @@ Reference:
 
 ---
 
-## 8) Admin operations (shared backend)
+## 9) Admin operations (shared backend)
 
 Because the backend may be shared:
 

@@ -1,6 +1,6 @@
 # Budgeteer — Style Guide
 
-Last updated: 2026-02-10
+Last updated: 2026-02-18
 
 This is a pragmatic style guide for keeping Budgeteer consistent while it continues migrating from mixed origins (platform scaffold + legacy budgeting logic).
 
@@ -101,3 +101,14 @@ If you change behavior in any of these areas, update the docs:
 - `docs/DATA_MODEL.md`
 - `docs/ingestion-architecture.md`
 - `docs/developer/README.md`
+
+---
+
+## Appendix — Shared utilities (use these)
+
+These helpers exist to keep behavior consistent across Planner/Tracker and to avoid one-off parsing/formatting.
+
+- Currency/number display: `src/utils/formatters.ts` (prefer `formatCurrency(...)`)
+- Date display and month/day keys: `src/services/dateTime.ts`
+- Input normalization (numbers/money): `src/services/inputNormalization.ts` (prefer `normalizeMoney(...)` / `parseFiniteNumber(...)`)
+- Sanitized SVG rendering: `src/components/ui/SanitizedSvg.tsx` (use for any SVG string rendered via `dangerouslySetInnerHTML`)

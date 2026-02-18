@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-15
+Last updated: 2026-02-18
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -139,7 +139,7 @@ Progress notes:
 
 ## Milestone 3 — Planner/Tracker UX polish
 
-Status: Planned
+Status: In Progress
 
 Goal:
 - Planner and Tracker feel complete for real use.
@@ -156,28 +156,28 @@ Acceptance:
 ### Milestone 3 checklist
 
 **A) Tracker correctness & clarity**
-- [ ] Tracker — fix “Total Override” checkbox not working
-- [ ] Tracker — income delete confirmation copy: don’t call it an “expense”, include the income source name, and fire success/error toast appropriately
-- [ ] Tracker — updating/adding income sources updates the “Monthly Income” total at top of card (not just the “Actual Net Income” stat)
-- [ ] Tracker — clarify stat bar layout above “<year> Summary”; remove duplicate/confusing stats (“Total Saved” / “Leftover”) and ensure intended set is unique
+- [x] ~~Tracker — fix “Total Override” checkbox not working~~ (done 2026-02-18)
+- [x] ~~Tracker — income delete confirmation copy: don’t call it an “expense”, include the income source name, and fire success/error toast appropriately~~ (done 2026-02-18)
+- [x] ~~Tracker — updating/adding income sources updates the “Monthly Income” total at top of card (not just the “Actual Net Income” stat)~~ (done 2026-02-18)
+- [x] ~~Tracker — clarify stat bar layout above “<year> Summary”; remove duplicate/confusing stats (“Total Saved” / “Leftover”) and ensure intended set is unique~~ (done 2026-02-18: Planned vs Actual summaries use consistent, non-duplicative labels)
 
 **B) Savings goals UX (Tracker)**
-- [ ] Tracker — savings goal card display: fix incorrect/missing info rendering
-- [ ] Tracker — savings goal edit: clicking “Edit” only opens the selected item
-- [ ] Tracker — savings goal save persists changes and refreshes UI correctly
-- [ ] Tracker — savings goal delete removes item and refreshes UI correctly
+- [x] ~~Tracker — savings goal card display: fix incorrect/missing info rendering~~ (done 2026-02-18)
+- [x] ~~Tracker — savings goal edit: clicking “Edit” only opens the selected item~~ (done 2026-02-18)
+- [x] ~~Tracker — savings goal save persists changes and refreshes UI correctly~~ (done 2026-02-18)
+- [x] ~~Tracker — savings goal delete removes item and refreshes UI correctly~~ (done 2026-02-18)
 
 **C) Planner UX polish (baseline)**
-- [ ] Planner — add basic validation/constraints for income/expense inputs (no negative or NaN totals)
+- [x] ~~Planner — add basic validation/constraints for income/expense inputs (no negative or NaN totals)~~ (done 2026-02-18: centralized money normalization + clamping)
 - [ ] Planner — improve empty states/help text so a new user can complete a first plan without guesswork
 
 **D) Console/runtime hygiene (must be clean during normal use)**
-- [ ] Tracker — fix duplicate React key warning `same key, NaN` from SavingsGoalsTracker list rendering (stable unique keys)
-- [ ] Tracker — fix Chakra `Progress` error: value receives `[object Object],[object Object]` and exceeds max 100
+- [x] ~~Tracker — fix duplicate React key warning `same key, NaN` from SavingsGoalsTracker list rendering (stable unique keys)~~ (done 2026-02-18)
+- [x] ~~Tracker — fix Chakra `Progress` error: value receives `[object Object],[object Object]` and exceeds max 100~~ (done 2026-02-18)
 - [ ] Settings — fix controlled/uncontrolled input warning (text input has both `value` and `defaultValue`)
 
 **E) Verification**
-- [ ] `npm run check` stays green for Milestone 3 changes
+- [x] ~~`npm run check` stays green for Milestone 3 changes~~ (done 2026-02-18)
 
 ---
 
