@@ -48,6 +48,18 @@ function defaultSessionId(): string {
 
 type ParsedRowsContainer = { rows: unknown[]; errors: CsvParseError[] };
 
+function isBudgetDayKey(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
 function coerceParsedRowsContainer(fileText: string, externalParsedRows?: unknown): ParsedRowsContainer {
   if (externalParsedRows) {
     if (Array.isArray(externalParsedRows)) {
@@ -211,6 +223,22 @@ export async function analyzeImport({
       continue;
     }
     if (!norm) continue;
+
+    // Runtime boundary validation: normalization should produce safe, finite primitives.
+    if (
+      !isBudgetDayKey(norm.date) ||
+      !isNonEmptyString(norm.description) ||
+      !isFiniteNumber(norm.amount) ||
+      !isFiniteNumber(norm.rawAmount)
+    ) {
+      errors.push({
+        type: "normalize",
+        raw,
+        message: "Normalized transaction failed validation",
+        line: (raw as { __line?: number })?.__line,
+      });
+      continue;
+    }
 
     norm.accountNumber = accountNumber;
 

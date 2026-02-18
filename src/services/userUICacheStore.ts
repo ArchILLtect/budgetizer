@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 import type { UserUI } from "../types";
-import { createUserScopedZustandStorage, getUserStorageScopeKey } from "./userScopedStorage";
+import { createUserScopedZustandStorage, getUserStorageScopeKey, parseZustandStorageValue } from "./userScopedStorage";
 
 export const USER_UI_STORAGE_KEY = "budgeteer:user";
 export const USER_UI_STORE_VERSION = 1 as const;
@@ -43,7 +43,8 @@ export const useUserUICacheStore = create<UserUICacheState>()(
             try {
               const raw = localStorage.getItem(name);
               if (!raw) return null;
-              const parsed = JSON.parse(raw) as StorageValue<unknown>;
+              const parsed = parseZustandStorageValue(raw);
+              if (!parsed) return null;
               scoped.setItem(name, parsed);
               localStorage.removeItem(name);
               return parsed;

@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 
 import { isoNow } from "../services/storage";
-import { createUserScopedZustandStorage, getUserStorageScopeKey } from "../services/userScopedStorage";
+import { createUserScopedZustandStorage, getUserStorageScopeKey, parseZustandStorageValue } from "../services/userScopedStorage";
 
 const STORAGE_KEY = "budgeteer:updates";
 const STORE_VERSION = 1;
@@ -53,7 +53,8 @@ const updatesScopedStorage: PersistStorage<unknown, unknown> = (() => {
       try {
         const raw = localStorage.getItem(name);
         if (!raw) return null;
-        const parsed = JSON.parse(raw) as StorageValue<unknown>;
+        const parsed = parseZustandStorageValue(raw);
+        if (!parsed) return null;
 
         scoped.setItem(name, parsed);
         localStorage.removeItem(name);

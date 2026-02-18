@@ -10,6 +10,18 @@ function safeJsonParse(raw: string): unknown {
   }
 }
 
+function coerceZustandStorageValue(parsed: unknown): StorageValue<unknown> | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  const maybe = parsed as { state?: unknown; version?: unknown };
+  if (!maybe.state || typeof maybe.state !== "object") return null;
+  if (maybe.version !== undefined && typeof maybe.version !== "number") return null;
+  return parsed as StorageValue<unknown>;
+}
+
+export function parseZustandStorageValue(raw: string): StorageValue<unknown> | null {
+  return coerceZustandStorageValue(safeJsonParse(raw));
+}
+
 function readPersistedAuthScopeKey(): string | null {
   try {
     const raw = localStorage.getItem(AUTH_SCOPE_STORAGE_KEY);
@@ -92,12 +104,27 @@ export function clearUserScopedKeysByPrefix(basePrefix: string): void {
   }
 }
 
+/**
+ * Create a Zustand storage adapter that scopes all keys to the current user's storage scope.
+ * This allows us to use Zustand for user-specific persisted state without risking cross-user data leakage.
+ * The storage adapter will automatically prefix all keys with the user's scope, and will read/write using that prefix.
+ * If the user's storage scope changes (e.g. they log out and a new user logs in), the adapter will start using the new scope for all operations.
+ * Note that this adapter does not automatically clear old data when the scope changes, so you may want to call `clearUserScopedKeysByPrefix` when changing users to avoid orphaned data.
+ * Example usage:
+ * const useStore = create(
+ *   persist(rootReducer, {
+ *    name: 'myStore',
+ *    storage: createUserScopedZustandStorage(),
+ *    partialize: (state) => ({ ... }),
+ *   }
+ * )
+ */
 export function createUserScopedZustandStorage(): PersistStorage<unknown, unknown> {
   return {
     getItem: (name: string) => {
       const raw = userScopedGetItem(`zustand:${name}`);
       if (raw == null) return null;
-      return safeJsonParse(raw) as StorageValue<unknown>;
+      return coerceZustandStorageValue(safeJsonParse(raw));
     },
     setItem: (name: string, value: StorageValue<unknown>) => {
       userScopedSetItem(`zustand:${name}`, JSON.stringify(value));
