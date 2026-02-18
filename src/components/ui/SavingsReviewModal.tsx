@@ -3,6 +3,7 @@ import { Button, VStack, Text, Input } from '@chakra-ui/react';
 import { useBudgetStore } from '../../store/budgetStore';
 import { AppSelect } from './AppSelect';
 import { DialogModal } from './DialogModal';
+import { normalizeMoney } from "../../services/inputNormalization";
 
 type SavingsReviewEntry = {
   id: string;
@@ -74,7 +75,7 @@ export default function SavingsReviewModal() {
   const handleSaveGoal = (entryId: string) => {
     const goalData = newGoalNames[entryId];
     const name = goalData?.name?.trim();
-    const target = goalData?.target ? parseFloat(goalData.target) || 0 : 0;
+    const target = normalizeMoney(goalData?.target, { min: 0, fallback: 0 });
     if (!name) return;
     const newGoalId = crypto.randomUUID();
     const originSessionId = queue.find((e) => e.id === entryId)?.importSessionId;

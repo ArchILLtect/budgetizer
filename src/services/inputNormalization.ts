@@ -44,3 +44,30 @@ export function normalizeDateInputToIso(dateInput: string): string | null {
   // Store dueAt as a UTC-anchored datetime string so day-key extraction is stable.
   return `${normalized}T00:00:00.000Z`;
 }
+
+export function parseFiniteNumber(
+  raw: unknown,
+  opts?: {
+    fallback?: number;
+    min?: number;
+    max?: number;
+  }
+): number {
+  const fallback = opts?.fallback ?? 0;
+  const n = typeof raw === "number" ? raw : Number.parseFloat(String(raw ?? ""));
+  if (!Number.isFinite(n)) return fallback;
+
+  const min = opts?.min;
+  const max = opts?.max;
+
+  let clamped = n;
+  if (typeof min === "number" && Number.isFinite(min)) clamped = Math.max(min, clamped);
+  if (typeof max === "number" && Number.isFinite(max)) clamped = Math.min(max, clamped);
+  return clamped;
+}
+
+export function normalizeMoney(raw: unknown, opts?: { fallback?: number; min?: number; max?: number }): number {
+  const n = parseFiniteNumber(raw, { fallback: opts?.fallback ?? 0, min: opts?.min, max: opts?.max });
+  // Round to cents.
+  return Math.round(n * 100) / 100;
+}

@@ -4,6 +4,7 @@ import { Box, Flex, Stack, Input, Button, HStack, IconButton, Checkbox } from '@
 import { MdAdd, MdDelete, MdInfo, MdContentCopy } from "react-icons/md";
 import { Tooltip } from '../ui/Tooltip';
 import { fireToast } from '../../hooks/useFireToast';
+import { normalizeMoney } from '../../services/inputNormalization';
 
 // TODO: Use FormErrorMessage for better validation feedback
 
@@ -56,13 +57,12 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
     }
   }
 
-  const setChecked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = Boolean(e.target.checked);
+  const setChecked = (checked: boolean) => {
     setOverrideEnabled(checked);
     if (!checked) {
       setOveriddenIncomeTotal(selectedMonth, 0);
     }
-  }
+  };
 
   const copyIncomeName = async (value: string) => {
     const text = String(value ?? '');
@@ -122,7 +122,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               aria-invalid={source.amount < 0}
               _invalid={{ borderColor: "red.500" }}
               onChange={(e) =>
-                updateSource(source.id, { amount: parseFloat(e.target.value) || 0 })
+                updateSource(source.id, { amount: normalizeMoney(e.target.value, { min: 0 }) })
               }
               placeholder="Amount"
             />
@@ -165,11 +165,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
                   borderColor="border" borderRadius={'md'}>
                   <Checkbox.Root
                     checked={overrideEnabled}
-                    onCheckedChange={(e: any) =>
-                      setChecked({
-                        target: { checked: e.checked === true },
-                      } as React.ChangeEvent<HTMLInputElement>)
-                    }
+                    onCheckedChange={(details: any) => setChecked(details.checked === true)}
                   >
                     <Checkbox.HiddenInput />
                     <Checkbox.Control />
@@ -186,8 +182,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
                   value={overrideEnabled ? (overiddenIncomeTotal ?? '') : ''}
                   disabled={!overrideEnabled}
                   onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    setOveriddenIncomeTotal(selectedMonth, isNaN(value) ? 0 : value);
+                    setOveriddenIncomeTotal(selectedMonth, normalizeMoney(e.target.value, { min: 0 }));
                   }}
               />
             </Flex>

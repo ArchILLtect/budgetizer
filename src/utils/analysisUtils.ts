@@ -1,4 +1,5 @@
 import { extractVendorDescription } from './accountUtils';
+import { parseFiniteNumber, normalizeMoney } from "../services/inputNormalization";
 
 export function findRecurringTransactions(transactions: any[], options: any = {}) {
     const groups = {} as Record<string, { date: Date; category: string; amount: number; original: any }[]>;
@@ -56,9 +57,8 @@ export function findRecurringTransactions(transactions: any[], options: any = {}
         const rounded = entries.map((e) => Math.round(e.amount * 100)) as any;
         const countMap = {} as any;
         for (const amt of rounded) countMap[amt] = (countMap[amt] || 0) + 1 as any;
-        const mode = parseFloat(
-            (parseFloat(Object.entries(countMap).sort((a: any, b: any) => b[1] - a[1])[0][0]) / 100).toFixed(2)
-        ) as any;
+        const modeCentsKey = Object.entries(countMap).sort((a: any, b: any) => b[1] - a[1])[0]?.[0];
+        const mode = normalizeMoney(parseFiniteNumber(modeCentsKey, { fallback: 0 }) / 100, { fallback: 0, min: 0 });
 
         // Step: Keep only entries within 20% of mode
         const closeToMode = entries.filter((e) => Math.abs(e.amount - mode) / mode <= 2) as any;

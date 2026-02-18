@@ -3,10 +3,12 @@ import { Tooltip } from "../ui/Tooltip";
 import { MdDelete } from "react-icons/md";
 import { useState } from "react";
 import { useBudgetStore } from "../../store/budgetStore";
-import dayjs from "dayjs";
 import { fireToast } from "../../hooks/useFireToast";
 import { AppCollapsible } from "../ui/AppCollapsible";
 import { AppSelect } from "../ui/AppSelect";
+import { formatCurrency } from "../../utils/formatters";
+import { getTodayDateInputValue } from "../../services/dateTime";
+import { normalizeMoney } from "../../services/inputNormalization";
 
 // TODO: Refactor (see other TODO) savings log entry amount input's max prop to use selected goal's total goal amount.
 
@@ -25,7 +27,6 @@ export default function SavingsLog() {
   const [editingLogId, setEditingLogId] = useState<number | null>(null);
   const [editGoalId, setEditGoalId] = useState("");
   const [amount, setAmount] = useState<number | "">("");
-  const bg = "bg";
   const totalSavings = logsForMonth.reduce((sum: number, e: any) => sum + (e.amount || 0), 0) || 0;
   const goal = savingsGoals.find((g) => g.id === selectedGoal);
   const hasSelectedGoal = !!goal;
@@ -41,13 +42,14 @@ export default function SavingsLog() {
 
   // TODO: Clamp the value here also.
   const handleAdd = () => {
-    const value = typeof amount === "number" ? amount : parseFloat(amount);
-    if (!value || value <= 0) return;
+    const value =
+      typeof amount === "number" ? amount : normalizeMoney(amount, { min: 0, fallback: NaN });
+    if (!Number.isFinite(value) || value <= 0) return;
 
     addSavingsLog(selectedMonth, {
       goalId: selectedGoal || null, // "" -> null (no goal)
       amount: value,
-      date: dayjs().format("YYYY-MM-DD"),
+      date: getTodayDateInputValue(),
     });
     setAmount("");
   };
@@ -64,11 +66,11 @@ export default function SavingsLog() {
   }
 
   return (
-    <Box p={4} boxShadow="md" borderRadius="lg" mt={6} bg={bg} borderWidth={1}>
+    <Box p={4} boxShadow="md" borderRadius="lg" mt={6} bg="bg" borderWidth={1}>
 
       <Flex justifyContent="space-between" alignItems="center">
         <Heading size="md">Savings Logs</Heading>
-        <Heading size="md">Total: ${totalSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
+        <Heading size="md">Total: {formatCurrency(totalSavings)}</Heading>
       </Flex>
 
       <AppCollapsible
@@ -181,7 +183,7 @@ export default function SavingsLog() {
               value={amount}
               bg={"bg.panel"}
               onChange={(e) => {
-                const raw = parseFloat(e.target.value);
+                const raw = normalizeMoney(e.target.value, { min: 0, fallback: NaN });
                 if (!Number.isFinite(raw)) return setAmount("");
                 // Only clamp if a goal is selected
                 const clamped = hasSelectedGoal && Number.isFinite(remaining)

@@ -1,6 +1,7 @@
 import { useBudgetStore } from '../../store/budgetStore'
 import { Input, Stack, RadioGroup, Field, HStack, Button, Center, NativeSelect,
     type RadioGroupValueChangeDetails } from '@chakra-ui/react'
+import { normalizeMoney, parseFiniteNumber } from "../../services/inputNormalization";
 
 type IncomeSourceFormProps = {
   source: {
@@ -70,7 +71,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               placeholder="Enter your hourly rate"
               value={source.hourlyRate ?? 0}
               onChange={(e) =>
-                onUpdate(source.id, { hourlyRate: parseFloat(e.target.value) || 0 })
+                onUpdate(source.id, { hourlyRate: normalizeMoney(e.target.value, { min: 0 }) })
               }
               bg="bg.panel"
             />
@@ -82,7 +83,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
               placeholder="Enter hours per week"
               value={source.hoursPerWeek ?? 0}
               onChange={(e) =>
-                onUpdate(source.id, { hoursPerWeek: parseFloat(e.target.value) || 0 })
+                onUpdate(source.id, { hoursPerWeek: parseFiniteNumber(e.target.value, { min: 0 }) })
               }
               bg="bg.panel"
             />
@@ -103,7 +104,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             max="1000000"
             value={source.weeklySalary ?? 0}
             onChange={(e) =>
-              onUpdate(source.id, { weeklySalary: parseFloat(e.target.value) || 0 })
+                onUpdate(source.id, { weeklySalary: normalizeMoney(e.target.value, { min: 0 }) })
             }
             bg="bg.panel"
           />
@@ -124,7 +125,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             max="1000000"
             value={source.biWeeklySalary ?? 0}
             onChange={(e) =>
-              onUpdate(source.id, { biWeeklySalary: parseFloat(e.target.value) || 0 })
+                onUpdate(source.id, { biWeeklySalary: normalizeMoney(e.target.value, { min: 0 }) })
             }
             bg="bg.panel"
           />
@@ -144,7 +145,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
             max="1000000"
             value={source.grossSalary ?? 0}
             onChange={(e) =>
-              onUpdate(source.id, { grossSalary: parseFloat(e.target.value) || 0 })
+                onUpdate(source.id, { grossSalary: normalizeMoney(e.target.value, { min: 0 }) })
             }
             bg="bg.panel"
           />

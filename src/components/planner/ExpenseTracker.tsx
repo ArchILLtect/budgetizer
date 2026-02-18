@@ -10,6 +10,8 @@ import SavingsPlanner from '../SavingsPlanner.js';
 import { AppCollapsible } from '../ui/AppCollapsible.js';
 import { Tooltip } from '../ui/Tooltip';
 import { fireToast } from '../../hooks/useFireToast';
+import { formatCurrency } from '../../utils/formatters';
+import { normalizeMoney } from '../../services/inputNormalization';
 
 type Expense = {
   id: string;
@@ -137,7 +139,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
         {!isTracker &&
           <Button variant={'outline'} colorScheme="blue" onClick={() => handleTempButton()}>Use Fixed Expense Total</Button>
         }
-        <Heading size="md">${displayedTotalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Heading>
+        <Heading size="md">{formatCurrency(displayedTotalExpenses)}</Heading>
       </Flex>
 
       <Box p={2} mt={3} borderWidth={1} borderColor="border" borderRadius={"lg"} bg="bg.panel">
@@ -191,7 +193,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     aria-invalid={expense.amount <= 0}
                     _invalid={{ borderColor: "red.500" }}
                     onChange={(e) =>
-                      updateExpense(expense.id, { amount: parseFloat(e.target.value) || 0 })
+                      updateExpense(expense.id, { amount: normalizeMoney(e.target.value, { min: 0 }) })
                     }
                     bg={expense.isSavings ? "bg.success" : "bg.subtle"}
                     placeholder="Amount"
@@ -252,8 +254,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                     value={overrideEnabled ? (overiddenExpenseTotal ?? '') : ''}
                     disabled={!overrideEnabled}
                     onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      setOveriddenExpenseTotal(selectedMonth, isNaN(value) ? 0 : value);
+                      setOveriddenExpenseTotal(selectedMonth, normalizeMoney(e.target.value, { min: 0 }));
                     }}
                   />
                 </Flex>
@@ -269,25 +270,25 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
               <StatGroup>
                 <Stat.Root textAlign={'center'}>
                   <StatLabel>Est. Net Income</StatLabel>
-                  <Stat.ValueText color="teal.600">${monthlyIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+                  <Stat.ValueText color="teal.600">{formatCurrency(monthlyIncome)}</Stat.ValueText>
                 </Stat.Root>
 
                 <Stat.Root textAlign={'center'}>
                   <StatLabel>Total Expenses</StatLabel>
-                  <Stat.ValueText color="teal.600">${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+                  <Stat.ValueText color="teal.600">{formatCurrency(totalExpenses)}</Stat.ValueText>
                 </Stat.Root>
 
                 {savingsValue > 0 && (
                   <Stat.Root textAlign={'center'}>
                     <StatLabel>Total Savings</StatLabel>
-                    <Stat.ValueText color="teal.600">${savingsValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Stat.ValueText>
+                    <Stat.ValueText color="teal.600">{formatCurrency(savingsValue)}</Stat.ValueText>
                   </Stat.Root>
                 )}
 
                 <Stat.Root textAlign={'center'}>
                   <StatLabel>Leftover</StatLabel>
                   <Stat.ValueText color={leftover >= 0 ? 'green.600' : 'red.600'} fontSize="2xl">
-                    ${leftover.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {formatCurrency(leftover)}
                   </Stat.ValueText>
                 </Stat.Root>
               </StatGroup>

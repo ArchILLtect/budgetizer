@@ -6,13 +6,15 @@ import { useState } from 'react';
 import { useBudgetStore } from '../../store/budgetStore';
 import { MdAdd, MdDelete } from "react-icons/md";
 import { fireToast } from '../../hooks/useFireToast';
-import dayjs from 'dayjs';
 import { AppCollapsible } from '../ui/AppCollapsible';
+import { formatCurrency } from '../../utils/formatters';
+import { getYearFromMonthKey } from '../../services/dateTime';
+import { normalizeMoney } from '../../services/inputNormalization';
 
 export default function SavingsGoalsTracker() {
 
   const selectedMonth =  useBudgetStore((s: any) => s.selectedMonth);
-  const selectedYear = dayjs(selectedMonth).format('YYYY');
+  const selectedYear = getYearFromMonthKey(selectedMonth) ?? (selectedMonth || '').slice(0, 4);
   //const currentMonthKey = dayjs().format('YYYY-MM');
   //const monthlyActuals = useBudgetStore((s) => s.monthlyActuals[currentMonthKey]);
   //const savingsGoal = useBudgetStore((s) => s.savingsGoal);
@@ -63,7 +65,7 @@ export default function SavingsGoalsTracker() {
       .reduce((sum: number, entry: any) => sum + (Number(entry?.amount) || 0), 0);
 
     const confirm = window.confirm(
-      `Are you sure you want to reset this goal${goalName ? ` ("${goalName}")` : ''}? This will remove $${totalForGoalThisYear.toLocaleString(undefined, { minimumFractionDigits: 2 })} of saved progress from ${selectedYear}.`
+      `Are you sure you want to reset this goal${goalName ? ` ("${goalName}")` : ''}? This will remove ${formatCurrency(totalForGoalThisYear)} of saved progress from ${selectedYear}.`
     );
 
     if (!confirm) return;
@@ -121,7 +123,7 @@ export default function SavingsGoalsTracker() {
               <Box justifyContent="center" display="flex" flexDirection="column" alignItems="center">
               <Stat.Label fontSize={'lg'}>{goal.name} {goal.id === 'yearly' ? selectedYear : ''}</Stat.Label>
               <Stat.ValueText color="green.500">
-                ${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--" } / ${Number.isFinite(goal?.target) ? goal.target.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--"}
+                {formatCurrency(total)} / {formatCurrency(goal?.target)}
               </Stat.ValueText>
               </Box>
             </Stat.Root>
@@ -167,17 +169,16 @@ export default function SavingsGoalsTracker() {
                       bg="bg.panel"
                       borderColor="border"
                       onChange={(e) => {
-                        const next = parseFloat(e.target.value);
-                        updateSavingsGoal(goal.id, { target: Number.isFinite(next) ? next : 0 });
+                        updateSavingsGoal(goal.id, { target: normalizeMoney(e.target.value, { min: 0 }) });
                       }}
                     />
                   </HStack>
                 </Flex>
                 <Text fontSize="sm" color="fg.muted">
                   You have
-                  saved ${Number.isFinite(total) ? total.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "--"} towards
+                  saved {formatCurrency(total)} towards
                   this goal. Your goal is to
-                  save ${goal?.target?.toLocaleString(undefined, { minimumFractionDigits: 2 })}.
+                  save {formatCurrency(goal?.target)}.
                 </Text>
                 <Text fontSize="sm" color="fg.muted">
                   Adjust your monthly savings goals to stay on track with your budget.

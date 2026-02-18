@@ -2,6 +2,7 @@
 // Imported here to provide a gradual migration path away from the legacy key used
 // for persisted historical transactions. We keep both for a stabilization window.
 import { buildTxKey, type TxKeyInput } from '../ingest/buildTxKey';
+import { parseFiniteNumber } from "../services/inputNormalization";
 
 import type { BudgetMonthKey, TransactionType } from '../types';
 
@@ -54,7 +55,7 @@ export const getMonthlyTotals = (account: AccountLike, month: BudgetMonthKey): M
                 ? tx.rawAmount
                 : typeof tx.amount === 'number'
                   ? tx.amount
-                  : parseFloat(String(tx.amount ?? 0)) || 0;
+                                    : parseFiniteNumber(tx.amount, { fallback: 0 });
 
         // Normalize by type so totals have consistent sign semantics:
         // - income: positive
@@ -121,7 +122,7 @@ export const normalizeTransactionAmount = (
           ? txOrAmount.amount
           : txOrAmount;
 
-    const abs = Math.abs(typeof raw === 'number' ? raw : parseFloat(String(raw ?? 0)) || 0);
+    const abs = Math.abs(typeof raw === 'number' ? raw : parseFiniteNumber(raw, { fallback: 0 }));
 
     return abs;
 };
