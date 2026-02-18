@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBudgetStore } from '../../store/budgetStore'
+import type { ActualFixedIncomeSource } from '../../store/slices/plannerSlice'
 import { Box, Flex, Stack, Input, Button, HStack, IconButton, Checkbox } from '@chakra-ui/react'
 import { MdAdd, MdDelete, MdInfo, MdContentCopy } from "react-icons/md";
 import { Tooltip } from '../ui/Tooltip';
@@ -15,41 +16,27 @@ type AddFixedIncomeSourceProps = {
 
 export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth }: AddFixedIncomeSourceProps) {
 
+  const isTracker = origin === 'Tracker';
+
   const overiddenIncomeTotal = useBudgetStore((s) => s.monthlyActuals[selectedMonth]?.overiddenIncomeTotal || 0);
   const setOveriddenIncomeTotal = useBudgetStore((s) => s.setOveriddenIncomeTotal);
-  const addSourceRaw = useBudgetStore((s) => s.addFixedIncomeSource);
-  const updateSourceRaw = useBudgetStore((s) => s.updateFixedIncomeSource);
-  const removeSourceRaw = useBudgetStore((s) => s.removeFixedIncomeSource);
   const addActualIncomeSource = useBudgetStore((s) => s.addActualIncomeSource);
   const removeActualIncomeSource = useBudgetStore((s) => s.removeActualIncomeSource);
   const updateMonthlyIncomeActuals = useBudgetStore((s) => s.updateMonthlyIncomeActuals);
-  const actualraw = useBudgetStore((s) => s.monthlyActuals[selectedMonth]);
-  const actual = actualraw;
-  const sources = actual?.actualFixedIncomeSources || [];
+  const sources = useBudgetStore((s) => s.monthlyActuals[selectedMonth]?.actualFixedIncomeSources ?? []);
 
   const [overrideEnabled, setOverrideEnabled] = useState(overiddenIncomeTotal >= 1);
-  const isTracker = origin === 'Tracker';
   const lastSyncedMonthRef = useRef<string>(selectedMonth);
 
-  const addSource = isTracker
-  ? (entry: Omit<any, 'id'>) => addActualIncomeSource(selectedMonth, entry)
-  : addSourceRaw;
-  const updateSource = isTracker
-    ? (id: string, data: Partial<any>) => updateMonthlyIncomeActuals(selectedMonth, id, data)
-    : updateSourceRaw;
-  const removeSource = isTracker
-    ? (id: string) => removeActualIncomeSource(selectedMonth, id)
-    : removeSourceRaw;
-
   const handleRemove = (id: string) => {
-    const label = String(sources.find((s: any) => s.id === id)?.description || '').trim();
+    const label = String(sources.find((s) => s.id === id)?.description || '').trim();
     const message = label
       ? `Are you sure you want to remove the income source "${label}"?`
       : 'Are you sure you want to remove this income source?';
 
     if (window.confirm(message)) {
       try {
-        removeSource(id)
+        removeActualIncomeSource(selectedMonth, id)
         fireToast('success', 'Income source removed', label ? `Removed "${label}".` : 'Removed income source.')
       } catch (err: any) {
         fireToast('error', 'Could not remove income source', err?.message || 'Please try again.')
@@ -92,17 +79,19 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
     }
   }, [selectedMonth, overiddenIncomeTotal, overrideEnabled]);
 
+  if (!isTracker) return null;
+
   return (
     <Box p={2} mt={3}>
         <Stack gap={3}>
-        {sources.map((source: any) => (
+        {sources.map((source: ActualFixedIncomeSource) => (
             <HStack key={source.id}>
             <Input
               value={source.description ?? ''}
               aria-invalid={!source?.description?.trim()}
               _invalid={{ borderColor: "red.500" }}
               onChange={(e) =>
-                updateSource(source.id, { description: e.target.value })
+                updateMonthlyIncomeActuals(selectedMonth, source.id, { description: e.target.value })
               }
               placeholder="Source name"
             />
@@ -122,7 +111,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               aria-invalid={source.amount < 0}
               _invalid={{ borderColor: "red.500" }}
               onChange={(e) =>
-                updateSource(source.id, { amount: normalizeMoney(e.target.value, { min: 0 }) })
+                updateMonthlyIncomeActuals(selectedMonth, source.id, { amount: normalizeMoney(e.target.value, { min: 0 }) })
               }
               placeholder="Amount"
             />
@@ -139,21 +128,10 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
             </HStack>
         ))}
 
-        {!isTracker ? (
-            <Box width={'25%'} p={1}>
-            <Button
-              onClick={() => addSource({ description: '', amount: 0 })}
-              size="sm"
-            >
-              <MdAdd />
-              Add Source
-            </Button>
-            </Box>
-        ) : (
         <Flex justifyContent="space-between" alignItems="center">
             <Box width={'25%'} p={1}>
             <Button
-              onClick={() => addSource({ description: '', amount: 0 })}
+              onClick={() => addActualIncomeSource(selectedMonth, { description: '', amount: 0 })}
               size="sm"
             >
               <MdAdd />
@@ -187,7 +165,6 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               />
             </Flex>
         </Flex>
-        )}
         </Stack>
     </Box>
   )

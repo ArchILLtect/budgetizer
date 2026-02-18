@@ -2,33 +2,45 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createUserScopedZustandStorage } from "../services/userScopedStorage";
 import { createImportSlice } from "./slices/importSlice";
-import { createPlannerSlice } from "./slices/plannerSlice";
+import { createPlannerSlice, type PlannerSlice } from "./slices/plannerSlice";
 import { createSettingsSlice } from "./slices/settingsSlice";
 import { createAccountsSlice } from "./slices/accountsSlice";
+import type { ImportSlice } from "./slices/importSlice";
+import type { SettingsSlice } from "./slices/settingsSlice";
+import type { AccountsSlice } from "./slices/accountsSlice";
+
+type Origin = "csv" | "ofx" | "plaid" | "manual";
+
+export type BudgetStoreState = ImportSlice &
+    PlannerSlice &
+    SettingsSlice &
+    AccountsSlice & {
+        ORIGIN_COLOR_MAP: Record<Origin, string>;
+    };
 
 // TODO: Allow users to change overtime threshold and tax rates
 
-export const useBudgetStore = create(
+export const useBudgetStore = create<BudgetStoreState>()(
     persist(
-        (set: any, get: any, store: any) => ({
+        (set, get, store) => ({
             ...createImportSlice(set, get, store),
             ...createPlannerSlice(set, get, store),
             ...createSettingsSlice(set, get, store),
             ...createAccountsSlice(set, get, store),
             ORIGIN_COLOR_MAP: {
-                csv: 'purple',
-                ofx: 'green',
-                plaid: 'red',
-                manual: 'blue',
+                csv: "purple",
+                ofx: "green",
+                plaid: "red",
+                manual: "blue",
             },
         }),
 
         {
-            name: 'budgeteer:budgetStore', // key in localStorage
+            name: "budgeteer:budgetStore", // key in localStorage
             storage: createUserScopedZustandStorage(),
-            partialize: (state: any) => {
+            partialize: (state) => {
                 // Intentionally strip transient flags and UI modal/progress from persistence
-                const clone = { ...state };
+                const clone: Partial<BudgetStoreState> = { ...state };
                 delete clone.sessionExpired;
                 delete clone.hasInitialized;
                 delete clone.isSavingsModalOpen;

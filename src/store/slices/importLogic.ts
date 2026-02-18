@@ -12,7 +12,7 @@ export type ImportHistoryEntry = {
 };
 
 export type TransactionForImportLifecycle = {
-  id: string;
+  id?: string;
   date?: string;
   staged?: boolean;
   budgetApplied?: boolean;

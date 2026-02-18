@@ -66,7 +66,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
     const newSource = {
       id,
       description: `Income ${sources.length + 1}`,
-      type: 'hourly',
+      type: 'hourly' as const,
       hourlyRate: 0,
       hoursPerWeek: 0,
       grossSalary: 0,
