@@ -3,11 +3,15 @@ import { createStore } from "zustand/vanilla";
 
 import { createAccountsSlice } from "../accountsSlice";
 import { createImportSlice } from "../importSlice";
+import type { AccountsSlice } from "../accountsSlice";
+import type { ImportSlice } from "../importSlice";
+
+type TestState = AccountsSlice & ImportSlice;
 
 function makeTestStore() {
-  return createStore<any>()((set, get, api) => ({
-    ...createAccountsSlice(set as any, get as any, api as any),
-    ...createImportSlice(set as any, get as any, api as any),
+  return createStore<TestState>()((set, get, api) => ({
+    ...createAccountsSlice(set, get, api),
+    ...createImportSlice(set, get, api),
   }));
 }
 
@@ -53,8 +57,8 @@ describe("cross-slice invariants (accounts + import)", () => {
     store.setState({
       pendingSavingsByAccount: {
         [accountNumber]: [
-          { importSessionId: sessionId, month: "2026-02", kind: "savings" },
-          { importSessionId: sessionId, month: "2026-03", kind: "savings" },
+          { id: "p1", importSessionId: sessionId, month: "2026-02", date: "2026-02-01", kind: "savings", name: "Savings", amount: 10 },
+          { id: "p2", importSessionId: sessionId, month: "2026-03", date: "2026-03-01", kind: "savings", name: "Savings", amount: 20 },
         ],
       },
       savingsReviewQueue: [],
@@ -63,10 +67,10 @@ describe("cross-slice invariants (accounts + import)", () => {
     store.getState().processPendingSavingsForAccount(accountNumber, ["2026-02"]);
 
     expect(store.getState().pendingSavingsByAccount[accountNumber]).toEqual([
-      { importSessionId: sessionId, month: "2026-03", kind: "savings" },
+      { id: "p2", importSessionId: sessionId, month: "2026-03", date: "2026-03-01", kind: "savings", name: "Savings", amount: 20 },
     ]);
     expect(store.getState().savingsReviewQueue).toEqual([
-      { importSessionId: sessionId, month: "2026-02", kind: "savings" },
+      { id: "p1", importSessionId: sessionId, month: "2026-02", date: "2026-02-01", kind: "savings", name: "Savings", amount: 10 },
     ]);
 
     // Re-processing the same month should not enqueue duplicates.

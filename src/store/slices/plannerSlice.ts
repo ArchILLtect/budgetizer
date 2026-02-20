@@ -14,6 +14,7 @@ type Expense = {
   description: string;
   amount: number;
   isSavings?: boolean;
+  importSessionId?: string;
 };
 
 export type IncomeSourceType = "hourly" | "weekly" | "bi-weekly" | "salary";
@@ -36,6 +37,7 @@ export type ActualFixedIncomeSource = {
   id: string;
   description?: string;
   amount: number;
+  importSessionId?: string;
   createdAt?: string;
 };
 
@@ -192,7 +194,11 @@ export type PlannerSlice = {
   deleteScenario: (name: string) => void;
 };
 
-type SliceCreator<T> = StateCreator<any, [], [], T>;
+type PlannerSliceStoreState = PlannerSlice & {
+  [key: string]: unknown;
+};
+
+type SliceCreator<T> = StateCreator<PlannerSliceStoreState, [], [], T>;
 
 export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
   const currentMonth = getCurrentMonthYYYYMM();
@@ -379,7 +385,7 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
       }),
 
     getSavingsForMonth: (month) => {
-      const { savingsLogs } = get() as PlannerSlice;
+      const { savingsLogs } = get();
       const logs = savingsLogs[month] || [];
       return logs.reduce((sum, e) => sum + e.amount, 0);
     },
@@ -460,11 +466,14 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
       set((state: PlannerSlice) => {
         const newExpense = {
           ...expense,
+          description: expense.description ?? "",
           id: expense.id || crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         };
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]) as MonthlyActual;
-        const updated = [...(existing.actualExpenses || []), newExpense] as Expense[];
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
+        const updated = [...existing.actualExpenses, newExpense];
         return {
           monthlyActuals: {
             ...state.monthlyActuals,
@@ -478,8 +487,10 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     removeActualExpense: (month, id) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]) as MonthlyActual;
-        const updated = (existing.actualExpenses || []).filter((e) => e.id !== id);
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
+        const updated = existing.actualExpenses.filter((e) => e.id !== id);
         return {
           monthlyActuals: {
             ...state.monthlyActuals,
@@ -525,13 +536,15 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
         for (const [monthKey, actual] of Object.entries(nextMonthlyActuals)) {
           if (!actual) continue;
 
-          const existing = ensureMonthlyActual(actual) as MonthlyActual;
-          const nextExpenses = (existing.actualExpenses || []).map((e) => {
+          const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(actual);
+          const existing: MonthlyActual = { ...actual, ...normalized };
+
+          const nextExpenses = existing.actualExpenses.map((e) => {
             const nextName = applyExact(e?.name, expenseRules);
             return nextName && nextName !== e?.name ? { ...e, name: nextName } : e;
           });
 
-          const nextIncome = (existing.actualFixedIncomeSources || []).map((src) => {
+          const nextIncome = existing.actualFixedIncomeSources.map((src) => {
             const nextDesc = applyExact(src?.description, incomeRules);
             return nextDesc && nextDesc !== src?.description ? { ...src, description: nextDesc } : src;
           });
@@ -556,8 +569,11 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     updateMonthlyIncomeActuals: (month, id, newData) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]);
-        const updatedIncomeSources = (existing.actualFixedIncomeSources as ActualFixedIncomeSource[]).map((e) =>
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
+
+        const updatedIncomeSources = existing.actualFixedIncomeSources.map((e) =>
           e.id === id ? { ...e, ...newData } : e
         );
 
@@ -582,8 +598,11 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
           id: expense.id || crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         };
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]);
-        const updated = [...(existing.actualFixedIncomeSources as ActualFixedIncomeSource[]), newIncomeSource];
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
+
+        const updated = [...existing.actualFixedIncomeSources, newIncomeSource];
         const actualTotalNetIncome = calcActualIncomeTotal(updated);
         return {
           monthlyActuals: {
@@ -599,8 +618,11 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     removeActualIncomeSource: (month, id) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]);
-        const updated = (existing.actualFixedIncomeSources as ActualFixedIncomeSource[]).filter((e) => e.id !== id);
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
+
+        const updated = existing.actualFixedIncomeSources.filter((e) => e.id !== id);
         const actualTotalNetIncome = calcActualIncomeTotal(updated);
         return {
           monthlyActuals: {
@@ -616,7 +638,9 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     setActualCustomSavings: (month, value) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]) as MonthlyActual;
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
         return {
           monthlyActuals: {
             ...state.monthlyActuals,
@@ -630,7 +654,9 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     setOveriddenExpenseTotal: (month, value) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]);
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
         return {
           monthlyActuals: {
             ...state.monthlyActuals,
@@ -644,7 +670,9 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
 
     setOveriddenIncomeTotal: (month, value) =>
       set((state: PlannerSlice) => {
-        const existing = ensureMonthlyActual(state.monthlyActuals[month]);
+        const rawExisting = state.monthlyActuals[month];
+        const normalized = ensureMonthlyActual<Expense, ActualFixedIncomeSource>(rawExisting);
+        const existing: MonthlyActual = { ...(rawExisting ?? {}), ...normalized };
         return {
           monthlyActuals: {
             ...state.monthlyActuals,
@@ -675,14 +703,14 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
       }),
 
     getTotalGrossIncome: () => {
-      const { incomeSources } = get() as PlannerSlice;
+      const { incomeSources } = get();
       if (!Array.isArray(incomeSources)) return 0;
       return calculateNetIncome(incomeSources);
     },
 
     getTotalNetIncome: () => {
-      const totalGross = (get() as PlannerSlice).getTotalGrossIncome();
-      const filingStatus = (get() as PlannerSlice).filingStatus;
+      const totalGross = get().getTotalGrossIncome();
+      const filingStatus = get().filingStatus;
       const taxes = calculateTotalTaxes(totalGross, filingStatus);
       return {
         net: totalGross - taxes.total,
@@ -798,6 +826,7 @@ export const createPlannerSlice: SliceCreator<PlannerSlice> = (set, get) => {
         const newExpense = {
           ...expense,
           id: expense.id || crypto.randomUUID(),
+          description: expense.description ?? expense.name,
           createdAt: new Date().toISOString(),
         };
         const updated = [...state.expenses, newExpense];

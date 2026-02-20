@@ -4,12 +4,31 @@ import { createStore } from "zustand/vanilla";
 import { createAccountsSlice } from "../accountsSlice";
 import { createImportSlice } from "../importSlice";
 import { createPlannerSlice } from "../plannerSlice";
+import { createSettingsSlice } from "../settingsSlice";
+import type { AccountsSlice } from "../accountsSlice";
+import type { ImportSlice } from "../importSlice";
+import type { PlannerSlice } from "../plannerSlice";
+import type { SettingsSlice } from "../settingsSlice";
+
+type SavingsReviewQueueItem = { id: string; month: string; importSessionId?: string };
+
+function isSavingsReviewQueueItem(value: unknown): value is SavingsReviewQueueItem {
+  if (!value || typeof value !== "object") return false;
+  const rec = value as Record<string, unknown>;
+  return typeof rec.id === "string" && typeof rec.month === "string";
+}
+
+type TestState = AccountsSlice &
+  ImportSlice &
+  PlannerSlice &
+  SettingsSlice;
 
 function makeTestStore() {
-  return createStore<any>()((set, get, api) => ({
-    ...createAccountsSlice(set as any, get as any, api as any),
-    ...createImportSlice(set as any, get as any, api as any),
-    ...createPlannerSlice(set as any, get as any, api as any),
+  return createStore<TestState>()((set, get, api) => ({
+    ...createAccountsSlice(set, get, api),
+    ...createImportSlice(set, get, api),
+    ...createPlannerSlice(set, get, api),
+    ...createSettingsSlice(set, get, api),
   }));
 }
 
@@ -37,15 +56,15 @@ describe("clearImportSessionEverywhere", () => {
       ],
       pendingSavingsByAccount: {
         [accountNumber]: [
-          { importSessionId: sessionToClear, month: "2026-02" },
-          { importSessionId: "s2", month: "2026-02" },
+          { id: "p1", date: "2026-02-01", name: "Savings 1", amount: 10, importSessionId: sessionToClear, month: "2026-02" },
+          { id: "p2", date: "2026-02-01", name: "Savings 2", amount: 20, importSessionId: "s2", month: "2026-02" },
         ],
       },
       monthlyActuals: {
         "2026-02": {
           actualExpenses: [
-            { id: "e1", amount: 10, importSessionId: sessionToClear },
-            { id: "e2", amount: 20, importSessionId: "s2" },
+            { id: "e1", name: "Expense 1", description: "Expense 1", amount: 10, importSessionId: sessionToClear },
+            { id: "e2", name: "Expense 2", description: "Expense 2", amount: 20, importSessionId: "s2" },
           ],
           actualFixedIncomeSources: [
             { id: "i1", amount: 1000, importSessionId: sessionToClear },
@@ -68,8 +87,8 @@ describe("clearImportSessionEverywhere", () => {
       ],
       // If a savings review queue exists, it should also be cleaned.
       savingsReviewQueue: [
-        { id: "q1", month: "2026-02", importSessionId: sessionToClear },
-        { id: "q2", month: "2026-02", importSessionId: "s2" },
+        { id: "q1", date: "2026-02-03", name: "Savings Q1", amount: 1, month: "2026-02", importSessionId: sessionToClear },
+        { id: "q2", date: "2026-02-04", name: "Savings Q2", amount: 2, month: "2026-02", importSessionId: "s2" },
       ],
       isSavingsModalOpen: true,
     });
@@ -77,29 +96,34 @@ describe("clearImportSessionEverywhere", () => {
     store.getState().clearImportSessionEverywhere(accountNumber, sessionToClear);
 
     // Account transactions
-    const txIds = store.getState().accounts[accountNumber].transactions.map((t: any) => t.id);
+    const txIds = (store.getState().accounts[accountNumber]?.transactions ?? [])
+      .map((t) => t.id)
+      .filter((id): id is string => typeof id === "string");
     expect(txIds).toEqual(["t2", "manual"]);
 
     // Import history row removed
-    expect(store.getState().importHistory.map((h: any) => h.sessionId).sort()).toEqual(["s2"]);
+    expect(store.getState().importHistory.map((h) => h.sessionId).sort()).toEqual(["s2"]);
 
     // Pending savings filtered
-    expect(store.getState().pendingSavingsByAccount[accountNumber]).toEqual([{ importSessionId: "s2", month: "2026-02" }]);
+    expect(store.getState().pendingSavingsByAccount[accountNumber]).toEqual([
+      { id: "p2", date: "2026-02-01", name: "Savings 2", amount: 20, importSessionId: "s2", month: "2026-02" },
+    ]);
 
     // Monthly actuals filtered + total recomputed
     const actual = store.getState().monthlyActuals["2026-02"];
-    expect(actual.actualExpenses.map((e: any) => e.id)).toEqual(["e2"]);
-    expect(actual.actualFixedIncomeSources.map((i: any) => i.id)).toEqual(["i2"]);
+    expect(actual.actualExpenses.map((e) => e.id)).toEqual(["e2"]);
+    expect(actual.actualFixedIncomeSources.map((i) => i.id)).toEqual(["i2"]);
     expect(actual.actualTotalNetIncome).toBe(500);
 
     // Savings logs filtered
-    expect(store.getState().savingsLogs["2026-02"].map((l: any) => l.id)).toEqual(["l2"]);
+    expect(store.getState().savingsLogs["2026-02"].map((l) => l.id)).toEqual(["l2"]);
 
     // Savings review queue filtered and modal stays open (queue not empty)
-    expect(store.getState().savingsReviewQueue.map((q: any) => q.id)).toEqual(["q2"]);
+  const queueIds = (store.getState().savingsReviewQueue ?? []).filter(isSavingsReviewQueueItem).map((q) => q.id);
+  expect(queueIds).toEqual(["q2"]);
     expect(store.getState().isSavingsModalOpen).toBe(true);
 
     // Savings goals created by s1 are removed; others remain.
-    expect(store.getState().savingsGoals.map((g: any) => g.id).sort()).toEqual(["g2", "yearly"].sort());
+    expect(store.getState().savingsGoals.map((g) => g.id).sort()).toEqual(["g2", "yearly"].sort());
   });
 });

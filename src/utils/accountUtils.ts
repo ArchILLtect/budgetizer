@@ -1,14 +1,12 @@
 import { getUniqueTransactions, normalizeTransactionAmount } from './storeHelpers';
 import dayjs from 'dayjs';
 import { fireToast } from '../hooks/useFireToast';
+import type { TxKeyInput } from '../ingest/buildTxKey';
+import type { SavingsReviewEntry } from "../types/savingsReview";
 
-type Transaction = {
+type Transaction = TxKeyInput & {
     id?: string;
-    date?: string;
     name?: string;
-    description?: string;
-    amount?: number | string;
-    rawAmount?: number;
     type?: 'expense' | 'income' | 'savings';
     origin?: string;
     importSessionId?: string;
@@ -21,31 +19,35 @@ type ApplyOneMonthResult = {
     reviewEntries?: SavingsReviewEntry[];
 };
 
-type SavingsReviewEntry = {
-    id: string;
-    date: string;
-    name: string;
-    amount: number;
-    month: string;
-    createdAt?: string;
-    importSessionId?: string;
-};
-
 type SavingsLogEntry = {
     goalId: string | null;
     date: string;
     amount: number;
-    name: string;
+    name?: string;
     id: string;
-    createdAt: string;
+    createdAt?: string;
     importSessionId?: string;
 };
 
+type ActualExpenseInState = TxKeyInput & {
+    id: string;
+    name: string;
+    description: string;
+    amount: number;
+};
+
+type ActualIncomeSourceInState = TxKeyInput & {
+    id: string;
+    amount: number;
+    description?: string;
+    createdAt?: string;
+};
+
 type MonthlyActuals = {
-    actualExpenses: Transaction[];
-    actualFixedIncomeSources: Transaction[];
+    actualExpenses: ActualExpenseInState[];
+    actualFixedIncomeSources: ActualIncomeSourceInState[];
     actualTotalNetIncome: number;
-    customSavings: number;
+    customSavings?: number;
 };
 
 type BudgetStoreStateForApply = {
@@ -53,12 +55,29 @@ type BudgetStoreStateForApply = {
     savingsLogs: Record<string, SavingsLogEntry[] | undefined>;
 
     updateMonthlyActuals: (monthKey: string, patch: Partial<MonthlyActuals>) => void;
-    addActualExpense: (monthKey: string, tx: Transaction) => void;
+    addActualExpense: (
+        monthKey: string,
+        expense: TxKeyInput & {
+            name: string;
+            amount: number;
+            id?: string;
+            description?: string;
+        }
+    ) => void;
 };
 
-type BudgetStoreLike = {
-    getState: () => unknown;
-    setState: (partial: any, replace?: any) => void;
+type BudgetStoreLike<State> = {
+    getState: () => State;
+    setState: {
+        (
+            partial:
+                | State
+                | Partial<State>
+                | ((state: State) => State | Partial<State>),
+            replace?: false
+        ): unknown;
+        (state: State | ((state: State) => State), replace: true): unknown;
+    };
 };
 
 type VendorExtractOptions = {
@@ -255,30 +274,33 @@ export function getUniqueOrigins<T extends { origin?: string }>(txs: T[]) {
     });
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
 }
-export const applyOneMonth = async (
-    budgetStore: BudgetStoreLike,
+export const applyOneMonth = async <State extends BudgetStoreStateForApply>(
+    budgetStore: BudgetStoreLike<State>,
     monthKey: string,
     acct: { accountNumber: string; transactions: Transaction[] },
     showToast = true,
     ignoreBeforeDate: string | null = null,
     options?: ExpenseNameOptions
 ): Promise<ApplyOneMonthResult> => {
-    const store = budgetStore.getState() as BudgetStoreStateForApply;
+    const store = budgetStore.getState();
     let savingsReviewEntries: SavingsReviewEntry[] = [];
 
     // Ensure month exists
     if (!store.monthlyActuals[monthKey]) {
-        budgetStore.setState((state: BudgetStoreStateForApply) => ({
-            monthlyActuals: {
-                ...state.monthlyActuals,
-                [monthKey]: {
-                    actualExpenses: [],
-                    actualFixedIncomeSources: [],
-                    actualTotalNetIncome: 0,
-                    customSavings: 0,
-                },
-            },
-        }));
+        budgetStore.setState(
+            (state) =>
+                ({
+                    monthlyActuals: {
+                        ...state.monthlyActuals,
+                        [monthKey]: {
+                            actualExpenses: [],
+                            actualFixedIncomeSources: [],
+                            actualTotalNetIncome: 0,
+                            customSavings: 0,
+                        },
+                    },
+                }) as Partial<State>
+        );
     }
 
     const existing =
@@ -290,9 +312,7 @@ export const applyOneMonth = async (
             customSavings: 0,
         } satisfies MonthlyActuals);
     const expenses = existing.actualExpenses || [];
-    const income = (existing.actualFixedIncomeSources || []).filter(
-        (i: Transaction) => i.id !== 'main'
-    );
+    const income = (existing.actualFixedIncomeSources || []).filter((i) => i.id !== 'main');
     const savings = store.savingsLogs[monthKey] || [];
 
     // Filter rows for this month
@@ -336,14 +356,13 @@ export const applyOneMonth = async (
     }
 
     const combinedIncome = [...income, ...newIncome];
-    const combinedIncomeWithOverrides = combinedIncome.map((src) => ({
+    const combinedIncomeWithOverrides: ActualIncomeSourceInState[] = combinedIncome.map((src) => ({
         ...src,
+        id: src.id || crypto.randomUUID(),
+        amount: normalizeTransactionAmount(src),
         description: getNonEmptyIncomeDescription(src, options),
     }));
-    const newTotalNetIncome = combinedIncome.reduce(
-        (sum, tx) => sum + normalizeTransactionAmount(tx),
-        0
-    );
+    const newTotalNetIncome = combinedIncomeWithOverrides.reduce((sum, tx) => sum + tx.amount, 0);
 
     store.updateMonthlyActuals(monthKey, {
         actualFixedIncomeSources: combinedIncomeWithOverrides,
@@ -392,13 +411,13 @@ export const applyOneMonth = async (
 
             // 🔻 SINGLE Zustand update for all months
             if (Object.keys(logsByMonth).length) {
-                budgetStore.setState((state: BudgetStoreStateForApply) => {
-                    const next: BudgetStoreStateForApply["savingsLogs"] = { ...state.savingsLogs };
+                budgetStore.setState((state) => {
+                    const next = { ...state.savingsLogs } as Record<string, SavingsLogEntry[]>;
                     for (const [month, logs] of Object.entries(logsByMonth)) {
                         const current = next[month] || [];
                         next[month] = current.concat(logs);
                     }
-                    return { savingsLogs: next };
+                    return { savingsLogs: next } as Partial<State>;
                 });
             }
 
@@ -430,7 +449,7 @@ export const applyOneMonth = async (
         i: newIncome.length,
         s: newSavings.length,
         reviewEntries: savingsReviewEntries,
-    } as ApplyOneMonthResult;
+    };
 };
 
 const partition = <T>(array: T[], predicate: (elem: T) => boolean): [T[], T[]] =>

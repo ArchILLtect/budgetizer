@@ -11,7 +11,7 @@ export async function fetchUserProfileUIById(profileId: string): Promise<UserPro
   //The following return is preferable, but the type assertion is necessary until
   // we have better type safety/enforcement on the API response
   //return toUserProfileUI(raw as Parameters<typeof toUserProfileUI>[0]);
-  return toUserProfileUI(raw as any);
+  return toUserProfileUI(raw);
 }
 
 export async function fetchMyUserProfileUI(): Promise<UserProfileUI | null> {

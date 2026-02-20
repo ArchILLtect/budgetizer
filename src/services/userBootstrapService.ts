@@ -7,34 +7,16 @@ import {
 } from "../API";
 import { budgeteerApi } from "../api/budgeteerApi";
 import { isDemoIdentityUsername } from "./userDisplay";
+import { errorToMessage } from "../utils/appUtils";
 
 export const CURRENT_SEED_VERSION = 1 as const;
+
+type ApiPlanTier = (typeof PlanTier)[keyof typeof PlanTier];
 
 type BootstrapUserResult = {
   profileId: string;
   didSeedDemo: boolean;
 };
-
-function errorToMessage(err: unknown): string {
-  if (typeof err === "string") return err;
-  if (typeof err === "object" && err !== null) {
-    // Amplify often throws `{ data, errors }` for GraphQL failures.
-    if ("errors" in err && Array.isArray((err as { errors?: unknown }).errors)) {
-      const errors = (err as { errors: Array<{ message?: unknown; errorType?: unknown }> }).errors;
-      const messages = errors
-        .map((e) => {
-          const msg = typeof e?.message === "string" ? e.message : "Unknown GraphQL error";
-          const type = typeof e?.errorType === "string" ? e.errorType : "";
-          return type ? `${msg} (${type})` : msg;
-        })
-        .filter(Boolean);
-      if (messages.length) return messages.join("; ");
-    }
-
-    if ("message" in err) return String((err as { message: unknown }).message);
-  }
-  return "Unknown error";
-}
 
 function isConditionalFailure(err: unknown): boolean {
   const msg = errorToMessage(err).toLowerCase();
@@ -65,7 +47,7 @@ async function selfHealUserProfileEmail(profileId: string, email: string) {
   } catch (err) {
     // If condition fails, email was already set (or another tab fixed it).
     if (isConditionalFailure(err)) return;
-    // Any other failure should surface, but don't hard-break the app.
+    // Other failure should surface, but don't hard-break the app.
     if (import.meta.env.DEV) {
       console.warn("[user bootstrap] email self-heal failed", err);
     }
@@ -138,18 +120,16 @@ function payloadToRole(payload?: Record<string, unknown>): string {
   return typeof raw === "string" ? raw : "";
 }
 
-// Used ype any for now to keep the dependency tree clean; we can type this properly once we
-// integrate it into the UI layer.
-async function resolveDesiredPlanTier(username?: string | null): Promise<any> {
+async function resolveDesiredPlanTier(username?: string | null): Promise<ApiPlanTier> {
   // Fast-path: demo identities are created with the demo+<uuid>@... username shape.
-  if (username && isDemoIdentityUsername(username)) return PlanTier.DEMO as any;
+  if (username && isDemoIdentityUsername(username)) return PlanTier.DEMO;
 
   try {
     const session = await fetchAuthSession();
     const payload = session.tokens?.idToken?.payload as Record<string, unknown> | undefined;
     const groups = payloadToGroups(payload);
     const role = payloadToRole(payload);
-    if (groups.includes("Demo") || role === "Demo") return PlanTier.DEMO as any;
+    if (groups.includes("Demo") || role === "Demo") return PlanTier.DEMO;
   } catch {
     // ignore
   }

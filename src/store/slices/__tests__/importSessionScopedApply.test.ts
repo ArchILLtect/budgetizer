@@ -3,11 +3,15 @@ import { createStore } from "zustand/vanilla";
 
 import { createAccountsSlice } from "../accountsSlice";
 import { createImportSlice } from "../importSlice";
+import type { AccountsSlice } from "../accountsSlice";
+import type { ImportSlice } from "../importSlice";
+
+type TestState = AccountsSlice & ImportSlice;
 
 function makeTestStore() {
-  return createStore<any>()((set, get, api) => ({
-    ...createAccountsSlice(set as any, get as any, api as any),
-    ...createImportSlice(set as any, get as any, api as any),
+  return createStore<TestState>()((set, get, api) => ({
+    ...createAccountsSlice(set, get, api),
+    ...createImportSlice(set, get, api),
   }));
 }
 
@@ -36,14 +40,21 @@ describe("Import session-scoped apply (regression)", () => {
 
     store.getState().markImportSessionBudgetApplied(accountNumber, s1, ["2026-02"]);
 
-    const txns = store.getState().accounts[accountNumber].transactions;
-    expect(txns.find((t: any) => t.id === "s1-feb")).toMatchObject({ staged: false, budgetApplied: true });
+    const txns = store.getState().accounts[accountNumber].transactions ?? [];
+
+    const s1Feb = txns.find((t) => t.id === "s1-feb");
+    if (!s1Feb) throw new Error("Expected transaction s1-feb to exist");
+    expect(s1Feb).toMatchObject({ staged: false, budgetApplied: true });
 
     // Other session in same month remains staged.
-    expect(txns.find((t: any) => t.id === "s2-feb")).toMatchObject({ staged: true, budgetApplied: false });
+    const s2Feb = txns.find((t) => t.id === "s2-feb");
+    if (!s2Feb) throw new Error("Expected transaction s2-feb to exist");
+    expect(s2Feb).toMatchObject({ staged: true, budgetApplied: false });
 
     // Other month in the same session remains staged (month-scoped apply).
-    expect(txns.find((t: any) => t.id === "s1-mar")).toMatchObject({ staged: true, budgetApplied: false });
+    const s1Mar = txns.find((t) => t.id === "s1-mar");
+    if (!s1Mar) throw new Error("Expected transaction s1-mar to exist");
+    expect(s1Mar).toMatchObject({ staged: true, budgetApplied: false });
   });
 
   it("processing pending savings for one session+month does not enqueue other sessions", () => {
@@ -56,9 +67,9 @@ describe("Import session-scoped apply (regression)", () => {
     store.setState({
       pendingSavingsByAccount: {
         [accountNumber]: [
-          { importSessionId: s1, month: "2026-02", id: "p1" },
-          { importSessionId: s2, month: "2026-02", id: "p2" },
-          { importSessionId: s1, month: "2026-03", id: "p3" },
+          { importSessionId: s1, month: "2026-02", date: "2026-02-01", id: "p1", name: "Savings", amount: 10 },
+          { importSessionId: s2, month: "2026-02", date: "2026-02-02", id: "p2", name: "Savings", amount: 20 },
+          { importSessionId: s1, month: "2026-03", date: "2026-03-01", id: "p3", name: "Savings", amount: 30 },
         ],
       },
       savingsReviewQueue: [],
@@ -66,12 +77,14 @@ describe("Import session-scoped apply (regression)", () => {
 
     store.getState().processPendingSavingsForImportSession(accountNumber, s1, ["2026-02"]);
 
-    expect(store.getState().savingsReviewQueue).toEqual([{ importSessionId: s1, month: "2026-02", id: "p1" }]);
+    expect(store.getState().savingsReviewQueue).toEqual([
+      { importSessionId: s1, month: "2026-02", date: "2026-02-01", id: "p1", name: "Savings", amount: 10 },
+    ]);
 
     // Only s1/Feb removed from pending.
     expect(store.getState().pendingSavingsByAccount[accountNumber]).toEqual([
-      { importSessionId: s2, month: "2026-02", id: "p2" },
-      { importSessionId: s1, month: "2026-03", id: "p3" },
+      { importSessionId: s2, month: "2026-02", date: "2026-02-02", id: "p2", name: "Savings", amount: 20 },
+      { importSessionId: s1, month: "2026-03", date: "2026-03-01", id: "p3", name: "Savings", amount: 30 },
     ]);
   });
 });

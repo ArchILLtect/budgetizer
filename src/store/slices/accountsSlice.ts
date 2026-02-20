@@ -19,7 +19,11 @@ export type AccountsSlice = {
   removeAccount: (accountNumber: string) => void;
 };
 
-type SliceCreator<T> = StateCreator<any, [], [], T>;
+type AccountsSliceStoreState = AccountsSlice & {
+  [key: string]: unknown;
+};
+
+type SliceCreator<T> = StateCreator<AccountsSliceStoreState, [], [], T>;
 
 export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
   accountMappings: {},
@@ -30,7 +34,7 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
   clearAllAccountMappings: () => set(() => ({ accountMappings: {} })),
 
   addOrUpdateAccount: (accountNumber, data) =>
-    set((state: AccountsSlice) => ({
+    set((state) => ({
       accounts: {
         ...state.accounts,
         [accountNumber]: {
@@ -41,7 +45,7 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
     })),
 
   addTransactionsToAccount: (accountNumber, transactions) =>
-    set((state: AccountsSlice) => {
+    set((state) => {
       const existing: Transaction[] = state.accounts[accountNumber]?.transactions ?? [];
       const seen = new Set(existing.map((t) => getStrongTransactionKey(t, accountNumber)));
       const newTxs: Transaction[] = [];
@@ -71,7 +75,7 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
     }),
 
   setAccountMapping: (accountNumber, mapping) =>
-    set((state: AccountsSlice) => ({
+    set((state) => ({
       accountMappings: {
         ...state.accountMappings,
         [accountNumber]: mapping,
@@ -79,7 +83,7 @@ export const createAccountsSlice: SliceCreator<AccountsSlice> = (set) => ({
     })),
 
   removeAccount: (accountNumber) =>
-    set((state: AccountsSlice) => {
+    set((state) => {
       const updated = { ...state.accounts };
       delete updated[accountNumber];
       return { accounts: updated };

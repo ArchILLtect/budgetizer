@@ -16,6 +16,8 @@ export type BudgetStoreState = ImportSlice &
     SettingsSlice &
     AccountsSlice & {
         ORIGIN_COLOR_MAP: Record<Origin, string>;
+        updateRecurring?: (id: string, updates: { amount: number }) => void;
+        removeRecurring?: (id: string) => void;
     };
 
 // TODO: Allow users to change overtime threshold and tax rates

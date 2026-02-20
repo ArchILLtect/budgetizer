@@ -3,6 +3,8 @@ import { toUserProfileUI } from "../api/mappers";
 import { ModelAttributeTypes } from "../API";
 import type { UserProfileUI } from "../types/userProfile";
 
+type ApiUserProfileLike = Parameters<typeof toUserProfileUI>[0];
+
 function errorToMessage(err: unknown): string {
   if (typeof err === "string") return err;
   if (typeof err === "object" && err !== null) {
@@ -106,8 +108,10 @@ async function fetchAllUserProfiles(limit = 200): Promise<{ userProfiles: UserPr
       });
     }
 
-    // Switched `Parameters<typeof toUserProfileUI>[0]` to `any` here as a temporary workaround.
-    all.push(...page.items.map((p) => toUserProfileUI(p as any)));
+    const mapped = page.items
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .map((p) => toUserProfileUI(p as ApiUserProfileLike));
+    all.push(...mapped);
     nextToken = page.nextToken ?? null;
   } while (nextToken);
 
@@ -237,7 +241,9 @@ export async function listUserProfilesAdminPage(opts?: {
   if (requestedMode === "safe") {
     const page = await budgeteerApi.listUserProfilesSafe({ limit, nextToken });
     return {
-      items: page.items.map((p) => toUserProfileUI(p as any)),
+      items: page.items
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
       nextToken: page.nextToken ?? null,
       emailMode: "safe",
     };
@@ -246,7 +252,9 @@ export async function listUserProfilesAdminPage(opts?: {
   try {
     const page = await budgeteerApi.listUserProfiles({ limit, nextToken });
     return {
-      items: page.items.map((p) => toUserProfileUI(p as any)),
+      items: page.items
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
       nextToken: page.nextToken ?? null,
       emailMode: "full",
     };
@@ -254,7 +262,9 @@ export async function listUserProfilesAdminPage(opts?: {
     if (!shouldFallbackUserProfilesWithoutEmail(err)) throw err;
     const page = await budgeteerApi.listUserProfilesSafe({ limit, nextToken });
     return {
-      items: page.items.map((p) => toUserProfileUI(p as any)),
+      items: page.items
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
       nextToken: page.nextToken ?? null,
       emailMode: "safe",
     };
@@ -278,7 +288,9 @@ export async function listUserProfilesWithEmailAdminPage(opts?: {
   });
 
   return {
-    items: page.items.map((p) => toUserProfileUI(p as any)),
+    items: page.items
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
     nextToken: page.nextToken ?? null,
   };
 }
@@ -299,7 +311,9 @@ export async function listUserProfilesByEmailAdminPage(opts: {
     });
 
     return {
-      items: page.items.map((p) => toUserProfileUI(p as any)),
+      items: page.items
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
       nextToken: page.nextToken ?? null,
       emailMode: "full",
     };
@@ -314,7 +328,9 @@ export async function listUserProfilesByEmailAdminPage(opts: {
     });
 
     return {
-      items: page.items.map((p) => toUserProfileUI(p as any)),
+      items: page.items
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => toUserProfileUI(p as ApiUserProfileLike)),
       nextToken: page.nextToken ?? null,
       emailMode: "safe",
     };

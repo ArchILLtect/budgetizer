@@ -1,17 +1,19 @@
-export type MonthlyActualLike = {
-  actualExpenses: unknown[];
+export type ActualIncomeSourceLike = { amount?: unknown } & Record<string, unknown>;
+
+export type MonthlyActualBase<TExpense = unknown, TIncomeSource = ActualIncomeSourceLike> = {
+  actualExpenses: TExpense[];
   actualTotalNetIncome: number;
-  actualFixedIncomeSources: Array<{ amount?: unknown } & Record<string, unknown>>;
-  overiddenExpenseTotal?: unknown;
-  overiddenIncomeTotal?: unknown;
+  actualFixedIncomeSources: TIncomeSource[];
+  overiddenExpenseTotal?: number;
+  overiddenIncomeTotal?: number;
 };
 
 function roundToCents(value: number): number {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
-export function calcActualIncomeTotal(
-  actualFixedIncomeSources: MonthlyActualLike["actualFixedIncomeSources"] | undefined
+export function calcActualIncomeTotal<TIncomeSource extends { amount?: unknown }>(
+  actualFixedIncomeSources: TIncomeSource[] | undefined
 ): number {
   if (!Array.isArray(actualFixedIncomeSources)) return 0;
   return roundToCents(
@@ -19,17 +21,23 @@ export function calcActualIncomeTotal(
   );
 }
 
-export function ensureMonthlyActual(existing?: unknown): MonthlyActualLike {
+export function ensureMonthlyActual<TExpense = unknown, TIncomeSource = ActualIncomeSourceLike>(
+  existing?: unknown
+): MonthlyActualBase<TExpense, TIncomeSource> {
   if (existing && typeof existing === "object") {
     const e = existing as Record<string, unknown>;
+
+    const overiddenExpenseTotalRaw = Number(e.overiddenExpenseTotal);
+    const overiddenIncomeTotalRaw = Number(e.overiddenIncomeTotal);
+
     return {
-      actualExpenses: Array.isArray(e.actualExpenses) ? (e.actualExpenses as unknown[]) : [],
+      actualExpenses: Array.isArray(e.actualExpenses) ? (e.actualExpenses as TExpense[]) : [],
       actualTotalNetIncome: Number(e.actualTotalNetIncome) || 0,
       actualFixedIncomeSources: Array.isArray(e.actualFixedIncomeSources)
-        ? (e.actualFixedIncomeSources as MonthlyActualLike["actualFixedIncomeSources"])
+        ? (e.actualFixedIncomeSources as TIncomeSource[])
         : [],
-      overiddenExpenseTotal: e.overiddenExpenseTotal,
-      overiddenIncomeTotal: e.overiddenIncomeTotal,
+      overiddenExpenseTotal: Number.isFinite(overiddenExpenseTotalRaw) ? overiddenExpenseTotalRaw : undefined,
+      overiddenIncomeTotal: Number.isFinite(overiddenIncomeTotalRaw) ? overiddenIncomeTotalRaw : undefined,
     };
   }
 

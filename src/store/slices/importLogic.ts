@@ -1,3 +1,5 @@
+import type { SavingsReviewEntry } from "../../types/savingsReview";
+
 export type ImportHistoryEntry = {
   sessionId: string;
   accountNumber: string;
@@ -26,16 +28,12 @@ export type AccountForImportLifecycle = {
   [key: string]: unknown;
 };
 
-export type PendingSavingsQueueEntry = {
-  month?: string;
-  importSessionId?: string;
-  [key: string]: unknown;
-};
+export type PendingSavingsQueueEntry = SavingsReviewEntry;
 
 export type ImportLifecycleState = {
   accounts: Record<string, AccountForImportLifecycle>;
   pendingSavingsByAccount: Record<string, PendingSavingsQueueEntry[]>;
-  savingsReviewQueue?: unknown[];
+  savingsReviewQueue?: SavingsReviewEntry[];
 
   importHistory: ImportHistoryEntry[];
   importUndoWindowMinutes: number;

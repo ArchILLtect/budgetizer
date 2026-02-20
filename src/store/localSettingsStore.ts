@@ -51,8 +51,8 @@ function normalizeNameOverrideRules(value: unknown): NameOverrideRule[] {
   const out: NameOverrideRule[] = [];
 
   for (const item of arr) {
-    const match = normalizeDisplayText((item as any)?.match);
-    const displayName = normalizeDisplayText((item as any)?.displayName);
+    const match = normalizeDisplayText((item)?.match);
+    const displayName = normalizeDisplayText((item)?.displayName);
     if (!match || !displayName) continue;
     out.push({ match, displayName });
   }

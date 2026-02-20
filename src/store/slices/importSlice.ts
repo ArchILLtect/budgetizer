@@ -9,12 +9,14 @@ import {
   type ImportHistoryEntry,
   type ImportLifecycleState,
   type ImportSessionRuntime,
+  type AccountForImportLifecycle,
   type PendingSavingsQueueEntry,
   type TransactionForImportLifecycle,
 } from "./importLogic";
 import { buildTxKey } from "../../ingest/buildTxKey";
 import type { ImportPlan } from "../../ingest/importPlan";
 import { normalizeTransactionAmount } from "../../utils/storeHelpers";
+import type { SavingsReviewEntry } from "../../types/savingsReview";
 
 type ImportManifestMeta = {
   size?: number;
@@ -37,6 +39,16 @@ type ImportManifest = {
   >;
 };
 
+export type LastIngestionTelemetry = {
+  at: string;
+  accountNumber: string;
+  hash?: string;
+  newCount: number;
+  dupesExisting?: number;
+  dupesIntraFile?: number;
+  categorySources?: Record<string, number>;
+};
+
 type ImportSliceStoreState = Pick<
   ImportLifecycleState,
   | "accounts"
@@ -47,7 +59,7 @@ type ImportSliceStoreState = Pick<
   | "importHistoryMaxAgeDays"
   | "stagedAutoExpireDays"
 > & {
-  savingsReviewQueue?: unknown[];
+  savingsReviewQueue?: SavingsReviewEntry[];
   isSavingsModalOpen?: boolean;
   importManifests: Record<string, ImportManifest>;
 
@@ -55,14 +67,14 @@ type ImportSliceStoreState = Pick<
   streamingAutoByteThreshold: number;
   showIngestionBenchmark: boolean;
 
-  lastIngestionTelemetry: unknown;
+  lastIngestionTelemetry: LastIngestionTelemetry | null;
 
   [key: string]: unknown;
 };
 
 export type ImportSlice = {
   pendingSavingsByAccount: ImportLifecycleState["pendingSavingsByAccount"];
-  savingsReviewQueue: unknown[];
+  savingsReviewQueue: SavingsReviewEntry[];
   importHistory: ImportHistoryEntry[];
 
   importUndoWindowMinutes: number;
@@ -75,9 +87,9 @@ export type ImportSlice = {
   showIngestionBenchmark: boolean;
 
   importManifests: Record<string, ImportManifest>;
-  lastIngestionTelemetry: unknown;
+  lastIngestionTelemetry: LastIngestionTelemetry | null;
 
-  setLastIngestionTelemetry: (telemetry: unknown) => void;
+  setLastIngestionTelemetry: (telemetry: LastIngestionTelemetry | null) => void;
   clearAllImportData: () => void;
   registerImportManifest: (hash: string, accountNumber: string, meta?: ImportManifestMeta) => void;
 
@@ -85,8 +97,8 @@ export type ImportSlice = {
 
   addPendingSavingsQueue: (accountNumber: string, entries: PendingSavingsQueueEntry[]) => void;
   clearPendingSavingsForAccount: (accountNumber: string) => void;
-  processSavingsQueue: (entries: unknown[]) => void;
-  setSavingsReviewQueue: (entries: unknown[]) => void;
+  processSavingsQueue: (entries: SavingsReviewEntry[]) => void;
+  setSavingsReviewQueue: (entries: SavingsReviewEntry[]) => void;
   clearSavingsReviewQueue: () => void;
   processPendingSavingsForAccount: (accountNumber: string, months: string[]) => void;
   clearPendingSavingsForAccountMonths: (accountNumber: string, months: string[]) => void;
@@ -181,10 +193,11 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
   commitImportPlan: (plan) =>
     set((state) => {
-      const sessionId = String(plan?.session?.sessionId || "");
-      const accountNumber = String(plan?.session?.accountNumber || "");
-      const importedAt = String(plan?.session?.importedAt || new Date().toISOString());
-      const hash = String(plan?.stats?.hash || plan?.session?.hash || "");
+      const sessionId = String(plan.session?.sessionId || "");
+      const accountNumber = String(plan.session?.accountNumber || "");
+      const importedAt = String(plan.session?.importedAt || new Date().toISOString());
+      const stats = plan.stats;
+      const hash = String(stats?.hash || plan.session?.hash || "");
 
       if (!sessionId || !accountNumber) return {};
 
@@ -193,7 +206,9 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       );
       if (alreadyRecorded) return {};
 
-      const accepted = Array.isArray(plan?.accepted) ? plan.accepted : [];
+      const accepted: TransactionForImportLifecycle[] = Array.isArray(plan?.accepted)
+        ? (plan.accepted as TransactionForImportLifecycle[])
+        : [];
       if (!accepted.length) {
         // Still record the session metadata for audit if desired.
         const entry: ImportHistoryEntry = {
@@ -201,8 +216,8 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
           accountNumber,
           importedAt,
           newCount: 0,
-          dupesExisting: (plan?.stats as any)?.dupesExisting,
-          dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
+          dupesExisting: stats?.dupesExisting,
+          dupesIntraFile: stats?.dupesIntraFile,
           savingsCount: Array.isArray(plan?.savingsQueue) ? plan.savingsQueue.length : 0,
           hash,
         };
@@ -218,21 +233,21 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
       // Merge into the account's transactions, de-duping again at commit time
       // so retry/double-clicks can't double-insert.
-      const acct = state.accounts?.[accountNumber] as { transactions?: TransactionForImportLifecycle[] } | undefined;
-      const existingTxns = (acct?.transactions ?? []) as TransactionForImportLifecycle[];
+      const acct: AccountForImportLifecycle | undefined = state.accounts?.[accountNumber];
+      const existingTxns: TransactionForImportLifecycle[] = (acct?.transactions ?? []) as TransactionForImportLifecycle[];
 
       const existingKeys = new Set<string>();
       for (const t of existingTxns) {
         try {
-          const k = buildTxKey(t as any);
+          const k = buildTxKey(t);
           if (k) existingKeys.add(k);
         } catch {
           // ignore
         }
       }
 
-      const toAdd = [] as any[];
-      for (const t of accepted as any[]) {
+      const toAdd: TransactionForImportLifecycle[] = [];
+      for (const t of accepted) {
         try {
           const k = typeof t?.key === "string" && t.key ? t.key : buildTxKey(t);
           if (!k || existingKeys.has(k)) continue;
@@ -244,14 +259,19 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
         }
       }
 
-      const merged = [...existingTxns, ...toAdd].sort((a: any, b: any) =>
+      const merged = [...existingTxns, ...toAdd].sort((a, b) =>
         String(a?.date || "").localeCompare(String(b?.date || ""))
       );
 
       // Bootstrap account metadata similar to buildPatch.
-      const firstOrig = (toAdd.find((t: any) => t?.original)?.original || {}) as Record<string, unknown>;
+      const firstOrig = (
+        toAdd.find((t): t is TransactionForImportLifecycle & { original?: Record<string, unknown> } => {
+          const orig = (t as { original?: unknown }).original;
+          return !!orig && typeof orig === "object";
+        })?.original || {}
+      ) as Record<string, unknown>;
       const inferredType =
-        String((firstOrig as any)?.AccountType || (firstOrig as any)?.accountType || "")
+        String(firstOrig?.AccountType || firstOrig?.accountType || "")
           .trim()
           .toLowerCase() || "checking";
 
@@ -265,7 +285,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       const nextAccount = acct
         ? {
             ...baseNew,
-            ...(acct as any),
+            ...acct,
             transactions: merged,
           }
         : {
@@ -279,8 +299,8 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
         accountNumber,
         importedAt,
         newCount: toAdd.length,
-        dupesExisting: (plan?.stats as any)?.dupesExisting,
-        dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
+        dupesExisting: stats?.dupesExisting,
+        dupesIntraFile: stats?.dupesIntraFile,
         savingsCount: Array.isArray(plan?.savingsQueue) ? plan.savingsQueue.length : 0,
         hash,
       };
@@ -291,8 +311,23 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       const pruned = pruneImportHistory(withEntry, maxEntries, maxAgeDays, Date.now());
 
       // Queue pending savings (deferred until apply)
-      const savings = Array.isArray(plan?.savingsQueue) ? (plan.savingsQueue as any[]) : [];
-      const currentPending = (state.pendingSavingsByAccount?.[accountNumber] || []) as any[];
+      const savings: PendingSavingsQueueEntry[] = Array.isArray(plan?.savingsQueue)
+        ? (plan.savingsQueue as Array<Record<string, unknown>>).map((s) => {
+            const rawId = typeof s.id === "string" ? s.id : "";
+            const rawDate = typeof s.date === "string" ? s.date : "";
+            const rawMonth = typeof s.month === "string" ? s.month : (rawDate ? rawDate.slice(0, 7) : "");
+
+            return {
+              ...s,
+              id: rawId || crypto.randomUUID(),
+              date: rawDate,
+              month: rawMonth,
+              name: typeof s.name === "string" ? s.name : "",
+              amount: typeof s.amount === "number" ? s.amount : Number(s.amount) || 0,
+            };
+          })
+        : [];
+      const currentPending = (state.pendingSavingsByAccount?.[accountNumber] || []) as PendingSavingsQueueEntry[];
       const pendingSavingsByAccount = savings.length
         ? {
             ...state.pendingSavingsByAccount,
@@ -319,7 +354,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
               [accountNumber]: {
                 importedAt,
                 newCount: toAdd.length,
-                dupes: (plan?.stats as any)?.dupes ?? 0,
+                dupes: stats?.dupes ?? 0,
               },
             },
           },
@@ -327,14 +362,14 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       })();
 
       // Snapshot latest ingestion telemetry
-      const lastIngestionTelemetry = {
+      const lastIngestionTelemetry: LastIngestionTelemetry = {
         at: new Date().toISOString(),
         accountNumber,
         hash,
-        newCount: (plan?.stats as any)?.newCount ?? toAdd.length,
-        dupesExisting: (plan?.stats as any)?.dupesExisting,
-        dupesIntraFile: (plan?.stats as any)?.dupesIntraFile,
-        categorySources: (plan?.stats as any)?.categorySources,
+        newCount: stats?.newCount ?? toAdd.length,
+        dupesExisting: stats?.dupesExisting,
+        dupesIntraFile: stats?.dupesIntraFile,
+        categorySources: stats?.categorySources,
       };
 
       return {
@@ -557,16 +592,48 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
     set((state) => undoStagedImport(state, accountNumber, sessionId, Date.now())),
 
   clearImportSessionEverywhere: (accountNumber, sessionId) =>
-    set((state: any) => {
+    set((state) => {
       if (!accountNumber || !sessionId) return {};
 
-      const patch: Record<string, unknown> = {};
+      type MonthlyActualLike = {
+        actualExpenses?: Array<{ importSessionId?: string } & Record<string, unknown>>;
+        actualFixedIncomeSources?: Array<
+          { id?: string; amount?: number | string; importSessionId?: string } & Record<string, unknown>
+        >;
+        actualTotalNetIncome?: number;
+        [key: string]: unknown;
+      };
+
+      type MonthlyActualsMap = Record<string, MonthlyActualLike>;
+
+      type SavingsLogEntryLike = {
+        importSessionId?: string;
+        goalId?: string;
+        [key: string]: unknown;
+      };
+
+      type SavingsLogsMap = Record<string, SavingsLogEntryLike[]>;
+
+      type SavingsGoalLike = {
+        id?: string;
+        createdFromImportSessionId?: string;
+        [key: string]: unknown;
+      };
+
+      const patch: Partial<ImportSliceStoreState> & {
+        monthlyActuals?: MonthlyActualsMap;
+        savingsLogs?: SavingsLogsMap;
+        savingsGoals?: SavingsGoalLike[];
+        savingsReviewQueue?: SavingsReviewEntry[];
+      } = {};
 
       // 1) Remove imported transactions for this session from the account.
       const acct = state.accounts?.[accountNumber];
       if (acct?.transactions && Array.isArray(acct.transactions)) {
         const before = acct.transactions.length;
-        const remaining = acct.transactions.filter((tx: any) => tx?.importSessionId !== sessionId);
+        const remaining = (acct.transactions as TransactionForImportLifecycle[]).filter(
+          (tx) => tx?.importSessionId !== sessionId
+        );
         if (remaining.length !== before) {
           patch.accounts = {
             ...state.accounts,
@@ -581,7 +648,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       // 2) Remove import history row.
       if (Array.isArray(state.importHistory) && state.importHistory.length) {
         const nextHistory = state.importHistory.filter(
-          (h: any) => !(h?.sessionId === sessionId && h?.accountNumber === accountNumber)
+          (h) => !(h?.sessionId === sessionId && h?.accountNumber === accountNumber)
         );
         if (nextHistory.length !== state.importHistory.length) {
           patch.importHistory = nextHistory;
@@ -591,7 +658,9 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
       // 3) Remove pending savings entries for this session.
       const pendingForAcct = state.pendingSavingsByAccount?.[accountNumber];
       if (Array.isArray(pendingForAcct) && pendingForAcct.length) {
-        const remaining = pendingForAcct.filter((e: any) => e?.importSessionId !== sessionId);
+        const remaining = (pendingForAcct as PendingSavingsQueueEntry[]).filter(
+          (e) => e?.importSessionId !== sessionId
+        );
         if (remaining.length !== pendingForAcct.length) {
           const nextPendingByAccount = { ...(state.pendingSavingsByAccount || {}) };
           if (remaining.length === 0) {
@@ -605,10 +674,11 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
       // 4) Clear tracker-derived actuals (monthlyActuals) tagged with this session.
       if (state.monthlyActuals && typeof state.monthlyActuals === "object") {
-        const nextMonthlyActuals: Record<string, any> = { ...state.monthlyActuals };
+        const monthlyActuals = state.monthlyActuals as MonthlyActualsMap;
+        const nextMonthlyActuals: MonthlyActualsMap = { ...monthlyActuals };
         let changed = false;
 
-        for (const [month, actual] of Object.entries(state.monthlyActuals as Record<string, any>)) {
+        for (const [month, actual] of Object.entries(monthlyActuals)) {
           if (!actual || typeof actual !== "object") continue;
 
           let monthChanged = false;
@@ -616,7 +686,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
           if (Array.isArray(actual.actualExpenses)) {
             const before = actual.actualExpenses.length;
-            const remaining = actual.actualExpenses.filter((e: any) => e?.importSessionId !== sessionId);
+            const remaining = actual.actualExpenses.filter((e) => e?.importSessionId !== sessionId);
             if (remaining.length !== before) {
               nextActual.actualExpenses = remaining;
               monthChanged = true;
@@ -625,13 +695,13 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
           if (Array.isArray(actual.actualFixedIncomeSources)) {
             const before = actual.actualFixedIncomeSources.length;
-            const remaining = actual.actualFixedIncomeSources.filter((e: any) => e?.importSessionId !== sessionId);
+            const remaining = actual.actualFixedIncomeSources.filter((e) => e?.importSessionId !== sessionId);
             if (remaining.length !== before) {
               nextActual.actualFixedIncomeSources = remaining;
               // Keep totals consistent after removing imported income sources.
               const total = remaining
-                .filter((t: any) => String(t?.id || "") !== "main")
-                .reduce((sum: number, t: any) => sum + normalizeTransactionAmount(t), 0);
+                .filter((t) => String(t?.id || "") !== "main")
+                .reduce((sum, t) => sum + normalizeTransactionAmount(t), 0);
               nextActual.actualTotalNetIncome = total;
               monthChanged = true;
             }
@@ -650,12 +720,13 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
       // 5) Clear savings logs tagged with this session.
       if (state.savingsLogs && typeof state.savingsLogs === "object") {
-        const nextSavingsLogs: Record<string, any[]> = { ...state.savingsLogs };
+        const savingsLogs = state.savingsLogs as SavingsLogsMap;
+        const nextSavingsLogs: SavingsLogsMap = { ...savingsLogs };
         let changed = false;
 
-        for (const [month, logs] of Object.entries(state.savingsLogs as Record<string, any[]>)) {
+        for (const [month, logs] of Object.entries(savingsLogs)) {
           if (!Array.isArray(logs) || logs.length === 0) continue;
-          const remaining = logs.filter((e: any) => e?.importSessionId !== sessionId);
+          const remaining = logs.filter((e) => e?.importSessionId !== sessionId);
           if (remaining.length !== logs.length) {
             changed = true;
             if (remaining.length === 0) delete nextSavingsLogs[month];
@@ -670,11 +741,11 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
       // 5b) Remove savings goals created by this session, but only if nothing still references them.
       if (Array.isArray(state.savingsGoals) && state.savingsGoals.length) {
-        // Build a set of goalIds still referenced anywhere.
+        // Build a set of goalIds still referenced wherever.
         const referencedGoalIds = new Set<string>();
-        const logsByMonth = (patch.savingsLogs as any) ?? state.savingsLogs;
+        const logsByMonth: SavingsLogsMap | undefined = patch.savingsLogs ?? (state.savingsLogs as SavingsLogsMap | undefined);
         if (logsByMonth && typeof logsByMonth === "object") {
-          for (const logs of Object.values(logsByMonth as Record<string, any[]>)) {
+          for (const logs of Object.values(logsByMonth)) {
             if (!Array.isArray(logs)) continue;
             for (const e of logs) {
               if (e?.goalId) referencedGoalIds.add(String(e.goalId));
@@ -682,11 +753,11 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
           }
         }
 
-        const nextGoals = (state.savingsGoals as any[]).filter((g: any) => {
+        const nextGoals = (state.savingsGoals as SavingsGoalLike[]).filter((g) => {
           const createdFrom = g?.createdFromImportSessionId;
           if (createdFrom !== sessionId) return true;
           const goalId = g?.id;
-          // Only remove if it's not referenced anymore.
+          // Only remove if it's no longer referenced.
           return goalId ? referencedGoalIds.has(String(goalId)) : true;
         });
 
@@ -697,9 +768,7 @@ export const createImportSlice: SliceCreator<ImportSlice> = (set, get) => ({
 
       // 6) If a savings-review modal queue exists, remove entries for this session.
       if (Array.isArray(state.savingsReviewQueue) && state.savingsReviewQueue.length) {
-        const remaining = state.savingsReviewQueue.filter(
-          (e: any) => e?.importSessionId !== sessionId
-        );
+        const remaining = state.savingsReviewQueue.filter((e) => e?.importSessionId !== sessionId);
         if (remaining.length !== state.savingsReviewQueue.length) {
           patch.savingsReviewQueue = remaining;
           if (remaining.length === 0 && state.isSavingsModalOpen) {

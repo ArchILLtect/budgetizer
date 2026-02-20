@@ -3,11 +3,18 @@ import { createStore } from "zustand/vanilla";
 
 import { createAccountsSlice } from "../accountsSlice";
 import { createImportSlice } from "../importSlice";
+import { createSettingsSlice } from "../settingsSlice";
+import type { AccountsSlice } from "../accountsSlice";
+import type { ImportSlice } from "../importSlice";
+import type { SettingsSlice } from "../settingsSlice";
+
+type TestState = AccountsSlice & ImportSlice & SettingsSlice;
 
 function makeTestStore() {
-  return createStore<any>()((set, get, api) => ({
-    ...createAccountsSlice(set as any, get as any, api as any),
-    ...createImportSlice(set as any, get as any, api as any),
+  return createStore<TestState>()((set, get, api) => ({
+    ...createAccountsSlice(set, get, api),
+    ...createImportSlice(set, get, api),
+    ...createSettingsSlice(set, get, api),
   }));
 }
 
@@ -18,19 +25,19 @@ describe("pending savings clearing", () => {
     store.setState({
       pendingSavingsByAccount: {
         "1234": [
-          { id: "p1", importSessionId: "s1", month: "2025-08" },
-          { id: "p2", importSessionId: "s1", month: "2025-09" },
-          { id: "p3", importSessionId: "s2", month: "2025-08" },
+          { id: "p1", importSessionId: "s1", month: "2025-08", date: "2025-08-01", name: "Savings", amount: 10 },
+          { id: "p2", importSessionId: "s1", month: "2025-09", date: "2025-09-01", name: "Savings", amount: 20 },
+          { id: "p3", importSessionId: "s2", month: "2025-08", date: "2025-08-02", name: "Savings", amount: 30 },
         ],
       },
       savingsReviewQueue: [],
       isSavingsModalOpen: false,
-    } as any);
+    });
 
     store.getState().clearPendingSavingsForAccountMonths("1234", ["2025-08"]);
 
     expect(store.getState().pendingSavingsByAccount["1234"]).toEqual([
-      { id: "p2", importSessionId: "s1", month: "2025-09" },
+      { id: "p2", importSessionId: "s1", month: "2025-09", date: "2025-09-01", name: "Savings", amount: 20 },
     ]);
     expect(store.getState().savingsReviewQueue).toEqual([]);
     expect(store.getState().isSavingsModalOpen).toBe(false);
@@ -38,7 +45,7 @@ describe("pending savings clearing", () => {
     // idempotent
     store.getState().clearPendingSavingsForAccountMonths("1234", ["2025-08"]);
     expect(store.getState().pendingSavingsByAccount["1234"]).toEqual([
-      { id: "p2", importSessionId: "s1", month: "2025-09" },
+      { id: "p2", importSessionId: "s1", month: "2025-09", date: "2025-09-01", name: "Savings", amount: 20 },
     ]);
   });
 });

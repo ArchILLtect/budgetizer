@@ -20,9 +20,9 @@ export function resetUserSessionState(): void {
   if (now - lastResetAtMs < 250) return;
   resetInProgress = true;
 
-  const updatesState = useUpdatesStore.getState() as unknown as { resetAll?: () => void; clearAll?: () => void };
+  const updatesState = useUpdatesStore.getState();
   if (typeof updatesState.resetAll === "function") updatesState.resetAll();
-  else updatesState.clearAll?.();
+  else updatesState.clearAll();
 
   // Clear module-level authService caches so a user switch doesn't show stale metadata.
   clearUserUIInMemoryCache();

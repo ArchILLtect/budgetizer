@@ -52,7 +52,7 @@ function stripOwnerField<T extends Record<string, unknown>>(input: T): Omit<T, "
 }
 
 // The operation documents in `operationsMinimal.ts` are typed as branded strings.
-// Use those brands to infer variable + result types without any casts.
+// This means you can't accidentally pass a non-query/mutation string, and you get correct typings for variables and results.
 type GenQuery<I, O> = string & { __generatedQueryInput: I; __generatedQueryOutput: O };
 type GenMutation<I, O> = string & { __generatedMutationInput: I; __generatedMutationOutput: O };
 

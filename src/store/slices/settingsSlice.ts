@@ -1,4 +1,5 @@
 import type { StateCreator } from "zustand";
+import type { SavingsReviewEntry } from "../../types/savingsReview";
 
 export type SettingsSlice = {
   currentPage: string;
@@ -24,7 +25,7 @@ export type SettingsSlice = {
 
   setIsLoading: (val: boolean) => void;
 
-  awaitSavingsLink: (entries: unknown[]) => Promise<unknown>;
+  awaitSavingsLink: (entries: SavingsReviewEntry[]) => Promise<unknown>;
   resolveSavingsLink: (result: unknown) => void;
 
   openProgress: (header: string, total: number) => void;
@@ -44,7 +45,12 @@ export type SettingsSlice = {
   setIsDemoUser: (val: boolean) => void;
 };
 
-type SliceCreator<T> = StateCreator<any, [], [], T>;
+type SettingsSliceStoreState = SettingsSlice & {
+  savingsReviewQueue?: SavingsReviewEntry[];
+  [key: string]: unknown;
+};
+
+type SliceCreator<T> = StateCreator<SettingsSliceStoreState, [], [], T>;
 
 export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
   currentPage: "planner",
@@ -78,7 +84,7 @@ export const createSettingsSlice: SliceCreator<SettingsSlice> = (set, get) => ({
   },
 
   resolveSavingsLink: (result) => {
-    const resolver = (get() as unknown as SettingsSlice).resolveSavingsPromise;
+    const resolver = get().resolveSavingsPromise;
     if (typeof resolver === "function") {
       try {
         resolver(result);

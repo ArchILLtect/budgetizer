@@ -3,11 +3,15 @@ import { createStore } from "zustand/vanilla";
 
 import { createAccountsSlice } from "../accountsSlice";
 import { createImportSlice } from "../importSlice";
+import type { AccountsSlice } from "../accountsSlice";
+import type { ImportSlice } from "../importSlice";
+
+type TestState = AccountsSlice & ImportSlice;
 
 function makeTestStore() {
-  return createStore<any>()((set, get, api) => ({
-    ...createAccountsSlice(set as any, get as any, api as any),
-    ...createImportSlice(set as any, get as any, api as any),
+  return createStore<TestState>()((set, get, api) => ({
+    ...createAccountsSlice(set, get, api),
+    ...createImportSlice(set, get, api),
   }));
 }
 
@@ -52,23 +56,33 @@ describe("import apply/undo flow", () => {
         },
       ],
       pendingSavingsByAccount: {
-        [accountNumber]: [{ importSessionId: sessionId, month: "2026-02" }],
+        [accountNumber]: [{ id: "p1", importSessionId: sessionId, month: "2026-02", date: "2026-02-01", name: "Savings", amount: 10 }],
       },
     });
 
     store.getState().markTransactionsBudgetApplied(accountNumber, ["2026-02"]);
 
-    const afterApply = store.getState().accounts[accountNumber].transactions;
-    expect(afterApply.map((t: any) => ({ id: t.id, staged: t.staged, budgetApplied: t.budgetApplied }))).toEqual([
+    const afterApply = store.getState().accounts[accountNumber]?.transactions ?? [];
+    const afterApplyView = afterApply
+      .map((t) => ({ id: t.id, staged: t.staged, budgetApplied: t.budgetApplied }))
+      .filter(
+        (t): t is { id: string; staged: boolean; budgetApplied: boolean } =>
+          typeof t.id === "string" && typeof t.staged === "boolean" && typeof t.budgetApplied === "boolean"
+      );
+    expect(afterApplyView).toEqual([
       { id: "t1", staged: false, budgetApplied: true },
       { id: "t2", staged: false, budgetApplied: true },
     ]);
 
     store.getState().undoStagedImport(accountNumber, sessionId);
 
-    const afterUndo = store.getState().accounts[accountNumber].transactions;
+    const afterUndo = store.getState().accounts[accountNumber]?.transactions ?? [];
     expect(afterUndo).toHaveLength(2);
-    expect(afterUndo.map((t: any) => t.id).sort()).toEqual(["t1", "t2"]);
+    const afterUndoIds = afterUndo
+      .map((t) => t.id)
+      .filter((id): id is string => typeof id === "string")
+      .sort();
+    expect(afterUndoIds).toEqual(["t1", "t2"]);
 
     const hist = store.getState().importHistory[0];
     expect(hist.undoneAt).toBeUndefined();
@@ -116,8 +130,8 @@ describe("import apply/undo flow", () => {
       ],
       pendingSavingsByAccount: {
         [accountNumber]: [
-          { importSessionId: sessionId, month: "2026-02" },
-          { importSessionId: sessionId, month: "2026-03" },
+          { id: "p1", importSessionId: sessionId, month: "2026-02", date: "2026-02-01", name: "Savings", amount: 10 },
+          { id: "p2", importSessionId: sessionId, month: "2026-03", date: "2026-03-01", name: "Savings", amount: 20 },
         ],
       },
       importUndoWindowMinutes: 30,
@@ -126,14 +140,20 @@ describe("import apply/undo flow", () => {
     store.getState().markTransactionsBudgetApplied(accountNumber, ["2026-02"]);
 
     // Feb applied, Mar still staged
-    const afterApply = store.getState().accounts[accountNumber].transactions;
-    expect(afterApply.find((t: any) => t.id === "tFeb")).toMatchObject({ staged: false, budgetApplied: true });
-    expect(afterApply.find((t: any) => t.id === "tMar")).toMatchObject({ staged: true, budgetApplied: false });
+    const afterApply = store.getState().accounts[accountNumber]?.transactions ?? [];
+    const feb = afterApply.find((t) => t.id === "tFeb");
+    if (!feb) throw new Error("Expected transaction tFeb to exist");
+    expect(feb).toMatchObject({ staged: false, budgetApplied: true });
+
+    const mar = afterApply.find((t) => t.id === "tMar");
+    if (!mar) throw new Error("Expected transaction tMar to exist");
+    expect(mar).toMatchObject({ staged: true, budgetApplied: false });
 
     store.getState().undoStagedImport(accountNumber, sessionId);
 
-    const afterUndo = store.getState().accounts[accountNumber].transactions;
-    expect(afterUndo.map((t: any) => t.id)).toEqual(["tFeb"]);
+    const afterUndo = store.getState().accounts[accountNumber]?.transactions ?? [];
+    const afterUndoIds = afterUndo.map((t) => t.id).filter((id): id is string => typeof id === "string");
+    expect(afterUndoIds).toEqual(["tFeb"]);
 
     const hist = store.getState().importHistory[0];
     expect(typeof hist.undoneAt).toBe("string");

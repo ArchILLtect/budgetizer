@@ -105,8 +105,8 @@ describe("importLogic", () => {
       },
       pendingSavingsByAccount: {
         "1234": [
-          { importSessionId: "s1", month: "2026-02" },
-          { importSessionId: "s2", month: "2026-02" },
+          { importSessionId: "s1", month: "2026-02", date: "2026-02-01", name: "Savings", amount: 10, id: "p1" },
+          { importSessionId: "s2", month: "2026-02", date: "2026-02-02", name: "Savings", amount: 20, id: "p2" },
         ],
       },
       importHistory: [

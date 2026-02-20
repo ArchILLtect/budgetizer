@@ -11,6 +11,23 @@ import { useLocalSettingsStore } from "../store/localSettingsStore";
 import { useUpdatesStore } from "../store/updatesStore";
 //import { clearDemoSessionActive } from "../services/demoSession";
 
+type StoreWithOptionalInitial = {
+  getInitialState?: () => unknown;
+  setState?: (state: unknown, replace?: boolean) => void;
+};
+
+function tryResetStoreToInitial(store: unknown): void {
+  if (store == null) return;
+  if (typeof store !== "function" && typeof store !== "object") return;
+
+  const maybe = store as StoreWithOptionalInitial;
+  const initial = typeof maybe.getInitialState === "function" ? maybe.getInitialState() : null;
+  if (initial == null) return;
+  if (typeof maybe.setState !== "function") return;
+
+  maybe.setState(initial, true);
+}
+
 function isNotSignedInError(err: unknown): boolean {
   const name = typeof err === "object" && err !== null && "name" in err ? String((err as { name: unknown }).name) : "";
   return (
@@ -52,18 +69,11 @@ export function useAuthUser(): {
     // Fix: when a scope changes and there's no persisted state for that scope, reset
     // the in-memory store back to its initial defaults *before* rehydration.
     if (authKey && authKey !== lastAppliedScopeKeyRef.current) {
-      const resetStoreIfMissing = (persistName: string, store: any) => {
+      const resetStoreIfMissing = (persistName: string, store: unknown) => {
         const hasPersisted = userScopedGetItem(`zustand:${persistName}`) != null;
         if (hasPersisted) return;
 
-        try {
-          const initial = store?.getInitialState?.();
-          if (initial) {
-            store.setState(initial, true);
-          }
-        } catch {
-          // ignore
-        }
+        tryResetStoreToInitial(store);
       };
 
       resetStoreIfMissing("budgeteer:budgetStore", useBudgetStore);
@@ -77,35 +87,13 @@ export function useAuthUser(): {
     //   Doing so can overwrite the newly-selected scope with defaults before rehydrate.
     // - On sign-out, we do reset in-memory state so the UI doesn't retain authed data.
     if (!authKey) {
-      // Clear any authed state from in-memory stores so signed-out screens (or the next
+      // Clear authed state from in-memory stores so signed-out screens (or the next
       // login) can't briefly show previous-user data.
       try {
-        const initial = (useBudgetStore as any).getInitialState?.();
-        if (initial) {
-          useBudgetStore.setState(initial, true);
-        } else {
-          useBudgetStore.setState({
-            user: null,
-            isDemoUser: false,
-            accounts: {},
-            accountMappings: {},
-            pendingSavingsByAccount: {},
-            savingsReviewQueue: [],
-            importHistory: [],
-            importManifests: {},
-            monthlyPlans: {},
-            monthlyActuals: {},
-            savingsLogs: {},
-            lastIngestionTelemetry: null,
-            sessionExpired: false,
-            hasInitialized: false,
-            isSavingsModalOpen: false,
-            isConfirmModalOpen: false,
-            isLoadingModalOpen: false,
-            isProgressOpen: false,
-            resolveSavingsPromise: null,
-          } as any);
-        }
+        // Prefer a full replace with Zustand's initial state.
+        // If the runtime store doesn't expose it (unexpected), skip the reset rather than
+        // risking a stale/partial hard-coded default.
+        tryResetStoreToInitial(useBudgetStore);
       } catch {
         // ignore
       }
