@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-18
+Last updated: 2026-02-19
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -204,7 +204,7 @@ Acceptance:
 - [x] ~~Implement `commitImportPlan(plan)` store action (single entrypoint to merge + record history + queue savings)~~ (done)
 - [x] ~~Migrate import UIs to commit via store action (no `useBudgetStore.setState(patch)` from components)~~ (done: ImportTransactionsModal + SyncAccountsModal)
 - [x] ~~Add deterministic unit tests for analyze vs commit (idempotency, error surfaces, and plan stability)~~ (done: `analyzeImport` tests + commit boundary test)
-- [ ] After ImportPlan is manually testable in-browser, complete the deferred type-hardening follow-ups in `TODO.md` (root store typing, planner `any` cluster)
+- [x] ~~After ImportPlan is manually testable in-browser, complete the deferred type-hardening follow-ups in `TODO.md` (root store typing, planner `any` cluster)~~ (done 2026-02-19)
 
 **B) Proposed ingestion upgrades (from plan)**
 - [x] Streaming parse worker mode (PapaParse worker) for large files (ImportTransactionsModal + SyncAccountsModal)

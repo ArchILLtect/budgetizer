@@ -164,10 +164,10 @@ Docs (P1):
 
 Type hardening follow-ups (deferred until Milestone 4A is browser-testable):
 
-- [ ] TODO(P3): Type the root persisted store wiring in `src/store/budgetStore.ts`
+- [x] TODO(P3): Type the root persisted store wiring in `src/store/budgetStore.ts` (done 2026-02-19)
   - define a single RootStore type (slice composition)
   - remove `set/get/store/state: any` in the persist wrapper
-- [ ] TODO(P3): Replace remaining `any` in `src/store/slices/plannerSlice.ts` (planner domain models + setters)
+- [x] TODO(P3): Replace remaining `any` in `src/store/slices/plannerSlice.ts` (planner domain models + setters) (done 2026-02-19)
   - keep scope tight; don’t attempt to type unrelated UI
 - [ ] TODO(P3): Tighten ingestion internal/output shapes (`analyzeImport` + `ImportPlan`)
   - replace `existingTxns: any[]` with domain `Transaction[]`
