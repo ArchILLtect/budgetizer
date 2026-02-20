@@ -16,6 +16,7 @@ import { AboutPage } from './pages/AboutPage';
 import { ProfilePage } from './pages/ProfilePage';
 import ImportHistoryPage from './pages/ImportHistoryPage';
 import TrackerPage from './pages/TrackerPage';
+import InsightsPage from './pages/InsightsPage';
 import { DevPage } from './pages/DevPage';
 import { useDefaultLandingRoute } from './store/localSettingsStore';
 
@@ -71,6 +72,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/planner" element={<PlannerPage />} />
           <Route path="/tracker" element={<TrackerPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/login" element={<LoginPage signedIn={signedIn} authLoading={authLoading} />} />
 
