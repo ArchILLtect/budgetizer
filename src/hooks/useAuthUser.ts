@@ -5,6 +5,7 @@ import { Hub } from "aws-amplify/utils";
 import type { AuthUserLike } from "../types";
 import { resetUserSessionState } from "../store/clearUserCaches";
 import { setUserStorageScopeKey, userScopedGetItem } from "../services/userScopedStorage";
+import { requestOpenWelcomeModal } from "../services/welcomeModalPreference";
 import { useUserUICacheStore } from "../services/userUICacheStore";
 import { useBudgetStore } from "../store/budgetStore";
 import { useLocalSettingsStore } from "../store/localSettingsStore";
@@ -48,6 +49,7 @@ export function useAuthUser(): {
   const [user, setUser] = useState<AuthUserLike | null>(null);
   const [loading, setLoading] = useState(true);
   const lastAppliedScopeKeyRef = useRef<string | null>(null);
+  const lastWelcomeLoginRequestAtRef = useRef(0);
 
   const signedIn = useMemo(() => Boolean(user?.userId || user?.username), [user?.userId, user?.username]);
 
@@ -174,8 +176,15 @@ export function useAuthUser(): {
       const evt = String((payload as { event?: unknown } | undefined)?.event ?? "");
       if (evt === "signIn" || evt === "signedIn") {
         // Resolve auth + apply scope; the WelcomeModal itself will handle
-        // "open on login (not refresh)" based on a signed-out -> signed-in transition.
-        void refresh();
+        // "open on login (not refresh)" via this explicit login event.
+        void refresh().finally(() => {
+          const now = Date.now();
+          // Some environments emit both `signIn` and `signedIn` for one login.
+          // Dedup so we don't re-open the modal twice.
+          if (now - lastWelcomeLoginRequestAtRef.current < 2000) return;
+          lastWelcomeLoginRequestAtRef.current = now;
+          requestOpenWelcomeModal("login");
+        });
       }
       if (evt === "signOut" || evt === "signedOut") {
         // Cache cleanup is handled by signOutWithCleanup or the global listener.
