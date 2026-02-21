@@ -18,9 +18,29 @@ type AppCollapsibleProps = {
   width?: string | number;
   mt?: string | number;
   mb?: string | number;
+  pxContent?: string | number;
+  noRight?: boolean; // if true, headerRight will not be rendered and headerCenter will be justified to the right
 };
 
-export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, midChevronToggler, fontSize = "lg", fontWeight = "600", fontColor = "fg", children, defaultOpen = false, open, onOpenChange, width = "100%", mt = "5", mb = "5" }: AppCollapsibleProps) {
+export function AppCollapsible({
+  title,
+  ariaLabel,
+  headerCenter,
+  headerRight,
+  midChevronToggler,
+  fontSize = "lg",
+  fontWeight = "600",
+  fontColor = "fg",
+  children,
+  defaultOpen = false,
+  open,
+  onOpenChange,
+  width = "100%",
+  mt = "5",
+  mb = "5",
+  pxContent = 4,
+  noRight = false
+}: AppCollapsibleProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const isOpen = open ?? uncontrolledOpen;
   return (
@@ -51,14 +71,14 @@ export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, mi
             rounded="md"
             _hover={{ bg: "blackAlpha.50" }}
             alignItems="center"
-            templateColumns="1fr auto 1fr"
+            templateColumns={!noRight ? "1fr auto 1fr" : "1fr 1fr"}
             gap={2}
           >
             {/* LEFT */}
             {title ? (
               <HStack align="center" gap={2} px={"10px"}>
                 {typeof title === "string" ? (
-                  <Text fontSize={fontSize} fontWeight={fontWeight} color={fontColor}>
+                  <Text fontSize={fontSize} fontWeight={fontWeight} color={fontColor} lineClamp={1}>
                     {title}
                   </Text>
                 ) : (
@@ -107,7 +127,7 @@ export function AppCollapsible({ title, ariaLabel, headerCenter, headerRight, mi
           }
         </Box>
       </Collapsible.Trigger>
-      <Collapsible.Content px="4">
+      <Collapsible.Content px={pxContent}>
         {children}
       </Collapsible.Content>
     </Collapsible.Root>
