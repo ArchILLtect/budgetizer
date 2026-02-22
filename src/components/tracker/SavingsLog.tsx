@@ -70,22 +70,22 @@ export default function SavingsLog() {
   return (
     <Box p={4} boxShadow="md" borderRadius="lg" mt={6} bg="bg" borderWidth={1} borderColor="border">
 
-      <Flex justifyContent="space-between" alignItems="center">
-        <Heading size="md">Savings Logs</Heading>
-        <Heading size="md">Total: {formatCurrency(totalSavings)}</Heading>
-      </Flex>
-
       <AppCollapsible
-        mb={4}
-        pxContent={0}
-        defaultOpen={showInputs}
-        open={showInputs}
-        onOpenChange={(open) => setShowInputs(open)}
+        title={"Savings Logs"}
         headerCenter={
-          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowInputs(!showInputs)}>
+          <Text fontSize="xs" color="fg.info" onClick={() => setShowInputs(!showInputs)}>
             {showInputs ? '▲ Hide All Logs ▲' : '▼ Show/Edit Logs ▼'}
           </Text>
         }
+        headerRight={
+          <Heading size="md">Total: {formatCurrency(totalSavings)}</Heading>
+        }
+        pxContent={2}
+        defaultOpen={showInputs}
+        open={showInputs}
+        onOpenChange={(open) => setShowInputs(open)}
+        mt={0}
+        mb={0}
       >
         {logsForMonth.length === 0 ? (
           <Text color="fg.muted" fontSize="sm">
@@ -118,7 +118,7 @@ export default function SavingsLog() {
                         </AppSelect>
                         <Button
                           size={isPortraitWidth ? "2xs" : "xs"}
-                          colorScheme="green"
+                          colorPalette="green"
                           onClick={() => {
                             const newGoalId = editGoalId || null; // "" -> null
                             updateSavingsLog(selectedMonth, entry.id, { goalId: newGoalId });

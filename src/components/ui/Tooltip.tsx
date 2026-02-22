@@ -8,8 +8,6 @@ export interface TooltipProps extends ChakraTooltip.RootProps {
   bg?: ChakraTooltip.ContentProps["bg"]
   placement?: Placement
   rounded?: ChakraTooltip.ContentProps["rounded"]
-  // Legacy alias; prefer `bg`
-  colorScheme?: ChakraTooltip.ContentProps["bg"]
   showArrow?: boolean
   portalled?: boolean
   portalRef?: React.RefObject<HTMLElement | null>
@@ -25,7 +23,6 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       bg,
       placement = "bottom",
       rounded = "none",
-      colorScheme,
       showArrow,
       children,
       disabled,
@@ -55,8 +52,7 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       </Box>
     )
 
-    const tooltipBg = bg ?? colorScheme
-    const finalBg: ChakraTooltip.ContentProps["bg"] = contentProps?.bg ?? tooltipBg ?? "gray.900"
+    const finalBg: ChakraTooltip.ContentProps["bg"] = contentProps?.bg ?? bg ?? "gray.900"
 
     const positioning = { ...(positioningProp ?? {}), placement };
 

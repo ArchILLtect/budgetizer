@@ -129,7 +129,7 @@ export function FormSelect({
             {helperMode === "tooltip" ? helper : null}
           </HStack>
 
-          <Select.Control bg="bg.panel" minW={minW ?? "220px"} maxW={maxW}>
+          <Select.Control bg="bg" minW={minW ?? "220px"} maxW={maxW}>
             <Select.Trigger>
               <Select.ValueText placeholder={placeholder ?? "Select an option"} />
               <Select.Indicator />

@@ -192,7 +192,7 @@ export default function IncomeSourceForm({ source, onUpdate }: IncomeSourceFormP
           <Button
             mt={4}
             size="sm"
-            colorScheme="red"
+            colorPalette="red"
             onClick={() => handleRemove()}
           >
             Delete This Source

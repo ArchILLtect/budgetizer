@@ -105,7 +105,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
         {!isTracker &&
           <Button
             variant={'outline'}
-            colorScheme="blue"
+            colorPalette="blue"
             bg="bg.emphasized"
             onClick={() => handleTempButton()}
           >
@@ -127,125 +127,125 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
         )}
       </Flex>
 
-      <Box border={"1px solid"} borderColor="border" borderRadius={"lg"} my={3} p={2} bg="bg.panel">
-      <AppCollapsible
-        mt={0}
-        mb={"4px"}
-        fontSize='md'
-        title="Income Details"
-        noRight={isPortraitWidth ? true : false}
-        pxContent={isPortraitWidth ? 0 : 4}
-        ariaLabel="Toggle income details"
-        defaultOpen={showIncomeInputs}
-        open={showIncomeInputs}
-        onOpenChange={(open) => setShowIncomeInputs(open)}
-        headerCenter={
-          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowIncomeInputs(!showIncomeInputs)}>
-            {showIncomeInputs ? '▲ Hide Income Inputs ▲' : '▼ Show Income Inputs ▼'}
-          </Text>
-        }
-      >
-      {isTracker ? (
-        /* TODO(P4) For Tracker, introduce a modal that allows user to either add fixed amount or calculate similar
-          to Budget Planner */
-        <AddFixedIncomeSource origin={origin} selectedMonth={selectedMonth} />
-      ) : (
-        <>
-          <Field.Root mb={4}>
-            <Field.Label>Filing Status</Field.Label>
-            <RadioGroup.Root
-              value={effectiveFilingStatus}
-              onValueChange={(details) => {
-                const next = details.value as FilingStatus;
-                if (!currentScenario) return;
-                if (next === effectiveFilingStatus) return;
-                
-                handleUpdateFilingStatus(next);
-              }}
-            >
-              <HStack gap={4} wrap={'wrap'}>
-                {isPortraitWidth ? (
-                  <Flex flexDirection={'column'} gap={2} justifyContent={"flex-start"}>
-                    {FilingStatusOptions.map((opt) => (
-                      <RadioGroup.Item key={opt.value} value={opt.value as FilingStatus}>
-                        <RadioGroup.ItemHiddenInput />
-                        <RadioGroup.ItemControl>
-                          <RadioGroup.ItemIndicator />
-                        </RadioGroup.ItemControl>
-                        <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
-                      </RadioGroup.Item>
-                    ))}
-                  </Flex>
-                ) : (
-                  <>
-                    {FilingStatusOptions.map((opt) => (
-                      <RadioGroup.Item key={opt.value} value={opt.value as FilingStatus}>
-                        <RadioGroup.ItemHiddenInput />
-                        <RadioGroup.ItemControl>
-                          <RadioGroup.ItemIndicator />
-                        </RadioGroup.ItemControl>
-                        <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
-                      </RadioGroup.Item>
-                    ))}
-                  </>
-                )}
-              </HStack>
-            </RadioGroup.Root>
-          </Field.Root>
-          
-          {sources.length === 0 ? (
-            <Stack gap={2} minWidth={0} overflow={"scroll"}>
-              <Text fontSize="sm" color="fg.muted">
-                No income sources yet. Add one to estimate gross/net monthly income.
-              </Text>
-              <Button size="sm" variant="outline" alignSelf="flex-start" onClick={handleAddSource}>
-                {isPortraitWidth ? "+ Add" : "+ Add income source"}
-              </Button>
-            </Stack>
+      <Box p={3} mt={3} borderWidth={1} borderColor="border" borderRadius={"lg"} bg="bg.panel">
+        <AppCollapsible
+          mt={0}
+          mb={0}
+          fontSize='md'
+          title="Income Details"
+          noRight={isPortraitWidth ? true : false}
+          pxContent={isPortraitWidth ? 0 : 2}
+          ariaLabel="Toggle income details"
+          defaultOpen={showIncomeInputs}
+          open={showIncomeInputs}
+          onOpenChange={(open) => setShowIncomeInputs(open)}
+          headerCenter={
+            <Text fontSize="xs" color="fg.info" onClick={() => setShowIncomeInputs(!showIncomeInputs)}>
+              {showIncomeInputs ? '▲ Hide Income Inputs ▲' : '▼ Show Income Inputs ▼'}
+            </Text>
+          }
+        >
+          {isTracker ? (
+            /* TODO(P4) For Tracker, introduce a modal that allows user to either add fixed amount or calculate similar
+              to Budget Planner */
+            <AddFixedIncomeSource origin={origin} selectedMonth={selectedMonth} />
           ) : (
-            <Stack gap={2} minWidth={0} overflow={isPortraitWidth ? "scroll" : "hidden"}>
-              <Tabs.Root
-                value={selectedId ?? sources[0].id}
-                borderTopRadius="lg"
-                onValueChange={(details) => {
-                  const nextId = details.value;
-                  if (nextId === "__add__") {
-                    handleAddSource();
-                    return;
-                  }
-                  setSelected(nextId);
-                }}
-                variant="enclosed"
-                w={"fit-content"}
-              >
-                <Tabs.List
-                  borderTopRadius="lg"
-                  borderBottomRadius={"none"}
-                  borderX={"1px solid"}
-                  borderTop={"1px solid"}
-                  borderColor="border"
-                  bg={"bg.emphasized"}
+            <>
+              <Field.Root mb={4}>
+                <Field.Label>Filing Status</Field.Label>
+                <RadioGroup.Root
+                  value={effectiveFilingStatus}
+                  onValueChange={(details) => {
+                    const next = details.value as FilingStatus;
+                    if (!currentScenario) return;
+                    if (next === effectiveFilingStatus) return;
+                    
+                    handleUpdateFilingStatus(next);
+                  }}
                 >
-                  {sources.map((source) => (
-                    <Tabs.Trigger key={source.id} value={source.id}>
-                      {source.description}
-                    </Tabs.Trigger>
-                  ))}
-                  <Tabs.Trigger value="__add__">+ Add</Tabs.Trigger>
-                </Tabs.List>
-                <Box p={4} borderWidth={1} borderColor="border" borderBottomRadius="lg" bg="bg.subtle" w={"100%"}>
-                  {sources.map((source) => (
-                    <Tabs.Content key={source.id} value={source.id} pt={0} w={"100%"}>
-                      <IncomeSourceForm source={source} onUpdate={updateSource} />
-                    </Tabs.Content>
-                  ))}
-                </Box>
-              </Tabs.Root>
-            </Stack>
+                  <HStack gap={4} wrap={'wrap'}>
+                    {isPortraitWidth ? (
+                      <Flex flexDirection={'column'} gap={2} justifyContent={"flex-start"}>
+                        {FilingStatusOptions.map((opt) => (
+                          <RadioGroup.Item key={opt.value} value={opt.value as FilingStatus}>
+                            <RadioGroup.ItemHiddenInput />
+                            <RadioGroup.ItemControl>
+                              <RadioGroup.ItemIndicator />
+                            </RadioGroup.ItemControl>
+                            <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
+                          </RadioGroup.Item>
+                        ))}
+                      </Flex>
+                    ) : (
+                      <>
+                        {FilingStatusOptions.map((opt) => (
+                          <RadioGroup.Item key={opt.value} value={opt.value as FilingStatus}>
+                            <RadioGroup.ItemHiddenInput />
+                            <RadioGroup.ItemControl>
+                              <RadioGroup.ItemIndicator />
+                            </RadioGroup.ItemControl>
+                            <RadioGroup.ItemText>{opt.label}</RadioGroup.ItemText>
+                          </RadioGroup.Item>
+                        ))}
+                      </>
+                    )}
+                  </HStack>
+                </RadioGroup.Root>
+              </Field.Root>
+              
+              {sources.length === 0 ? (
+                <Stack gap={2} minWidth={0} overflow={"scroll"}>
+                  <Text fontSize="sm" color="fg.muted">
+                    No income sources yet. Add one to estimate gross/net monthly income.
+                  </Text>
+                  <Button size="sm" variant="outline" alignSelf="flex-start" onClick={handleAddSource}>
+                    {isPortraitWidth ? "+ Add" : "+ Add income source"}
+                  </Button>
+                </Stack>
+              ) : (
+                <Stack gap={2} minWidth={0} overflow={isPortraitWidth ? "scroll" : "hidden"}>
+                  <Tabs.Root
+                    value={selectedId ?? sources[0].id}
+                    borderTopRadius="lg"
+                    onValueChange={(details) => {
+                      const nextId = details.value;
+                      if (nextId === "__add__") {
+                        handleAddSource();
+                        return;
+                      }
+                      setSelected(nextId);
+                    }}
+                    variant="enclosed"
+                    w={"fit-content"}
+                  >
+                    <Tabs.List
+                      borderTopRadius="lg"
+                      borderBottomRadius={"none"}
+                      borderX={"1px solid"}
+                      borderTop={"1px solid"}
+                      borderColor="border"
+                      bg={"bg.emphasized"}
+                    >
+                      {sources.map((source) => (
+                        <Tabs.Trigger key={source.id} value={source.id}>
+                          {source.description}
+                        </Tabs.Trigger>
+                      ))}
+                      <Tabs.Trigger value="__add__">+ Add</Tabs.Trigger>
+                    </Tabs.List>
+                    <Box p={4} borderWidth={1} borderColor="border" borderBottomRadius="lg" bg="bg.subtle" w={"100%"}>
+                      {sources.map((source) => (
+                        <Tabs.Content key={source.id} value={source.id} pt={0} w={"100%"}>
+                          <IncomeSourceForm source={source} onUpdate={updateSource} />
+                        </Tabs.Content>
+                      ))}
+                    </Box>
+                  </Tabs.Root>
+                </Stack>
+              )}
+            </>
           )}
-        </>
-      )}
-      </AppCollapsible>
+        </AppCollapsible>
       </Box>
 
       {/* Estimated Income Output */}
@@ -284,7 +284,7 @@ export default function IncomeCalculator({ origin = 'Planner', selectedMonth }: 
                       open={showDetails}
                       onOpenChange={(open) => setShowDetails(open)}
                       headerRight={
-                        <Text fontSize="xs" colorScheme="blue" onClick={() => setShowDetails(!showDetails)} minW={"150px"}>
+                        <Text fontSize="xs" color="fg.info" onClick={() => setShowDetails(!showDetails)} minW={"150px"}>
                           {showDetails ? '▲ Hide Breakdown ▲' : '▼ Show Breakdown ▼'}
                         </Text>
                       }

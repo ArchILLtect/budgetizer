@@ -150,7 +150,7 @@ export default function SavingsReviewModal() {
                     />
                     <Button
                       size="sm"
-                      colorScheme="teal"
+                      colorPalette="teal"
                       onClick={() => handleSaveGoal(entry.id)}
                     >
                       Save

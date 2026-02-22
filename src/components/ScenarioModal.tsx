@@ -78,8 +78,8 @@ export default function ScenarioModal({ isOpen, onClose }: ScenarioModalProps) {
             </Box>
           </RadioGroup.Root>
 
-          <Button onClick={handleSave} colorScheme="teal" mt={4}>
-            Create
+          <Button onClick={handleSave} colorPalette="teal" mt={4}>
+            Save
           </Button>
         </VStack>
       }

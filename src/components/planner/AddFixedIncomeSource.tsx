@@ -85,7 +85,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
   if (!isTracker) return null;
 
   return (
-    <Box p={2} mt={3}>
+    <Box p={0} mt={0}>
         <Stack gap={3}>
         {sources.map((source: ActualFixedIncomeSource) => (
             <HStack key={source.id}>
@@ -96,9 +96,10 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               onChange={(e) =>
                 updateMonthlyIncomeActuals(selectedMonth, source.id, { description: e.target.value })
               }
+              bg="bg.muted"
               placeholder="Source name"
             />
-            <Tooltip content="Copy name" placement="top">
+            <Tooltip content="Copy merchant name" placement="top">
               <IconButton
                 aria-label="Copy income name"
                 size="sm"
@@ -116,6 +117,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
               onChange={(e) =>
                 updateMonthlyIncomeActuals(selectedMonth, source.id, { amount: normalizeMoney(e.target.value, { min: 0 }) })
               }
+              bg="bg.muted"
               placeholder="Amount"
             />
             {source.id !== 'main' &&
@@ -123,7 +125,7 @@ export default function AddFixedIncomeSource({ origin = 'Planner', selectedMonth
                 aria-label="Remove source"
                 onClick={() => handleRemove(source.id)}
                 size="sm"
-                colorScheme="red"
+                colorPalette="red"
               >
                 <MdDelete />
               </IconButton>

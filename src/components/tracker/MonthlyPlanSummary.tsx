@@ -1,4 +1,5 @@
-import { Box, Heading, Stat, StatGroup, Text, Button, Flex, useMediaQuery } from "@chakra-ui/react";
+import { Box, Heading, Stat, StatGroup, Text, useMediaQuery } from "@chakra-ui/react";
+import { AppCollapsible } from "../ui/AppCollapsible"
 import { useBudgetStore } from '../../store/budgetStore';
 import { formatCurrency } from '../../utils/formatters';
 import { formatLocalIsoDate } from '../../services/dateTime';
@@ -17,17 +18,37 @@ export default function MonthlyPlanSummary() {
     <Box p={4} boxShadow="md" bg="bg.subtle" borderWidth={2} borderColor="border">
     {plan ? (
       <>
-        <Flex justifyContent="space-between" alignItems="center" mb={3}>
-          <Heading size="md">Plan Summary</Heading>
-          {plan.createdAt && (
-            <Text fontSize="xs" color="fg.muted">
-              Plan Created: {formatLocalIsoDate(plan.createdAt)}
+        <AppCollapsible
+          title={"Plan Summary"}
+          headerCenter={
+            plan.createdAt && (
+              <Text fontSize="xs" color="fg.muted">
+                Plan Created: {formatLocalIsoDate(plan.createdAt)}
+              </Text>
+            )
+          }
+          headerRight={
+            <Text fontSize="md" color="fg.info" onClick={() => setShowPlanInputs(!showPlanInputs)}>
+              {showPlanInputs ? '▲ Hide All Details ▲' : '▼ Show All Details ▼'}
             </Text>
-          )}
-          <Button size="xs" variant="plain" colorScheme="blue" ml={2} onClick={() => setShowPlanInputs(!showPlanInputs)}>
-            {showPlanInputs ? 'Hide All Inputs' : 'Show All Inputs'}
-          </Button>
-        </Flex>
+          }
+          pxContent={2}
+          defaultOpen={showPlanInputs}
+          open={showPlanInputs}
+          onOpenChange={setShowPlanInputs}
+          mt={0}
+          mb={0}
+        >
+          <Box p={4}>
+            <Heading m={0}>Coming Soon</Heading>
+            <Text fontSize="sm" color="fg.muted" mb={2}>
+              This summary is based on the plan you set for this month. You can adjust your plan inputs on the Planner page, and this summary will update accordingly.
+            </Text>
+            <Text fontSize="sm" color="fg.muted">
+              We’ll be adding more features and insights here soon, such as adjusting your plan and seeing how it affects your overall financial picture.
+            </Text>
+          </Box>
+        </AppCollapsible>
 
         <Box px={4} py={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.panel">
           <StatGroup>

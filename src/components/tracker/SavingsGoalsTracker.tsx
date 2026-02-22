@@ -97,28 +97,30 @@ export default function SavingsGoalsTracker() {
 
   return (
     <Box mt={4} borderWidth={1} borderColor="border" p={4} borderRadius="lg" bg="bg.panel" boxShadow="md">
-      <Flex justify="space-between" align="center">
-        <Heading size="md">Savings Goals</Heading>
-        <Heading size="md"># of Goals: {goals.length}</Heading>
-      </Flex>
 
       <AppCollapsible
-        mb={4}
-        defaultOpen={showGoalInputs}
-        open={showGoalInputs}
-        onOpenChange={(open) => setShowGoalInputs(open)}
+        title="Savings Goals"
         headerCenter={
-          <Text fontSize="xs" colorScheme="blue" onClick={() => setShowGoalInputs(!showGoalInputs)}>
+          <Text fontSize="xs" color="fg.info" onClick={() => setShowGoalInputs(!showGoalInputs)}>
             {showGoalInputs ? '▲ Hide All Goals ▲' : '▼ Show/Edit Goals ▼'}
           </Text>
         }
+        headerRight={
+          <Heading size="md"># of Goals: {goals.length}</Heading>
+        }
+        pxContent={2}
+        defaultOpen={showGoalInputs}
+        open={showGoalInputs}
+        onOpenChange={(open) => setShowGoalInputs(open)}
+        mt={0}
+        mb={0}
       >
         {progressData.map(({ goal, total, progress }) => (
         <Card.Root p={4} mb={4} borderWidth={1} borderColor="border" bg="bg.subtle" key={String(goal.id)}>
           <Flex justify="space-between" align="center" mb={4}>
             <Button
               size={isPortraitWidth ? "xs" : "sm"}
-              colorScheme="blue"
+              colorPalette="blue"
               onClick={() => setEditGoalId(editGoalId === goal.id ? null : goal.id)}
             >
               {editGoalId === goal.id ? 'Close' : 'Edit'}
@@ -131,9 +133,9 @@ export default function SavingsGoalsTracker() {
               </Stat.ValueText>
               </Box>
             </Stat.Root>
-            <Button size={isPortraitWidth ? "xs" : "sm"} colorScheme="red" onClick={() => resetGoal(goal.id)}>Reset</Button>
+            <Button size={isPortraitWidth ? "xs" : "sm"} colorPalette="red" onClick={() => resetGoal(goal.id)}>Reset</Button>
           </Flex>
-          <Progress.Root value={progress} size="lg" colorScheme="green" bg="bg.subtle" borderRadius="xl" mb={4}>
+          <Progress.Root value={progress} size="lg" colorPalette="green" bg="bg.subtle" borderRadius="xl" mb={4}>
             <Progress.Track borderRadius="xl" bg={"bg.panel"}>
               <Progress.Range borderRadius="xl"/>
             </Progress.Track>
@@ -196,7 +198,7 @@ export default function SavingsGoalsTracker() {
                 mt={4}
                 size={isPortraitWidth ? "xs" : "sm"}
                 variant={'outline'}
-                colorScheme="red"
+                colorPalette="red"
                 onClick={() => handleGoalDelete(goal.id)}
               >
                 <MdDelete />
@@ -210,7 +212,7 @@ export default function SavingsGoalsTracker() {
           <Button
             onClick={() => handleGoalAdd()}
             size={isPortraitWidth ? "xs" : "sm"}
-            colorScheme='green'
+            colorPalette='green'
           >
             <MdAdd />
             Add Savings Goal

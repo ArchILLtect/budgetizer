@@ -44,7 +44,7 @@ export function GlobalProgressOverlay() {
           </Text>
         </HStack>
 
-        <Progress.Root value={pct} size="sm" colorScheme="teal" borderRadius="md">
+        <Progress.Root value={pct} size="sm" colorPalette="teal" borderRadius="md">
           <Progress.Track borderRadius="md" bg="bg.subtle">
             <Progress.Range borderRadius="md" />
           </Progress.Track>

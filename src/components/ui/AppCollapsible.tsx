@@ -76,7 +76,7 @@ export function AppCollapsible({
           >
             {/* LEFT */}
             {title ? (
-              <HStack align="center" gap={2} px={"10px"}>
+              <HStack align="center" gap={2}>
                 {typeof title === "string" ? (
                   <Text fontSize={fontSize} fontWeight={fontWeight} color={fontColor} lineClamp={1}>
                     {title}
@@ -120,10 +120,11 @@ export function AppCollapsible({
             )}
           </Grid>
           {/* TODO(P4): Add carry-over for centered show/hide toggle display */} 
-          {midChevronToggler &&
+          {midChevronToggler ? (
             <Box w="100%" display="flex" justifyContent="center">
               {isOpen ? <Icon as={MdOutlineKeyboardArrowDown} /> : <Icon as={MdOutlineKeyboardArrowUp} />}
             </Box>
+          ) : (<>{!isOpen ? <Text fontSize="2xs" color="fg.muted">▼ ▼ ▼</Text> : null}</>)
           }
         </Box>
       </Collapsible.Trigger>

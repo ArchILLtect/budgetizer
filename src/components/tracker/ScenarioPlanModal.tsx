@@ -129,7 +129,7 @@ export default function ScenarioPlanModal({ isOpen, onClose, targetMonths }: Sce
         <Checkbox
           isChecked={applyAsActuals}
           onChange={(e) => setApplyAsActuals(e.target.checked)}
-          colorScheme="teal"
+          colorPalette="teal"
           mt={4}
         >
           Also apply this scenario to actuals

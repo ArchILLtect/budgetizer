@@ -139,25 +139,26 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
       <Flex justifyContent="space-between" alignItems="center" borderWidth={1} p={3} borderRadius="lg" bg="bg.panel" borderColor="border">
         <Heading size="md">Expenses (Monthly)</Heading>
         {!isTracker &&
-          <Button variant={'outline'} colorScheme="blue" onClick={() => handleTempButton()}>{isPortraitWidth ? "Fixed" : "Use Fixed Expense Total"}</Button>
+          <Button variant={'outline'} colorPalette="blue" onClick={() => handleTempButton()}>{isPortraitWidth ? "Fixed" : "Use Fixed Expense Total"}</Button>
         }
         <Heading size="md">{formatCurrency(displayedTotalExpenses)}</Heading>
       </Flex>
 
-      <Box p={4} mt={3} borderWidth={1} borderColor="border" borderRadius={"lg"} bg="bg.panel">
+      <Box p={3} mt={3} borderWidth={1} borderColor="border" borderRadius={"lg"} bg="bg.panel">
         <Stack gap={3}>
           <AppCollapsible
-            mb={"4px"}
+            mb={0}
+            mt={0}
             fontSize='md'
             title={"Expense Details"}
             noRight={isPortraitWidth ? true : false}
-            pxContent={isPortraitWidth ? 0 : 4}
+            pxContent={isPortraitWidth ? 0 : 2}
             ariaLabel="Toggle expense details"
             defaultOpen={showExpenseInputs}
             open={showExpenseInputs}
             onOpenChange={(open) => setShowExpenseInputs(open)}
             headerCenter={
-              <Text fontSize="xs" colorScheme="blue" onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
+              <Text fontSize="xs" color="fg.info" onClick={() => setShowExpenseInputs(!showExpenseInputs)}>
                 {showExpenseInputs ? '▲ Hide Expense Inputs ▲' : '▼ Show Expense Inputs ▼'}
               </Text>
             }
@@ -209,7 +210,7 @@ export default function ExpenseTracker({ origin = 'Planner', selectedMonth: sele
                       aria-label="Remove expense"
                       onClick={() => handleRemove(expense.id)}
                       size="sm"
-                      colorScheme="red"
+                      colorPalette="red"
                     >
                       <MdDelete />
                     </IconButton>

@@ -11,6 +11,7 @@ type DialogModalProps = {
   onAccept: (id?: string, isFavorite?: boolean) => void | Promise<void>;
   onCancel: () => void;
   isModal?: boolean;
+  isDanger?: boolean;
 
   hideFooter?: boolean;
   hideCancelButton?: boolean;
@@ -40,6 +41,7 @@ export const DialogModal = ({
   setOpen,
   onAccept,
   onCancel,
+  isDanger,
   acceptLabel,
   cancelLabel,
   acceptColorPalette,
@@ -157,13 +159,13 @@ export const DialogModal = ({
       }}
     >
       <Portal>
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-          <Dialog.Content onKeyDown={onDialogKeyDown}>
+        <Dialog.Backdrop bg={isDanger ? "rgba(224, 84, 84, 0.7)" : "rgba(0, 0, 0, 0.7)"} />
+        <Dialog.Positioner mt={10}>
+          <Dialog.Content onKeyDown={onDialogKeyDown} border={isDanger ? "5px solid" : "unset"} borderColor={isDanger ? "red.500" : "unset" }>
             <Dialog.Header paddingX={4} paddingTop={4} paddingBottom={2}>
               <Dialog.Title>{title}</Dialog.Title>
             </Dialog.Header>
-            <Dialog.Body paddingX={4} paddingY={2} >
+            <Dialog.Body paddingX={4} paddingY={2}>
               {body}
             </Dialog.Body>
             {hideFooter ? null : (

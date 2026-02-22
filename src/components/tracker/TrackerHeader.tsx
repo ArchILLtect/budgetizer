@@ -89,7 +89,7 @@ export default function TrackerHeader() {
                 <Center mt={1}>
                     <Flex gap={2} align="center" wrap="wrap" justify="center">
                         <Button
-                            colorScheme="teal"
+                            colorPalette="teal"
                             size="xs"
                             onClick={() => {
                                 setPlanTargetMonths(undefined);
@@ -100,7 +100,7 @@ export default function TrackerHeader() {
                         </Button>
                         <Button
                             variant="outline"
-                            colorScheme="teal"
+                            colorPalette="teal"
                             size="xs"
                             disabled={eligibleAppliedMonths.length === 0}
                             onClick={() => {
