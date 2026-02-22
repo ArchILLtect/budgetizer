@@ -51,6 +51,10 @@ UI bugfixes (P1):
 - [x] TODO(P1): Tracker — fix “Total Override” checkbox not working
 - [ ] TODO(P1): Imports/Apply — after Savings Review modal completes, fire toast “Savings transactions linked” (later: include counts); ensure it happens for both Accounts “Apply to Budget” and Import History “Apply”
 
+Deployment (P1):
+
+- [x] TODO(P1): Netlify SPA routing — add `public/_redirects` (or `netlify.toml`) so deep links like `/planner` don’t 404 in production
+
 Income Details (Tracker) (P1):
 
 - [x] TODO(P1): Tracker — income delete confirmation alert copy: don’t call it an “expense”, include the income source name, and fire success/error toast appropriately
@@ -131,6 +135,11 @@ Docs (P1):
   - review and update sections on auth, persistence, budgeting model, transaction importing, etc. to match the current implementation
   - remove any outdated references to non-Budgeteer concepts
   - ensure the doc is clear and comprehensive for new developers joining the project
+
+MVP quality (P1/P2):
+
+- [ ] TODO(P2): Accessibility pass — add/verify “skip to content”, basic keyboard navigation, and labeled form controls (align with PRD a11y requirements)
+- [ ] TODO(P2): Startup resilience — ensure corrupted user-scoped localStorage can’t brick app startup (detect/clear + user-friendly message)
   
 <a id="p2"></a>
 ### TODO(P2)
@@ -160,6 +169,8 @@ Docs (P1):
 - [ ] TODO(P3): Reduce store surface area (without tackling `any` yet)
   - separate UI-only flags from budgeting domain state
   - ensure persist `partialize` is correct and minimal
+
+- [ ] TODO(P3): Evaluate splitting slice modules into separate persisted stores once domains are stable (Milestone 2 stretch)
 - [ ] TODO(P3): Page-by-page DRY sweep (refactor-only; no behavior changes)
   - [ ] extract shared helper functions (date/month-key math, formatting, common aggregations)
   - [ ] extract shared helper consts (chart defaults/dimensions, clamp lengths, common table column sets)
