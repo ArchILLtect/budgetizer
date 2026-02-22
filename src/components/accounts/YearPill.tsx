@@ -38,7 +38,7 @@ export function YearPill({ months }: YearPillProps) {
           <Button
             key={y}
             onClick={() => handleYearClick(y)}
-            colorScheme={isActive ? 'teal' : 'gray'}
+            colorPalette={isActive ? 'teal' : 'gray'}
             variant={isActive ? 'solid' : 'ghost'}
             fontWeight={isActive ? 'bold' : 'normal'}
             size="md"

@@ -17,6 +17,7 @@ import { getMonthlyTotals, getAvailableMonths } from '../../utils/storeHelpers';
 import { maskAccountNumber } from "../../utils/maskAccountNumber";
 import { useBudgetStore } from "../../store/budgetStore";
 import type { Account, Transaction, BudgetMonthKey } from "../../types";
+import type { ImportHistoryEntry } from "../../store/slices/importLogic";
 import { parseFiniteNumber } from "../../services/inputNormalization";
 // Used for DEV only:
 // import { findRecurringTransactions } from "../utils/analysisUtils";
@@ -53,6 +54,7 @@ type StagedSessionEntry = {
 type BudgetStoreAccountState = {
   ORIGIN_COLOR_MAP: OriginColorMap;
   accounts: Record<string, Account>;
+  importHistory: ImportHistoryEntry[];
   removeAccount: (acctNumber: string) => void;
   selectedMonth: BudgetMonthKey;
   setSelectedMonth: (month: BudgetMonthKey) => void;
@@ -63,6 +65,7 @@ type BudgetStoreAccountState = {
 export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
   const ORIGIN_COLOR_MAP = useBudgetStore((s) => (s as BudgetStoreAccountState).ORIGIN_COLOR_MAP);
   const accounts = useBudgetStore((s) => (s as BudgetStoreAccountState).accounts);
+  const importHistory = useBudgetStore((s) => (s as BudgetStoreAccountState).importHistory);
   const removeAccount = useBudgetStore((s) => (s as BudgetStoreAccountState).removeAccount);
   const selectedMonth = useBudgetStore((s) => (s as BudgetStoreAccountState).selectedMonth);
   const setSelectedMonth = useBudgetStore((s) => (s as BudgetStoreAccountState).setSelectedMonth);
@@ -77,6 +80,18 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
   const undoStagedImport = useBudgetStore((s) => (s as BudgetStoreAccountState).undoStagedImport);
   const resolvedAccountNumber = acct.accountNumber || acctNumber;
   const sessionEntries = getAccountStagedSessionSummaries(resolvedAccountNumber);
+  const latestImportedAt = useMemo(() => {
+    const importedAts: string[] = [];
+    for (const se of sessionEntries) {
+      if (se.importedAt) importedAts.push(se.importedAt);
+    }
+    for (const h of importHistory ?? []) {
+      if (h?.accountNumber === resolvedAccountNumber && h.importedAt) importedAts.push(String(h.importedAt));
+    }
+    // ISO strings compare lexicographically; keep it simple.
+    importedAts.sort();
+    return importedAts.at(-1) ?? null;
+  }, [importHistory, resolvedAccountNumber, sessionEntries]);
   const stagedCount = sessionEntries.reduce(
     (sum: number, entry) => sum + (entry.stagedNow ?? entry.count ?? 0),
     0
@@ -141,14 +156,14 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
             {institution}
           </Text>
           <Text fontSize="sm" color="fg.muted">
-            Imported {formatLocalIsoDateAtTime(acct.importedAt)}
+            Imported {formatLocalIsoDateAtTime(latestImportedAt)}
           </Text>
         </VStack>
         <Flex alignItems="center" gap={3}>
           <HStack gap={1}>
             {getUniqueOrigins(currentTransactions).map((origin) => (
               <Tooltip key={origin} content={`Imported via ${origin}`}>
-                <Tag.Root size="sm" colorScheme={ORIGIN_COLOR_MAP[origin.toLowerCase()] || 'gray'}>
+                <Tag.Root size="sm" colorPalette={ORIGIN_COLOR_MAP[origin.toLowerCase()] || 'gray'}>
                   {origin?.toUpperCase() || 'manual'}
                 </Tag.Root>
               </Tooltip>
@@ -156,7 +171,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
             {stagedCount > 0 && (
               <Menu.Root closeOnSelect={false}>
                 <Tooltip content={`${stagedCount} staged (click for details / undo)`}>
-                  <Menu.Trigger as={Button} colorScheme="yellow" fontSize="xs">
+                  <Menu.Trigger as={Button} colorPalette="yellow" fontSize="xs">
                     <FiChevronDown />
                     {stagedCount} STAGED <FiChevronDown />
                   </Menu.Trigger>
@@ -188,9 +203,9 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                           <Flex justify="space-between" align="center" gap={2}>
                             <HStack gap={1} align="center">
                               <Text fontSize="xs" fontWeight="bold" truncate title={se.sessionId}>{se.sessionId.slice(0,8)}</Text>
-                              <Badge colorScheme={statusColor} fontSize="0.55rem" px={1}>{se.status?.replace('-', ' ') || '—'}</Badge>
+                              <Badge colorPalette={statusColor} fontSize="0.55rem" px={1}>{se.status?.replace('-', ' ') || '—'}</Badge>
                               {se.status && se.status.startsWith('partial') && (
-                                <Badge colorScheme='pink' fontSize='0.5rem'>{progressPct}%</Badge>
+                                <Badge colorPalette='pink' fontSize='0.5rem'>{progressPct}%</Badge>
                               )}
                             </HStack>
                             <HStack gap={1}>
@@ -198,7 +213,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                               <Button
                                 size="xs"
                                 variant="outline"
-                                colorScheme="red"
+                                colorPalette="red"
                                 disabled={!se.canUndo}
                                 onClick={() => se.canUndo && undoStagedImport(resolvedAccountNumber, se.sessionId)}
                               >
@@ -232,7 +247,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
               </Menu.Root>
             )}
           </HStack>
-          <Button size="xs" colorScheme="red" onClick={() => removeAccount(acctNumber)}>
+          <Button size="xs" colorPalette="red" onClick={() => removeAccount(acctNumber)}>
               Remove
           </Button>
         </Flex>
@@ -249,10 +264,16 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
         value={activeMonth}
         onValueChange={(details) => setSelectedMonth(details.value as BudgetMonthKey)}
       >
-        <Tabs.List gap={0} bg={"bg.emphasized"} mb={2}>
+        <Tabs.List
+          gap={monthsForYear.length < 10 ? 10 : 0}
+          bg={"bg.emphasized"}
+          mb={2}
+          w={"100%"}
+          justifyContent={monthsForYear.length > 8 ? "space-around" : "start"}
+        >
           {monthsForYear.map((m) => (
             <Tabs.Trigger key={m} value={m} minWidth={1} fontWeight="bold" fontSize={22}>
-              {formatUtcMonthKey(m, { month: 'short' })}
+              {formatUtcMonthKey(m, { month: 'short', includeYear: false })}
             </Tabs.Trigger>
           ))}
         </Tabs.List>
@@ -311,7 +332,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                           <Table.Cell>
                             <Tag.Root
                               size="sm"
-                              colorScheme={
+                              colorPalette={
                                 tx.type === "income"
                                   ? "green"
                                   : tx.type === "savings"
@@ -344,7 +365,7 @@ export default function AccountCard({ acct, acctNumber }: AccountCardProps) {
                 </Flex>
               </Box>
               <Center>
-                <Button size="sm" colorScheme="teal" onClick={onOpen}>
+                <Button size="sm" colorPalette="teal" onClick={onOpen}>
                   ✅ Apply to Budget
                 </Button>
               </Center>

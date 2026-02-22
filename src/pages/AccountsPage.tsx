@@ -29,12 +29,12 @@ export default function AccountsTracker() {
         </Text>
         <Center>
           <HStack gap={4}>
-            <Button colorScheme="teal" onClick={syncModal.onOpen} onMouseEnter={preloadSyncModal}>
+            <Button colorPalette="teal" onClick={syncModal.onOpen} onMouseEnter={preloadSyncModal}>
               Import CSV
             </Button>
             {isDev && (
               <Button
-                colorScheme="red"
+                colorPalette="red"
                 variant="outline"
                 onClick={() => {
                   const ok = window.confirm(
