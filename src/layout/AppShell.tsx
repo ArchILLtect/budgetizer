@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Box, Flex, IconButton, Link } from "@chakra-ui/react";
 import { Toaster } from "../components/ui/Toaster";
 import { StorageDisclosureBanner } from "../components/ui/StorageDisclosureBanner.tsx";
@@ -6,7 +6,7 @@ import Header from "./Header.tsx";
 import Footer from "./Footer.tsx";
 import { ErrorBoundary } from "./ErrorBoundary.tsx";
 import type { AuthUserLike } from "../types";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { BasicSpinner } from "../components/ui/BasicSpinner.tsx";
 import { useBootstrapUserProfile } from "../hooks/useBootstrapUserProfile";
 import { WelcomeModal } from "../components/ui/WelcomeModal";
@@ -20,6 +20,9 @@ import { useBudgetStore } from "../store/budgetStore";
 import IngestionMetricsPanel from "../components/accounts/IngestionMetricsPanel";
 import { fireToast } from "../hooks/useFireToast";
 import { STORAGE_REPAIR_NOTICE_KEY } from "../services/userScopedStorage";
+import { waitForIdleAndPaint } from "../utils/appUtils";
+import { FullPageLoading } from "./FullPageLoading";
+import { useRouteLoadingStore } from "../store/routeLoadingStore";
 
 type AppShellProps = {
   user?: AuthUserLike | null;
@@ -30,6 +33,8 @@ type AppShellProps = {
 
 
 export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellProps) {
+
+  const location = useLocation();
 
   const sidebarWidthPreset = useSidebarWidthPreset();
   const sidebarWidth = useMemo(() => SIDEBAR_WIDTH[sidebarWidthPreset] ?? SIDEBAR_WIDTH.small, [sidebarWidthPreset]);
@@ -43,7 +48,33 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
   const lastIngestionBenchmarkMetrics = useBudgetStore((s) => s.lastIngestionBenchmarkMetrics);
   const lastIngestionBenchmarkSessionId = useBudgetStore((s) => s.lastIngestionBenchmarkSessionId);
 
+  const isRouteLoading = useRouteLoadingStore((s) => s.isRouteLoading);
+  const routeLoadingDestination = useRouteLoadingStore((s) => s.destination);
+  const routeLoadingStartedAtMs = useRouteLoadingStore((s) => s.startedAtMs);
+  const startRouteLoading = useRouteLoadingStore((s) => s.startRouteLoading);
+  const stopRouteLoading = useRouteLoadingStore((s) => s.stopRouteLoading);
+
   useBootstrapUserProfile(user);
+
+  // Fallback: if navigation happens outside our RouterLink clicks (e.g. redirects),
+  // show the loading overlay after the route commits.
+  useLayoutEffect(() => {
+    const dest = `${location.pathname}${location.search}${location.hash}`;
+    startRouteLoading(dest);
+  }, [location.hash, location.key, location.pathname, location.search, startRouteLoading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await waitForIdleAndPaint();
+      if (cancelled) return;
+      stopRouteLoading();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.key, stopRouteLoading]);
 
   useEffect(() => {
     try {
@@ -138,7 +169,21 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
         </IconButton>
 
         {/* Main area is the primary scroll container */}
-        <Box flex="1" minW={0} h="100%" overflow="auto" className="Main" id="main-content" tabIndex={-1}>
+        <Box flex="1" minW={0} h="100%" overflow="auto" className="Main" id="main-content" tabIndex={-1} position="relative">
+          {isRouteLoading ? (
+            <Box
+              position="absolute"
+              inset={0}
+              zIndex={1400}
+              pointerEvents="auto"
+            >
+              <FullPageLoading
+                label="Loading page…"
+                destination={routeLoadingDestination}
+                startedAtMs={routeLoadingStartedAtMs}
+              />
+            </Box>
+          ) : null}
           <ErrorBoundary title="Page Crashed">
             {import.meta.env.DEV && showIngestionBenchmark ? (
               <Box
@@ -165,7 +210,15 @@ export function AppShell({ user, onSignOut, signedIn, authLoading }: AppShellPro
                 </Box>
               </Box>
             ) : null}
-            <Suspense fallback={<BasicSpinner />}>
+            <Suspense
+              fallback={
+                <FullPageLoading
+                  label="Loading page…"
+                  destination={routeLoadingDestination}
+                  startedAtMs={routeLoadingStartedAtMs}
+                />
+              }
+            >
               <Outlet />
             </Suspense>
           </ErrorBoundary>
