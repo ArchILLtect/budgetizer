@@ -10,6 +10,7 @@ import { useUserUICacheStore } from "../services/userUICacheStore";
 import { useBudgetStore } from "../store/budgetStore";
 import { useLocalSettingsStore } from "../store/localSettingsStore";
 import { useUpdatesStore } from "../store/updatesStore";
+import { recordAuthTiming } from "../services/perfLogger";
 //import { clearDemoSessionActive } from "../services/demoSession";
 
 type StoreWithOptionalInitial = {
@@ -129,6 +130,7 @@ export function useAuthUser(): {
   }, []);
 
   const refresh = useCallback(async () => {
+    const startedAt = performance.now();
     setLoading(true);
     try {
       const current = await getCurrentUser();
@@ -141,11 +143,13 @@ export function useAuthUser(): {
       }
 
       setUser(nextUser);
+      recordAuthTiming({ name: "auth:refresh", durationMs: performance.now() - startedAt, ok: true });
     } catch (err) {
       if (isNotSignedInError(err)) {
         // Ensure signed-out sessions do not keep using a previous user's scope.
         applyScope(null);
         setUser(null);
+        recordAuthTiming({ name: "auth:refresh", durationMs: performance.now() - startedAt, ok: true, message: "signed-out" });
       } else {
         // Non-auth errors shouldn't brick the app; treat as signed out but log in DEV.
         applyScope(null);
@@ -153,6 +157,12 @@ export function useAuthUser(): {
         if (import.meta.env.DEV) {
           console.warn("[auth] failed to resolve current user", err);
         }
+        recordAuthTiming({
+          name: "auth:refresh",
+          durationMs: performance.now() - startedAt,
+          ok: false,
+          message: "refresh-failed",
+        });
       }
     } finally {
       setLoading(false);
