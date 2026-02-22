@@ -1,6 +1,6 @@
 # Budgeteer — Milestones
 
-Last updated: 2026-02-19
+Last updated: 2026-02-22
 
 This file turns the roadmap phases into concrete milestones.
 
@@ -183,7 +183,7 @@ Acceptance:
 
 ## Milestone 4 — CSV ingestion enhancements
 
-Status: In Progress (core done)
+Status: Done
 
 Goal:
 - Improve ingestion correctness, transparency, and performance.
