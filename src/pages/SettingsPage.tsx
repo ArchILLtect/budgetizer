@@ -1,9 +1,11 @@
-import { Box, Button, Heading, HStack, VStack, Text, Checkbox, NumberInput, Badge, Flex, Field, Separator, Input, IconButton } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, VStack, Text, Checkbox, NumberInput, Badge,
+    Flex, Field, Separator, Input, Icon, IconButton } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useSettingsPageData } from "./useSettingsPageData";
 import { BasicSpinner } from "../components/ui/BasicSpinner";
-import { useBudgetStore } from '../store/budgetStore';
-import { AppSwitch } from '../components/Switch';
+import { useBudgetStore } from "../store/budgetStore";
+import { AppSwitch } from "../components/Switch";
+import { Tooltip } from "../components/ui/Tooltip";
 import {
   useApplyAlwaysExtractVendorName,
   useExpenseNameOverrides,
@@ -37,6 +39,7 @@ import {
 } from "../services/demoDataService";
 import { AppCollapsible } from "../components/ui/AppCollapsible";
 import { MdAdd, MdDelete } from "react-icons/md";
+import { BsFillSignStopFill } from "react-icons/bs";
 
 type ImportSettingsLocal = {
   importUndoWindowMinutes: number;
@@ -112,7 +115,29 @@ export default function SettingsPage() {
     if (stagedAutoExpireDays !== local.stagedAutoExpireDays) {
       expireOldStagedTransactions();
     }
-    fireToast('success', 'Settings saved', 'Your settings have been saved successfully.');
+    fireToast("success", "Settings saved", "Your settings have been saved successfully.");
+  };
+
+  const handleRemoveSampleData = async () => {
+    if (removeSampleLoading) return;
+    setRemoveSampleLoading(true);
+    setRemoveSampleError(null);
+    try {
+      await clearDemoDataOnly();
+      setSeedDemoDisabled(true);
+      setSeedOptedOut(true);
+      // If the user has explicitly disabled sample-data seeding, Demo Mode becomes confusing (no data to drive it).
+      // Ensure it's also disabled so the badge/tour controls don't appear in a no-op state.
+      setDemoModeOptIn(false);
+      clearDemoSessionActive();
+      fireToast("success", "Sample data removed", "Demo-marked sample data was deleted and future seeding is disabled.");
+      setIsRemoveSampleOpen(false);
+    } catch (err) {
+      const msg = typeof err === "object" && err !== null && "message" in err ? String((err as { message: unknown }).message) : "Failed to remove sample data.";
+      setRemoveSampleError(msg);
+    } finally {
+      setRemoveSampleLoading(false);
+    }
   };
 
   const hasChanges = (
@@ -172,7 +197,7 @@ export default function SettingsPage() {
     setExpenseNameOverrides(nextExpense);
     setIncomeNameOverrides(nextIncome);
     applyActualNameOverrides({ expense: nextExpense, income: nextIncome });
-    fireToast('success', 'Name overrides saved', 'Existing tracker items were updated using your override mappings.');
+    fireToast("success", "Name overrides saved", "Existing tracker items were updated using your override mappings.");
   };
 
   const { isDemo, isDemoIdentity, isDemoSession, isDemoOptIn } = useDemoMode(true);
@@ -303,7 +328,7 @@ export default function SettingsPage() {
                         })
                       }
                       placeholder="Match (exact)"
-                      bg="bg.muted"
+                      bg={"bg"}
                     />
                     <Input
                       value={rule.displayName ?? ""}
@@ -315,12 +340,13 @@ export default function SettingsPage() {
                         })
                       }
                       placeholder="Display name"
-                      bg="bg.muted"
+                      bg={"bg"}
                     />
                     <IconButton
                       aria-label="Remove override"
                       size="sm"
                       variant="outline"
+                      colorPalette="red"
                       onClick={() => setExpenseNameOverridesLocal((prev) => prev.filter((_, i) => i !== idx))}
                     >
                       <MdDelete />
@@ -330,6 +356,7 @@ export default function SettingsPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  colorPalette="teal"
                   alignSelf="flex-start"
                   onClick={() => setExpenseNameOverridesLocal((prev) => prev.concat({ match: "", displayName: "" }))}
                 >
@@ -356,7 +383,7 @@ export default function SettingsPage() {
                         })
                       }
                       placeholder="Match (exact)"
-                      bg="bg.muted"
+                      bg={"bg"}
                     />
                     <Input
                       value={rule.displayName ?? ""}
@@ -368,12 +395,13 @@ export default function SettingsPage() {
                         })
                       }
                       placeholder="Display name"
-                      bg="bg.muted"
+                      bg={"bg"}
                     />
                     <IconButton
                       aria-label="Remove override"
                       size="sm"
                       variant="outline"
+                      colorPalette="red"
                       onClick={() => setIncomeNameOverridesLocal((prev) => prev.filter((_, i) => i !== idx))}
                     >
                       <MdDelete />
@@ -383,6 +411,7 @@ export default function SettingsPage() {
                 <Button
                   size="sm"
                   variant="outline"
+                  colorPalette="teal"
                   alignSelf="flex-start"
                   onClick={() => setIncomeNameOverridesLocal((prev) => prev.concat({ match: "", displayName: "" }))}
                 >
@@ -392,12 +421,13 @@ export default function SettingsPage() {
             </Box>
 
             <HStack pt={4}>
-              <Button size="sm" colorScheme="teal" onClick={saveNameOverrides}>
+              <Button size="sm" colorPalette="green" onClick={saveNameOverrides}>
                 Save overrides
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
+                variant="outline"
+                colorPalette="red"
                 onClick={() => {
                   setExpenseNameOverridesLocal(expenseNameOverrides ?? []);
                   setIncomeNameOverridesLocal(incomeNameOverrides ?? []);
@@ -432,8 +462,11 @@ export default function SettingsPage() {
               </Text>
 
               <HStack pt={2} gap={3} align="center" flexWrap="wrap">
+                <Tooltip content="WARNING: This action is not reversible. Make sure to export any data you want to keep before proceeding." placement="top">
+                <Icon colorPalette={"red"} size={"2xl"} color={"orangered"} as={BsFillSignStopFill} />
                 <Button
                   size="sm"
+                  mx={3}
                   variant="outline"
                   colorPalette="red"
                   onClick={() => {
@@ -445,6 +478,8 @@ export default function SettingsPage() {
                 >
                   Remove sample data
                 </Button>
+                <Icon colorPalette={"red"} size={"2xl"} color={"orangered"} as={BsFillSignStopFill} />
+                </Tooltip>
 
                 {seedOptedOut ? (
                   <Text fontSize="sm" color="fg.muted">
@@ -455,6 +490,7 @@ export default function SettingsPage() {
 
               <DialogModal
                 title="Remove sample data and disable seeding?"
+                isDanger
                 body={
                   <VStack align="start" gap={3}>
                     <Text>
@@ -467,7 +503,7 @@ export default function SettingsPage() {
                       <Checkbox.HiddenInput />
                       <Checkbox.Control />
                       <Checkbox.Label>
-                        <Text fontSize="sm">I understand this action is not reversible.</Text>
+                        <Text fontSize="sm" color="fg.warning">I understand this action is not reversible.</Text>
                       </Checkbox.Label>
                     </Checkbox.Root>
 
@@ -492,25 +528,7 @@ export default function SettingsPage() {
                 cancelLabel="Cancel"
                 cancelVariant="outline"
                 onAccept={async () => {
-                  if (removeSampleLoading) return;
-                  setRemoveSampleLoading(true);
-                  setRemoveSampleError(null);
-                  try {
-                    await clearDemoDataOnly();
-                    setSeedDemoDisabled(true);
-                    setSeedOptedOut(true);
-                    // If the user has explicitly disabled sample-data seeding, Demo Mode becomes confusing (no data to drive it).
-                    // Ensure it's also disabled so the badge/tour controls don't appear in a no-op state.
-                    setDemoModeOptIn(false);
-                    clearDemoSessionActive();
-                    fireToast("success", "Sample data removed", "Demo-marked sample data was deleted and future seeding is disabled.");
-                    setIsRemoveSampleOpen(false);
-                  } catch (err) {
-                    const msg = typeof err === "object" && err !== null && "message" in err ? String((err as { message: unknown }).message) : "Failed to remove sample data.";
-                    setRemoveSampleError(msg);
-                  } finally {
-                    setRemoveSampleLoading(false);
-                  }
+                  await handleRemoveSampleData();
                 }}
                 onCancel={() => {
                   // no-op
@@ -711,6 +729,8 @@ export default function SettingsPage() {
               <Button
                 size="sm"
                 variant="outline"
+                colorPalette="teal"
+                pb={1}
                 onClick={() => {
                   requestOpenWelcomeModal();
                 }}
@@ -720,6 +740,8 @@ export default function SettingsPage() {
               <Button
                 size="sm"
                 variant="outline"
+                colorPalette="teal"
+                pb={1}
                 onClick={() => {
                   clearWelcomeModalSeenVersion();
                   fireToast("success", "Welcome re-enabled", "The welcome modal will show again on next login.");
@@ -776,6 +798,7 @@ export default function SettingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      colorPalette="teal"
                       onClick={() => {
                         if (demoTourDisabled) {
                           resetDemoTourDisabled();
@@ -788,6 +811,7 @@ export default function SettingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
+                      colorPalette="teal"
                       onClick={() => {
                         resetDemoTourDisabled();
                         fireToast("success", "Demo tour reset", "The demo tour can be opened again from the Demo Mode badge.");
@@ -814,6 +838,7 @@ export default function SettingsPage() {
             <Button
               size="sm"
               variant="outline"
+              colorPalette="yellow"
               onClick={() => {
                 clearUserScopedKeysByPrefix("tip:");
               }}
@@ -826,25 +851,26 @@ export default function SettingsPage() {
       <Box p={4} maxW="80%" mx="auto" mt={3} borderWidth={1} borderColor="border" borderRadius="lg" boxShadow="md" bg="bg.panel">
         <AppCollapsible title="⚠️ Warning: Experimental Features Below" mb={6} defaultOpen={false}>
           <Box w={"100%"}>
-            <Heading size='md' mb={4}>Import & Staging Settings</Heading>
+            <Heading size="md" mb={4}>Import & Staging Settings</Heading>
             <Text color="red.600" mb={6}>
               The settings below are for advanced users and may cause issues if used incorrectly.
               Please proceed with caution and consider backing up your data before making changes.
             </Text>
 
-            <Box mb={6} p={3} borderWidth={1} borderColor="border" borderRadius='md' bg='bg.subtle'>
-              <Flex wrap='wrap' gap={2} mb={1}>
-                <Badge colorScheme='teal'>Undo {local.importUndoWindowMinutes}m</Badge>
-                <Badge colorScheme='purple'>History {local.importHistoryMaxEntries} max</Badge>
-                <Badge colorScheme='purple'>History {local.importHistoryMaxAgeDays}d age</Badge>
-                <Badge colorScheme='orange'>Auto-expire {local.stagedAutoExpireDays}d</Badge>
+            <Box mb={6} p={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
+              <Flex wrap="wrap" gap={2} mb={1}>
+                <Badge colorPalette="teal">Undo {local.importUndoWindowMinutes}m</Badge>
+                <Badge colorPalette="purple">History {local.importHistoryMaxEntries} max</Badge>
+                <Badge colorPalette="purple">History {local.importHistoryMaxAgeDays}d age</Badge>
+                <Badge colorPalette="orange">Auto-expire {local.stagedAutoExpireDays}d</Badge>
               </Flex>
-              <Text fontSize='xs' color='fg.muted'>{policySummary}</Text>
+              <Text fontSize="xs" color="fg.muted">{policySummary}</Text>
             </Box>
-            <VStack align='stretch' gap={5} separator={<Separator />}>
+            <VStack align="stretch" gap={5} separator={<Separator />}>
               <Field.Root>
                 <Field.Label>Undo Window (minutes)</Field.Label>
                 <NumberInput.Root
+                  bg={"bg"}
                   value={String(local.importUndoWindowMinutes)}
                   onValueChange={(details) =>
                     onChange("importUndoWindowMinutes", details.value, details.valueAsNumber)
@@ -852,39 +878,49 @@ export default function SettingsPage() {
                 >
                   <NumberInput.Input min={1} max={720} />
                 </NumberInput.Root>
-                <Text fontSize='xs' color='fg.muted'>How long after import sessions can be undone.</Text>
+                <Text fontSize="xs" color="fg.muted">How long after import sessions can be undone.</Text>
               </Field.Root>
-              <Field.Root>
-                <Field.Label>Streaming Auto Line Threshold</Field.Label>
-                  <NumberInput.Root
-                    value={String(local.streamingAutoLineThreshold)}
-                    onValueChange={(details) =>
-                      onChange("streamingAutoLineThreshold", details.value, details.valueAsNumber)
-                    }
-                  >
-                    <NumberInput.Input min={500} max={200000} step={100} />
-                  </NumberInput.Root>
-                    <Text fontSize='xs' color='fg.muted'>If a CSV exceeds this number of lines, streaming parser auto-enables.</Text>
-              </Field.Root>
-              <Field.Root>
-                <Field.Label>Streaming Auto Size Threshold (KB)</Field.Label>
-                  <NumberInput.Root
-                    value={String(Math.round(local.streamingAutoByteThreshold / 1024))}
-                    onValueChange={(details) =>
-                      onChange(
-                        "streamingAutoByteThreshold",
-                        details.value,
-                        details.valueAsNumber * 1024
-                      )
-                    }
-                  >
-                    <NumberInput.Input min={50} max={20480} step={50} />
-                  </NumberInput.Root>
-                    <Text fontSize='xs' color='fg.muted'>If file size exceeds this value, streaming parser auto-enables.</Text>
-              </Field.Root>
+              <Box p={3} borderWidth={1} borderColor="border" borderRadius="md" bg="bg.subtle">
+                <Heading size="sm" mb={2}>Streaming auto-toggle</Heading>
+                <Text fontSize="xs" color="fg.muted" mb={3}>{streamingSummary}</Text>
+                <VStack align="stretch" gap={4}>
+                  <Field.Root>
+                    <Field.Label>Streaming Auto Line Threshold</Field.Label>
+                    <NumberInput.Root
+                      bg={"bg"}
+                      value={String(local.streamingAutoLineThreshold)}
+                      onValueChange={(details) =>
+                        onChange("streamingAutoLineThreshold", details.value, details.valueAsNumber)
+                      }
+                    >
+                      <NumberInput.Input min={500} max={200000} step={100} />
+                    </NumberInput.Root>
+                    <Text fontSize="xs" color="fg.muted">If a CSV exceeds this number of lines, streaming parser auto-enables.</Text>
+                  </Field.Root>
+
+                  <Field.Root>
+                    <Field.Label>Streaming Auto Size Threshold (KB)</Field.Label>
+                    <NumberInput.Root
+                      bg={"bg"}
+                      value={String(Math.round(local.streamingAutoByteThreshold / 1024))}
+                      onValueChange={(details) =>
+                        onChange(
+                          "streamingAutoByteThreshold",
+                          details.value,
+                          details.valueAsNumber * 1024
+                        )
+                      }
+                    >
+                      <NumberInput.Input min={50} max={20480} step={50} />
+                    </NumberInput.Root>
+                    <Text fontSize="xs" color="fg.muted">If file size exceeds this value, streaming parser auto-enables.</Text>
+                  </Field.Root>
+                </VStack>
+              </Box>
               <Field.Root>
                 <Field.Label>Import History Max Entries</Field.Label>
                   <NumberInput.Root
+                    bg={"bg"}
                     value={String(local.importHistoryMaxEntries)}
                     onValueChange={(details) =>
                       onChange("importHistoryMaxEntries", details.value, details.valueAsNumber)
@@ -892,11 +928,12 @@ export default function SettingsPage() {
                   >
                     <NumberInput.Input min={5} max={500} />
                   </NumberInput.Root>
-                  <Text fontSize='xs' color='gray.500'>Newest sessions kept; older pruned beyond this count.</Text>
+                  <Text fontSize="xs" color="gray.500">Newest sessions kept; older pruned beyond this count.</Text>
               </Field.Root>
               <Field.Root>
                 <Field.Label>Import History Max Age (days)</Field.Label>
                   <NumberInput.Root
+                    bg={"bg"}
                     value={String(local.importHistoryMaxAgeDays)}
                     onValueChange={(details) =>
                       onChange("importHistoryMaxAgeDays", details.value, details.valueAsNumber)
@@ -904,11 +941,12 @@ export default function SettingsPage() {
                   >
                     <NumberInput.Input min={1} max={365} />
                   </NumberInput.Root>
-                  <Text fontSize='xs' color='gray.500'>Sessions older than this may be pruned.</Text>
+                  <Text fontSize="xs" color="gray.500">Sessions older than this may be pruned.</Text>
               </Field.Root>
               <Field.Root>
                 <Field.Label>Auto-Expire Staged Sessions (days)</Field.Label>
                   <NumberInput.Root
+                    bg={"bg"}
                     value={String(local.stagedAutoExpireDays)}
                     onValueChange={(details) =>
                       onChange("stagedAutoExpireDays", details.value, details.valueAsNumber)
@@ -916,35 +954,63 @@ export default function SettingsPage() {
                   >
                     <NumberInput.Input min={1} max={120} />
                   </NumberInput.Root>
-                  <Text fontSize='xs' color='gray.500'>Staged transactions auto-applied after this age.</Text>
+                  <Text fontSize="xs" color="gray.500">Staged transactions auto-applied after this age.</Text>
               </Field.Root>
-              <HStack gap={3} flexWrap='wrap'>
-                <Button colorScheme='teal' onClick={save} disabled={!hasChanges}>Save</Button>
-                <Button variant='outline' onClick={()=> setLocal({
-                  importUndoWindowMinutes: importUndoWindowMinutes ?? 30,
-                  importHistoryMaxEntries: importHistoryMaxEntries ?? 30,
-                  importHistoryMaxAgeDays: importHistoryMaxAgeDays ?? 30,
-                  stagedAutoExpireDays: stagedAutoExpireDays ?? 30,
-                  streamingAutoLineThreshold: streamingAutoLineThreshold ?? 3000,
-                  streamingAutoByteThreshold: streamingAutoByteThreshold ?? 500000,
-                })}>Reset</Button>
-                <Button size='sm' variant='ghost' onClick={() => { pruneImportHistory(); fireToast('success', 'History pruned', 'Import history has been pruned successfully.'); }}>Prune Now</Button>
-                <Button size='sm' variant='ghost' onClick={() => { expireOldStagedTransactions(); fireToast('success', 'Expired staged processed', 'Old staged transactions have been expired successfully.'); }}>Force Expire</Button>
+              <HStack gap={3} flexWrap="wrap">
+                <Button colorPalette="green" onClick={save} disabled={!hasChanges}>Save</Button>
+                <Button
+                  colorPalette="red"
+                  variant="outline"
+                  onClick={()=> setLocal({
+                    importUndoWindowMinutes: importUndoWindowMinutes ?? 30,
+                    importHistoryMaxEntries: importHistoryMaxEntries ?? 30,
+                    importHistoryMaxAgeDays: importHistoryMaxAgeDays ?? 30,
+                    stagedAutoExpireDays: stagedAutoExpireDays ?? 30,
+                    streamingAutoLineThreshold: streamingAutoLineThreshold ?? 3000,
+                    streamingAutoByteThreshold: streamingAutoByteThreshold ?? 500000,
+                  })}
+                >
+                  Reset
+                </Button>
+                <Tooltip content="Removes old import-session entries based on Max Entries and Max Age. This does not delete account transactions." placement="top">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      pruneImportHistory();
+                      fireToast("success", "History pruned", "Old import history entries were removed.");
+                    }}
+                  >
+                    Prune Import History
+                  </Button>
+                </Tooltip>
+
+                <Tooltip content="Marks eligible staged transactions as applied when their import session is older than the auto-expire age (ending undo for those sessions)." placement="top">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      expireOldStagedTransactions();
+                      fireToast("success", "Auto-apply complete", "Old staged transactions were auto-applied.");
+                    }}
+                  >
+                    Auto-Apply Old Staged
+                  </Button>
+                </Tooltip>
               </HStack>
+              <Text fontSize="xs" color="fg.muted" mt={2}>
+                Maintenance actions: pruning only affects the Import History list; auto-apply converts old staged transactions into applied ones.
+              </Text>
             </VStack>
-            <Box mt={6} p={3} borderWidth={1} borderRadius='md' bg='purple.50'>
-              <Heading size='sm' mb={2}>Streaming Auto-Toggle</Heading>
-              <Text fontSize='xs' color='gray.700'>{streamingSummary}</Text>
-            </Box>
             {import.meta.env.DEV && (
-              <Box mt={6} p={3} borderWidth={1} borderRadius='md' bg='gray.50'>
-                <Heading size='sm' mb={2}>Developer / Debug</Heading>
-                <HStack justify='space-between'>
-                  <Text fontSize='sm'>Show Ingestion Benchmark Panel</Text>
-                  {/* <Switch size='md' isChecked={showIngestionBenchmark} onChange={(e: React.ChangeEvent<HTMLInputElement>)=> setShowIngestionBenchmark(e.target.checked)} /> */}
+              <Box mt={6} p={3} borderWidth={1} borderRadius="md" bg="bg.subtle">
+                <Heading size="sm" mb={2}>Developer / Debug</Heading>
+                <HStack justify="space-between">
+                  <Text fontSize="sm">Show Ingestion Benchmark Panel</Text>
+                  {/* <Switch size="md" isChecked={showIngestionBenchmark} onChange={(e: React.ChangeEvent<HTMLInputElement>)=> setShowIngestionBenchmark(e.target.checked)} /> */}
                   <AppSwitch show={showIngestionBenchmark} setShow={setShowIngestionBenchmark} />
                 </HStack>
-                <Text fontSize='xs' mt={2} color='gray.500'>Dev-only synthetic ingestion performance harness. Not persisted.</Text>
+                <Text fontSize="xs" mt={2} color="gray.500">Dev-only synthetic ingestion performance harness. Not persisted.</Text>
               </Box>
             )}
           </Box>
