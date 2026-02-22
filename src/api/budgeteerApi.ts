@@ -14,6 +14,7 @@ import {
   listUserProfilesSafeMinimal,
 } from "./operationsMinimal";
 import type { ListUserProfilesQuery } from "../API";
+import { recordApiTiming } from "../services/perfLogger";
 
 /*
 function errorToMessage(err: unknown): string {
@@ -56,16 +57,83 @@ function stripOwnerField<T extends Record<string, unknown>>(input: T): Omit<T, "
 type GenQuery<I, O> = string & { __generatedQueryInput: I; __generatedQueryOutput: O };
 type GenMutation<I, O> = string & { __generatedMutationInput: I; __generatedMutationOutput: O };
 
+function extractGraphQLOperationName(doc: string): string | null {
+  const m = doc.match(/\b(query|mutation)\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
+  return m?.[2] ?? null;
+}
+
+function errorToSafeMessage(err: unknown): string {
+  if (typeof err === "string") return err.slice(0, 200);
+  if (typeof err === "object" && err !== null) {
+    const name = "name" in err ? String((err as { name?: unknown }).name ?? "") : "";
+    const message = "message" in err ? String((err as { message?: unknown }).message ?? "") : "";
+    const combined = [name, message].filter(Boolean).join(": ");
+    return combined.slice(0, 200) || "Unknown error";
+  }
+  return "Unknown error";
+}
+
+function variableKeys(variables: unknown): string[] {
+  if (!variables || typeof variables !== "object") return [];
+  try {
+    return Object.keys(variables as Record<string, unknown>);
+  } catch {
+    return [];
+  }
+}
+
 async function runQuery<I, O>(query: GenQuery<I, O>, variables: I): Promise<O> {
   const client = getClient();
-  const res = await client.graphql<O, I>({ query, variables });
-  return res.data as O;
+
+  const opName = extractGraphQLOperationName(String(query)) ?? "query";
+  const startedAt = performance.now();
+
+  try {
+    const res = await client.graphql<O, I>({ query, variables });
+    recordApiTiming({
+      name: opName,
+      durationMs: performance.now() - startedAt,
+      ok: true,
+      data: { variableKeys: variableKeys(variables) },
+    });
+    return res.data as O;
+  } catch (err) {
+    recordApiTiming({
+      name: opName,
+      durationMs: performance.now() - startedAt,
+      ok: false,
+      message: errorToSafeMessage(err),
+      data: { variableKeys: variableKeys(variables) },
+    });
+    throw err;
+  }
 }
 
 async function runMutation<I, O>(query: GenMutation<I, O>, variables: I): Promise<O> {
   const client = getClient();
-  const res = await client.graphql<O, I>({ query, variables });
-  return res.data as O;
+
+  const opName = extractGraphQLOperationName(String(query)) ?? "mutation";
+  const startedAt = performance.now();
+
+  try {
+    const res = await client.graphql<O, I>({ query, variables });
+    recordApiTiming({
+      name: opName,
+      durationMs: performance.now() - startedAt,
+      ok: true,
+      data: { variableKeys: variableKeys(variables) },
+    });
+    return res.data as O;
+  } catch (err) {
+    recordApiTiming({
+      name: opName,
+      durationMs: performance.now() - startedAt,
+      ok: false,
+      message: errorToSafeMessage(err),
+      data: { variableKeys: variableKeys(variables) },
+    });
+    throw err;
+  }
 }
 
 /**
