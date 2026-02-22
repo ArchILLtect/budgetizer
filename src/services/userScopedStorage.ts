@@ -1,6 +1,16 @@
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 
 export const AUTH_SCOPE_STORAGE_KEY = "budgeteer:authScope" as const;
+export const STORAGE_REPAIR_NOTICE_KEY = "budgeteer:storageRepairNotice" as const;
+
+function setStorageRepairNotice(): void {
+  try {
+    // Value is informational only; presence indicates we repaired storage.
+    localStorage.setItem(STORAGE_REPAIR_NOTICE_KEY, new Date().toISOString());
+  } catch {
+    // ignore
+  }
+}
 
 function safeJsonParse(raw: string): unknown {
   try {
@@ -122,9 +132,20 @@ export function clearUserScopedKeysByPrefix(basePrefix: string): void {
 export function createUserScopedZustandStorage(): PersistStorage<unknown, unknown> {
   return {
     getItem: (name: string) => {
-      const raw = userScopedGetItem(`zustand:${name}`);
+      const baseKey = `zustand:${name}`;
+      const raw = userScopedGetItem(baseKey);
       if (raw == null) return null;
-      return coerceZustandStorageValue(safeJsonParse(raw));
+
+      const parsed = safeJsonParse(raw);
+      const coerced = coerceZustandStorageValue(parsed);
+      if (!coerced) {
+        // Corrupted or unexpected persisted shape: clear it so it can't repeatedly fail on startup.
+        userScopedRemoveItem(baseKey);
+        setStorageRepairNotice();
+        return null;
+      }
+
+      return coerced;
     },
     setItem: (name: string, value: StorageValue<unknown>) => {
       userScopedSetItem(`zustand:${name}`, JSON.stringify(value));

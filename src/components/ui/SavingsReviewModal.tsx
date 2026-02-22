@@ -124,6 +124,7 @@ export default function SavingsReviewModal() {
                 </Text>
                 <AppSelect
                   placeholder="Don't add to goal"
+                  aria-label="Select savings goal"
                   value={selectedGoals[entry.id] || ''}
                   onChange={(e) => handleChange(entry.id, e.target.value)}
                 >
@@ -139,6 +140,7 @@ export default function SavingsReviewModal() {
                   <VStack mt={2} align="stretch" gap={2}>
                     <Input
                       placeholder="New goal name"
+                      aria-label="New goal name"
                       value={newGoalNames[entry.id]?.name || ''}
                       onChange={(e) =>
                         setNewGoalNames((prev) => ({
@@ -149,6 +151,7 @@ export default function SavingsReviewModal() {
                     />
                     <Input
                       placeholder="Target amount"
+                      aria-label="New goal target amount"
                       type="number"
                       value={newGoalNames[entry.id]?.target || ''}
                       onChange={(e) =>
