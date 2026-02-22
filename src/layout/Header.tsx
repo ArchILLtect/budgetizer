@@ -22,13 +22,6 @@ export default function Navigation({ user, userUI }: NavigationProps) {
 
   const { userUI: hookUserUI } = useUserUI();
   const effectiveUserUI = userUI ?? hookUserUI;
-
-  /* Omitted until we have a better need for this in the UI,
-  // and to avoid unnecessary re-renders of the Navigation component when updates change
-  const { loading } = 
-  const refreshing = loading && hasLoadedData;
-  */
-
   const authKey = user?.username ?? user?.userId;
   const userUIMatchesAuth =
     !authKey || !effectiveUserUI?.username || effectiveUserUI.username === authKey;
