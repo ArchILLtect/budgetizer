@@ -25,6 +25,15 @@ function pickFirstGroup(groups: unknown): string | undefined {
   return undefined;
 }
 
+function pickRoleFromGroups(groups: unknown): string | undefined {
+  if (typeof groups === "string" && groups) return groups;
+  if (Array.isArray(groups)) {
+    if (groups.includes("Admin")) return "Admin";
+    if (typeof groups[0] === "string") return groups[0];
+  }
+  return undefined;
+}
+
 export async function getUserUIResult(): Promise<{ userUI: UserUI | null; error: unknown | null }> {
   // Dedupe concurrent calls (TopBar + ProfilePage, etc.)
   if (inFlight) return inFlight;
@@ -72,8 +81,10 @@ export async function getUserUIResult(): Promise<{ userUI: UserUI | null; error:
 
       if (!role) {
         const session = await fetchAuthSession();
-        const groups = session.tokens?.idToken?.payload?.["cognito:groups"];
-        role = pickFirstGroup(groups);
+        const accessGroups = session.tokens?.accessToken?.payload?.["cognito:groups"];
+        const idGroups = session.tokens?.idToken?.payload?.["cognito:groups"];
+
+        role = pickRoleFromGroups(accessGroups) ?? pickRoleFromGroups(idGroups) ?? pickFirstGroup(idGroups);
       }
 
       return {

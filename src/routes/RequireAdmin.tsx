@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { BasicSpinner } from "../components/ui/BasicSpinner";
 import { isCurrentUserAdmin } from "../services/authIdentity";
+import { useUserUI } from "../hooks/useUserUI";
 import { sanitizeRedirectPath } from "./redirectUtils";
 
 function shouldBypassAuthForE2E(): boolean {
@@ -11,8 +12,11 @@ function shouldBypassAuthForE2E(): boolean {
 
 export function RequireAdmin({ signedIn, loading }: { signedIn: boolean; loading: boolean }) {
   const location = useLocation();
+  const { userUI, loading: userUiLoading } = useUserUI();
   const [checking, setChecking] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const isAdminFromUI = useMemo(() => userUI?.role === "Admin", [userUI?.role]);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,6 +24,14 @@ export function RequireAdmin({ signedIn, loading }: { signedIn: boolean; loading
     if (!signedIn || loading) {
       setChecking(false);
       setIsAdmin(false);
+      return;
+    }
+
+    // If UI already resolved admin, short-circuit without a network/token check.
+    // This keeps the guard consistent with the header badge.
+    if (isAdminFromUI) {
+      setChecking(false);
+      setIsAdmin(true);
       return;
     }
 
@@ -37,17 +49,17 @@ export function RequireAdmin({ signedIn, loading }: { signedIn: boolean; loading
     return () => {
       cancelled = true;
     };
-  }, [loading, signedIn]);
+  }, [isAdminFromUI, loading, signedIn]);
 
   if (shouldBypassAuthForE2E()) return <Outlet />;
 
-  if (loading || checking) return <BasicSpinner />;
+  if (loading || userUiLoading || checking) return <BasicSpinner />;
   if (!signedIn) {
     const next = sanitizeRedirectPath(`${location.pathname}${location.search}`, "/planner");
     const to = `/login?redirect=${encodeURIComponent(next)}`;
     return <Navigate to={to} replace />;
   }
 
-  if (isAdmin) return <Outlet />;
+  if (isAdminFromUI || isAdmin) return <Outlet />;
   return <Navigate to="/" replace />;
 }

@@ -31,13 +31,30 @@ export async function getCurrentUserEmail(): Promise<string | null> {
 
 export async function isCurrentUserAdmin(): Promise<boolean> {
   try {
-    const session = await fetchAuthSession();
-    const groups = session.tokens?.idToken?.payload?.["cognito:groups"];
-    const first = pickFirstString(groups);
+    // Prefer explicit role attribute when present.
+    try {
+      const attrs = await fetchUserAttributes();
+      const roleFromCustom = attrs["custom:role"];
+      if (typeof roleFromCustom === "string" && roleFromCustom === "Admin") return true;
+    } catch {
+      // ignore
+    }
 
-    if (typeof groups === "string") return groups === "Admin";
-    if (Array.isArray(groups)) return groups.includes("Admin");
-    if (first) return first === "Admin";
+    const session = await fetchAuthSession();
+
+    const idGroups = session.tokens?.idToken?.payload?.["cognito:groups"];
+    const accessGroups = session.tokens?.accessToken?.payload?.["cognito:groups"];
+
+    const matches = (groups: unknown): boolean => {
+      const first = pickFirstString(groups);
+      if (typeof groups === "string") return groups === "Admin";
+      if (Array.isArray(groups)) return groups.includes("Admin");
+      if (first) return first === "Admin";
+      return false;
+    };
+
+    if (matches(accessGroups)) return true;
+    if (matches(idGroups)) return true;
     return false;
   } catch {
     return false;
